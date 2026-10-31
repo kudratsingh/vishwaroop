@@ -41,3 +41,6 @@ The rename did not cause these. This repository tracks them as its WO-008. The f
 - **`tools/status_board.py`:** `--phase` and `--et` appends were always refused, because the record carried `"wo": null` and took the work-order path. The command line now drops unset fields before `append()`, and `current_states` tests its keys by `.get()` truthiness. It now refuses a record naming more than one id, which would otherwise mark a phase `passed` without recording the exit test. `tests/test_tools.py` adds tests for these appends through the command line.
 - **`tests/test_project_consistency.py`:** deleted `test_no_fixture_claims_in_reports`, as `banshee` did on the owner's instruction. It failed on any `.md` report in `reports/`, so it blocked every real work-order report.
 - **`.gitignore`:** replaced `*secret*`, which silently dropped `tools/scan_secrets.py` from `git add -A` and hid it from `ruff`, with specific patterns plus `!tools/scan_secrets.py`. `tests/test_tools.py` adds a test for this.
+
+## After import: private GitHub remote (2026-10-31, WO-009)
+The owner asked for the repository to be created. `kudratsingh/vishwaroop` is private, and `main` is protected (ADR-0005). `wo/WO-007-program-rename` stays local until the owner approves its push and pull request, so `main` keeps the kit's old package name until then.

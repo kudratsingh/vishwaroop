@@ -54,7 +54,7 @@ What an agent needs from the planning conversations (Sept–Oct 2026) to make th
 | 3 | Where sealed real-arm evaluation data lives | owner-controlled location outside agent access (unknown) |
 | 4 | GPU for M1 training | rented 4090/A40-class until the workstation exists; cap $0 until approved |
 | 5 | Teleop pilot scope for M3/M2b data | 10 successful demos + 10 safe autonomous/intervention episodes, one task, named object set (proposed default) |
-| 6 | Remote repository designation | none for this repository; local git only |
+| 6 | Remote repository designation | decided: `kudratsingh/vishwaroop`, private (ADR-0005) |
 
 ## 6. Contradictions found while consolidating (and how they were resolved)
 

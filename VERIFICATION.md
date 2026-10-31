@@ -23,7 +23,7 @@ Run in a throwaway clone, on a scratch commit of this tree.
 | Check | Result |
 |---|---|
 | `make check` (lint, types, tests, hash locks, secrets, links) | passed; 86 tests, 41 of them contract conformance |
-| `make immutable` against the import commit | passed; the same tool failed as it should on a scratch control commit that removed a line from `work_orders/STATUS.jsonl` |
+| `make immutable` against `main` | passed; the same tool failed as it should on a scratch control commit that removed a line from `work_orders/STATUS.jsonl` |
 | `tools/check_hashes.py --verify-kit-manifest` | passed |
 | `contracts/v1/validate.py` on all three fixtures | exit 0 |
 | `contracts/v1/audit_splits.py` on all three fixtures | exit 0 |
@@ -39,10 +39,17 @@ Run in a throwaway clone, on a scratch commit of this tree.
 | Fresh `git init && git add -A` on this tree | tracks every file in `SHA256SUMS.json` |
 
 ### Cross-repository check: against `banshee` commit `da128e3`
-This repository applied the change second, so it copied the shared files and authored none of them. It then compared the `banshee` commit object with this tree: `contracts/v1/` as a whole tree, `PROGRAM.md`, both lock files, ADR-0003 and the `AGENTS.md` core. All were byte-identical at 10:07 UTC, as were the WO-008 files `.gitignore`, `tools/status_board.py`, `tests/test_tools.py` and `tests/test_project_consistency.py`. That commit is on the `banshee` branch `wo/WO-006-program-rename`, not on its `main`, so this confirms the shared files on the two rename branches. Neither repository has merged this change.
+This repository applied the change second, so it copied the shared files and authored none of them. It then compared the `banshee` commit object with this tree: `contracts/v1/` as a whole tree, `PROGRAM.md`, both lock files, ADR-0003 and the `AGENTS.md` core. All were byte-identical at 10:19 UTC, as were the WO-008 files `.gitignore`, `tools/status_board.py`, `tests/test_tools.py` and `tests/test_project_consistency.py`. That commit is on the `banshee` branch `wo/WO-006-program-rename`, not on its `main`, so this confirms the shared files on the two rename branches. Neither repository has merged this change.
 
 ### First copy superseded
 The first copy was an earlier draft and was replaced on the owner's instruction. `work_orders/WO-007-program-rename-vishwaroop.md` records what changed and why.
+
+### Remote (WO-009)
+Read back from GitHub. `reports/WO-009-designate-github-remote.md` has the detail.
+- `kudratsingh/vishwaroop` is private, with default branch `main`. The owner asked for it on 2026-10-31.
+- `main` was pushed at `654bc0d`. CI run 41192093373 passed on that commit, on `cpu-tier (3.12)` and `cpu-tier (3.13)`.
+- `main` requires pull requests with 0 approvals and both `cpu-tier` checks, administrators included. Force-push and deletion are disallowed.
+- This rename branch is committed locally and not pushed, on the owner's instruction. CI on the rename is **not run**.
 
 ### Old names left on purpose
 - `Omni_Drone_World_Model_Starter_Kits_2026-10-30.zip` in `CHANGES.md`, a real file name.
@@ -68,7 +75,7 @@ These predate the rename and are outside it.
 - `docs/BUDGET_AND_LAUNCHER.md` cites `tests/test_budget_preflight.py`, which does not exist. Those tests are in `tests/test_tools.py`.
 - The `python -m vishwaroop.*` commands in the work orders need `PYTHONPATH=src` or an install, and no document says so. Without it, the module is not found (exit 1).
 - `START_HERE.md §6` and `prompts/FIRST_SESSION.md` step 3 mark WO-001 and M0 `ready` before the exit tests are frozen, which `AGENTS.md §5.3` does not allow.
-- `PROGRAM.md §12` row 7 says no remote is designated for either project, which is no longer true of `banshee`. Fixing it needs a program change, authored in `banshee`.
+- `PROGRAM.md §12` row 7 says no remote is designated for either project, which is no longer true of either project. Fixing it needs a program change, authored in `banshee`.
 
 ### Retro note
 Copying from a moving working tree produced a draft that had to be replaced. Next time, copy shared files only from a commit object and check them against that commit's own hash table. Run the owner's exact check with the system binary in the real checkout: a session-level `grep` wrapper and a clean clone each hid stale binary caches here. The two repositories also depend on each other here: `banshee` waits on this confirmation, and this repository needs its final commit, so whoever holds the final hash should state it.
@@ -77,7 +84,7 @@ Copying from a moving working tree produced a draft that had to be replaced. Nex
 WO-001, once WO-007 and WO-008 are `accepted`.
 
 ### Not run
-No GitHub CI (no remote is designated here), so the Python 3.12 leg of the CI matrix has not run. No simulator, no hardware. The owner's Claude Project copy of `PROGRAM.md` has not been updated to version 1.1; only the owner can do that.
+GitHub CI has not run on this rename branch, so the Python 3.12 leg has not run on these bytes; it passed only on `main` at `654bc0d`, before the rename. No simulator, no hardware. The owner's Claude Project copy of `PROGRAM.md` has not been updated to version 1.1; only the owner can do that.
 
 ## Packaging record (before the rename)
 

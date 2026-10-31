@@ -32,7 +32,7 @@ These commands do not run ManiSkill, train anything, read the arm repository, or
 | tools: status ledger/board, append-only CI check, hash locks, secrets scan, link check, budget preflight | enforcing paid launcher (WO-003), provider adapter |
 | CI workflow (CPU tier), Makefile, pre-commit hooks | sealed-data storage, physical outcome sensing |
 
-All phases are `not_started`; see `docs/STATUS_BOARD.md`. No paid compute, hardware, or remote repository is authorized by these files (`AGENTS.md §2`).
+All phases are `not_started`; see `docs/STATUS_BOARD.md`. No paid compute or hardware is authorized by these files, and no remote other than the one in `config/repo.json` (`AGENTS.md §2`).
 
 ## Layout
 ```
@@ -44,6 +44,6 @@ docs/        PHASES, ARCHITECTURE, CONTEXT_AND_DECISIONS, EVALUATION_PROTOCOL, D
 src/vishwaroop/    core/, importer.py, interfaces.py   (sim/, data/, models/, planning/, scoring/, eval/, synth/ to come)
 tests/       CPU tier;  contracts/v1/tests/  conformance
 tools/       status_board, check_immutable, check_hashes, scan_secrets, check_links, budget_preflight
-work_orders/ WO-001..008 + STATUS.jsonl (append-only)      prompts/FIRST_SESSION.md
+work_orders/ WO-001..009 + STATUS.jsonl (append-only)      prompts/FIRST_SESSION.md
 data/ runs/ ledgers/ artifacts/ reports/ evals/   append-only record locations
 ```
