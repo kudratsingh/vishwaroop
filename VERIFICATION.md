@@ -42,7 +42,7 @@ Run in a throwaway clone, on a scratch commit of this tree.
 | `git ls-files -ci --exclude-standard` | no tracked file is ignored |
 
 ### Cross-repository check: against `banshee` commit `3a66e3c`
-This repository applied the change second, so it copied the shared files and authored none of them. It then compared the `banshee` commit object with this tree: `contracts/v1/` as a whole tree, `PROGRAM.md`, both lock files, ADR-0003 and the `AGENTS.md` core. All were byte-identical at 10:57 UTC, as were `.gitignore`, `tools/status_board.py`, `tools/scan_secrets.py`, `tools/check_immutable.py`, `tests/test_tools.py` and `tests/test_project_consistency.py`. That commit is on the `banshee` branch `wo/WO-006-program-rename`, not on its `main`. Neither repository has merged this change. The owner confirms the match across the two repositories before merging.
+This repository applied the change second, so it copied the shared files and authored none of them. It then compared the `banshee` commit object with this tree: `contracts/v1/` as a whole tree, `PROGRAM.md`, both lock files, ADR-0003 and the `AGENTS.md` core. All were byte-identical at 10:57 UTC, as were `.gitignore`, `tools/status_board.py`, `tools/scan_secrets.py`, `tools/check_immutable.py`, `tests/test_tools.py` and `tests/test_project_consistency.py`. That commit is on the `banshee` branch `wo/WO-006-program-rename`, not on its `main`. The owner's own check across the two repositories passed at that commit, and pull request 1 here merged on the owner's approval as `85027d4`.
 
 ### First copy superseded
 The first copy was an earlier draft and was replaced on the owner's instruction. `work_orders/WO-007-program-rename-vishwaroop.md` records what changed and why.
@@ -52,7 +52,7 @@ Read back from GitHub. `reports/WO-009-designate-github-remote.md` has the detai
 - `kudratsingh/vishwaroop` is private, with default branch `main`. The owner asked for it on 2026-10-31.
 - `main` was pushed at `654bc0d`. CI run 41192093373 passed on that commit, on `cpu-tier (3.12)` and `cpu-tier (3.13)`.
 - `main` requires pull requests with 0 approvals and both `cpu-tier` checks, administrators included. Force-push and deletion are disallowed.
-- The owner approved pushing this branch and opening one pull request to `main`. When this commit was made, CI had **not run** on it; the pull request shows the result. The owner merges it, together with the `banshee` pull request.
+- Pull request 1 merged as `85027d4` on the owner's approval. CI passed on Python 3.12 and 3.13 on its head `405efa5` (runs 41194909627 and 41194913640) and on the merged commit (run 41247192471).
 
 ### Old names left on purpose
 - `Omni_Drone_World_Model_Starter_Kits_2026-10-30.zip` in `CHANGES.md`, a real file name.
@@ -89,13 +89,13 @@ These predate the rename and are outside it.
 Copying from a moving working tree produced a draft that had to be replaced. Next time, copy shared files only from a commit object and check them against that commit's own hash table. Run the owner's exact check with the system binary in the real checkout: a session-level `grep` wrapper and a clean clone each hid stale binary caches here. The two repositories also depend on each other here: `banshee` waits on this confirmation, and this repository needs its final commit, so whoever holds the final hash should state it. Dry-run a copied ignore rule against this repository's own paths before adopting it: that is how the WO-010 file name was caught.
 
 ### Next work order
-WO-001, once WO-007, WO-008 and WO-010 are `accepted`.
+WO-001. WO-007, WO-008, WO-009 and WO-010 are `accepted`.
 
 ### Claude Project copy
 Verified by the owner's assistant on 2026-10-31, not by an agent in this repository, which cannot read that copy: `claude/PROGRAM.md` in the Project is version 1.1, sha256 `58f4c930...`, the same bytes as both repositories.
 
 ### Not run
-When this commit was made, GitHub CI had not run on this rename branch, so the Python 3.12 leg had not run on these bytes; it had passed only on `main` at `654bc0d`, before the rename. No simulator, no hardware.
+No simulator and no hardware.
 
 ## Packaging record (before the rename)
 

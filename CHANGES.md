@@ -52,3 +52,6 @@ Copied byte for byte from `banshee` commit `3a66e3c6a93436f3bd6673708715264d1e47
 - **`tools/scan_secrets.py`:** adds Hugging Face and RunPod token patterns, and now scans files with no extension.
 - **`.gitignore`:** returns to `*secret*`, keeps `secrets/` and `.secrets*`, and keeps the exception for the scanner. This replaces the narrower patterns from WO-008, which left names such as `secret_prod.env`, `mysecret` and `secretkey` trackable.
 - **`tests/test_tools.py`:** adds tests for these.
+
+## After import: rename merged and accepted (2026-10-31)
+Pull request 1 merged as `85027d4` on the owner's approval, after the owner's check across the two repositories passed at `banshee` `3a66e3c`. WO-007, WO-008 and WO-010 are accepted, with reports under `reports/`.

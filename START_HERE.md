@@ -18,19 +18,19 @@ git status   # if this is not yet a git repository: git init -b main && git add 
 `make check` must be green. If it is not, fixing it is the first task and gets its own PR.
 
 ## 3. Status today (2026-10-31)
-- Every phase `not_started`. See `docs/STATUS_BOARD.md` for work-order states: WO-007 (the program-wide rename, ADR-0003), WO-008 (starter-kit tooling fixes) and WO-010 (work-order freeze and secret scan) are the current work. Nothing has run on a simulator. Fixtures are fabricated.
-- `config/repo.json`: the private remote `kudratsingh/vishwaroop` is designated (ADR-0005). No other remote may be added. `main` is protected, so changes reach it through pull requests. The owner has approved pushing `wo/WO-007-program-rename` and opening one pull request to `main`; only the owner merges it.
+- Every phase `not_started`. See `docs/STATUS_BOARD.md` for work-order states: WO-007 (the program-wide rename, ADR-0003), WO-008, WO-009 and WO-010 are `accepted`, and WO-001 is next. Nothing has run on a simulator. Fixtures are fabricated.
+- `config/repo.json`: the private remote `kudratsingh/vishwaroop` is designated (ADR-0005). No other remote may be added. `main` is protected, so changes reach it through pull requests.
 - `config/budget.json`: $0 approved → no paid compute; the arm and coding-agent budgets are separate projects' and do not transfer.
 - Hardware: the SO-101 is ordered, not confirmed arrived; it is not needed for M0/M1.
 
 ## 4. First work order
-Finish `work_orders/WO-007-program-rename-vishwaroop.md` (it merges only once the shared hashes are confirmed in both repositories), `work_orders/WO-008-starter-kit-tooling-fixes.md` and `work_orders/WO-010-status-freeze-and-token-scan.md` first. Then `work_orders/WO-001-m0-grounded-environment.md`. Start with its CPU-tier parts (outcome code, export adapter tests on fixtures, evaluation specification drafts) on any machine; the simulator parts need a Linux + NVIDIA machine (`docs/ENVIRONMENT.md`). Then WO-003 (budget enforcement, local) can run in parallel in its own worktree. WO-002 follows WO-001.
+`work_orders/WO-001-m0-grounded-environment.md` is next. Start with its CPU-tier parts (outcome code, export adapter tests on fixtures, evaluation specification drafts) on any machine; the simulator parts need a Linux + NVIDIA machine (`docs/ENVIRONMENT.md`). Then WO-003 (budget enforcement, local) can run in parallel in its own worktree. WO-002 follows WO-001.
 
 ## 5. Unresolved owner decisions you may hit
 See `docs/CONTEXT_AND_DECISIONS.md §5` and `PROGRAM.md §12`: first ManiSkill3 task if no arm export exists (default: a readily available pick-and-place task, honestly labelled); GPU rental approval (none yet); sealed-data location. Take the recorded default, write the assumption into the report, and continue — stop only at `AGENTS.md §2.3` gates or §12 conditions.
 
 ## 6. Exact next actions
-Do not start WO-001 until WO-007, WO-008 and WO-010 are `accepted`. If one is still waiting on `banshee`, report that to the owner. Once all are merged, branch from the updated `main`.
+WO-007, WO-008, WO-009 and WO-010 are `accepted`, so WO-001 is unblocked. Branch from the updated `main`.
 
 1. `make check` green → append `in_progress` for WO-001 (`python tools/status_board.py --append --wo WO-001 --event ready`, then `--event in_progress`) and `ready` for phase M0.
 2. Branch `wo/WO-001-m0`; write `evals/M0-exit-tests.json` with the frozen replay tolerance and dataset thresholds (from `config/phases.json` proposed defaults or justified alternatives) **before** any simulator run; append `frozen` for ET-M0-3 and ET-M0-6.
