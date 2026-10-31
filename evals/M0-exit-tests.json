@@ -1,7 +1,9 @@
 {
   "phase": "M0",
+  "protocol_version": "m0-protocol-2",
   "frozen_on": "2026-10-31",
   "frozen_before": "any simulator episode, replay or dataset exists for this project",
+  "revision_note": "m0-protocol-2 replaces m0-protocol-1 after an independent review, before any result. It adds target_position to the compared streams and adds the family-to-partition rule; no threshold is loosened.",
   "task": {
     "env_id": "PickCubeSO100-v1",
     "adr": "docs/adr/ADR-0004-m0-task-choice.md",
@@ -17,18 +19,40 @@
     "dwell_steps": 10
   },
   "replay": {
-    "compare_streams": ["joint_position", "object_position"],
+    "compare_streams": [
+      "joint_position",
+      "object_position",
+      "target_position"
+    ],
     "max_state_deviation": 0.001,
-    "units_note": "Joint positions in rad, object position in m. config/phases.json proposed 'normalized joint units', which nothing defined; rad is stricter over the arm's joint ranges, and it was chosen before any result existed.",
+    "units_note": "Joint positions in rad, object and target positions in m. config/phases.json first proposed 'normalized joint units', which nothing defined; rad is stricter over the arm's joint ranges, and it was chosen before any result existed.",
     "repeats": 3,
     "require_identical_outcome_label": true
   },
   "exit_tests": [
-    {"id": "ET-M0-1", "threshold": "100% of CPU-tier checks green"},
-    {"id": "ET-M0-2", "threshold": "validate.py returns contract_valid; zero null pins in the simulator section of the stack lock"},
-    {"id": "ET-M0-3", "threshold": "max per-step deviation <= 0.001 on all 3 repeats, per the replay block; identical outcome label"},
-    {"id": "ET-M0-4", "threshold": "5/5 negative tests rejected; 2/2 inspected outcomes agree"},
-    {"id": "ET-M0-5", "threshold": "evals/M0-protocol.md, this file and evals/M1-exit-tests.json present and hashed; the policy-holdout plan names run/family grouping; frozen events exist for every M1 exit test"},
-    {"id": "ET-M0-6", "threshold": ">= 200 episodes; >= 30% failures; >= 3 distinct failure modes; audit_splits.py passes"}
+    {
+      "id": "ET-M0-1",
+      "threshold": "100% of CPU-tier checks green"
+    },
+    {
+      "id": "ET-M0-2",
+      "threshold": "validate.py returns contract_valid; zero null pins in the simulator section of the stack lock"
+    },
+    {
+      "id": "ET-M0-3",
+      "threshold": "max per-step deviation <= 0.001 on all 3 repeats, per the replay block; identical outcome label"
+    },
+    {
+      "id": "ET-M0-4",
+      "threshold": "5/5 negative tests rejected; 2/2 inspected outcomes agree"
+    },
+    {
+      "id": "ET-M0-5",
+      "threshold": "evals/M0-protocol.md, this file and evals/M1-exit-tests.json present and hashed; the policy-holdout plan names run/family grouping; frozen events exist for every M1 exit test"
+    },
+    {
+      "id": "ET-M0-6",
+      "threshold": ">= 200 episodes; >= 30% failures; >= 3 distinct failure modes; audit_splits.py passes"
+    }
   ]
 }

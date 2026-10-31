@@ -9,6 +9,7 @@ null is honest where a copied value would not be.
 from __future__ import annotations
 
 import json
+import math
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
@@ -50,10 +51,12 @@ class EpisodeSpec:
 
 
 def _packets(env: SimEnv, packet: Packet, t_ns: int) -> list[dict[str, Any]]:
-    """Build one observation list. A stream the packet lacks is recorded as invalid, never faked."""
+    """Build one observation list. A missing or non-finite stream is invalid, never faked."""
     records: list[dict[str, Any]] = []
     for stream in env.stream_specs:
         value = packet.get(stream.name)
+        if value is not None and not all(math.isfinite(float(v)) for v in value):
+            value = None
         records.append(
             {
                 "stream": stream.name,
@@ -188,15 +191,18 @@ def _json_bytes(value: Any) -> bytes:
 def record_episode(env: SimEnv, policy: Policy, spec: EpisodeSpec, target_dir: Path) -> Path:
     """Run one episode and write it once. Raises the contract's error if it does not validate.
 
-    The initial state is saved right after ``reset``, before any action. The outcome comes from the
-    independent rubric. An existing ``target_dir`` is refused by the writer.
+    The initial state is saved right after ``reset``, before any action. The policy sees only the
+    streams declared as inputs. The outcome comes from the independent rubric. An existing
+    ``target_dir`` is refused by the writer. The manifest says ``scripted``, because M0's only
+    policies are scripted (evals/M0-protocol.md section 6).
     """
+    inputs = {stream.name for stream in env.stream_specs if stream.role == "input"}
     packet = env.reset(spec.seed)
     initial_state = env.save_state()
     records: list[dict[str, Any]] = []
     terminated = False
     for step in range(spec.max_steps):
-        action = policy(packet, step)
+        action = policy({name: packet[name] for name in packet if name in inputs}, step)
         if action is None:
             terminated = True
             break

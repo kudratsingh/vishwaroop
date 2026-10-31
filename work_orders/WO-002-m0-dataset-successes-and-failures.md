@@ -12,7 +12,7 @@ Collect the first dataset the predictors will learn from: enough episodes, delib
 ## Scope
 1. **Perturbed policies.** Variants of the WO-001 baseline: noisy actions, wrong-target grasps, early release, timeouts, randomized object poses outside the nominal range. Each variant is a named `policy.origin: scripted` with its own `scene_group_id`/`session_group_id` plan.
 2. **Collection driver** `src/vishwaroop/sim/collect.py`: runs N episodes per variant into a run directory, exports each through the WO-001 adapter, records failure mode labels from the independent outcome code (not from the policy), and writes dataset manifests.
-3. **Split specification applied.** Assign `train` / `dev` partitions by scene and session groups as frozen in `evals/M0-protocol.md`; create the `sealed` partition reference without touching it (sealed content is stored under an owner-controlled location; here only hashes and a manifest).
+3. **Split specification applied.** Assign `train` / `dev` partitions by scene and session groups as frozen in `evals/M0-protocol.md`, with each policy family wholly in one partition. M0 creates no `sealed` partition: the frozen protocol sets M0's sealed budget to 0.
 4. **Audit.** `python contracts/v1/audit_splits.py` over every manifest; the dataset registry (`src/vishwaroop/data/registry.py`) records lineage, licenses (sim assets), group ids, and the hash of every episode.
 5. **Report** with counts per variant and per failure mode, audit output, cost (simulator hours), and the dataset manifest hash.
 

@@ -6,17 +6,18 @@ simulator's own report of whether the object is held.
 This module decides success from state alone. It imports only the standard library and takes
 nothing from a policy, a reward or a learned model; a test enforces that. An episode that cannot be
 decided gets ``success=None`` and the label ``insufficient_evidence``; it is never counted as a
-failure.
+failure. A non-finite value is an invalid sample, so a physics blow-up cannot pass.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, fields
 from itertools import pairwise
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 OBJECT_STREAM = "object_position"
@@ -49,7 +50,10 @@ class PlaceRubric:
 
 @dataclass(frozen=True)
 class StateSample:
-    """Simulator state after one step. A ``None`` field means that sample was invalid or missing."""
+    """Simulator state at one time. A ``None`` field means that sample was invalid or missing.
+
+    Sample 0 is the state before the first action; sample ``n`` is the state after step ``n``.
+    """
 
     step: int
     object_position_m: Position | None
@@ -68,31 +72,37 @@ class Outcome:
     samples: int
 
 
+def _finite(position: Position | None) -> bool:
+    return position is not None and all(math.isfinite(value) for value in position)
+
+
 def assess(samples: Sequence[StateSample], rubric: PlaceRubric) -> Outcome:
     """Apply the rubric to an episode's samples, in step order.
 
-    The checks run in a fixed order and the first failure gives the label, so each failed episode
-    has exactly one label: never_lifted, still_grasped, not_on_table, outside_target, not_settled.
+    The last ``dwell_steps`` steps span ``dwell_steps + 1`` samples, because each step's motion runs
+    from the sample before it. The checks run in a fixed order and the first failure gives the
+    label, so each failed episode has exactly one label: never_lifted, still_grasped, not_on_table,
+    outside_target, not_settled.
     """
 
     def decide(success: bool | None, label: str, reason: str) -> Outcome:
         return Outcome(success, label, reason, rubric.rubric_version, len(samples))
 
-    if len(samples) < rubric.dwell_steps:
+    needed = rubric.dwell_steps + 1
+    if len(samples) < needed:
         return decide(
             None,
             "insufficient_evidence",
-            f"{len(samples)} samples; the rubric needs at least {rubric.dwell_steps}",
+            f"{len(samples)} samples; the rubric needs at least {needed}",
         )
     complete: list[tuple[Position, Position, bool]] = []
     for sample in samples:
-        if (
-            sample.object_position_m is None
-            or sample.target_position_m is None
-            or sample.grasped is None
-        ):
+        position, target = sample.object_position_m, sample.target_position_m
+        if position is None or target is None or sample.grasped is None:
             return decide(None, "insufficient_evidence", f"invalid sample at step {sample.step}")
-        complete.append((sample.object_position_m, sample.target_position_m, sample.grasped))
+        if not (_finite(position) and _finite(target)):
+            return decide(None, "insufficient_evidence", f"non-finite sample at {sample.step}")
+        complete.append((position, target, sample.grasped))
 
     highest = max(position[2] for position, _, _ in complete)
     if highest - rubric.rest_height_m < rubric.min_lift_above_rest_m:
@@ -108,7 +118,7 @@ def assess(samples: Sequence[StateSample], rubric: PlaceRubric) -> Outcome:
         distance = math.hypot(position[0] - target[0], position[1] - target[1])
         if distance > rubric.target_radius_m:
             return decide(False, "outside_target", f"object was {distance:.6f} m from the target")
-    for (before, _, _), (after, _, _) in pairwise(window):
+    for (before, _, _), (after, _, _) in pairwise(complete[-needed:]):
         motion = math.dist(before, after)
         if motion > rubric.max_step_motion_m:
             return decide(False, "not_settled", f"object moved {motion:.6f} m in one step")
@@ -131,11 +141,12 @@ def _position(value: list[float] | None) -> Position | None:
 
 def _sample(step: int, packets: Sequence[Mapping[str, Any]]) -> StateSample:
     grasped = _stream_value(packets, GRASPED_STREAM)
+    decided = grasped is not None and len(grasped) == 1 and math.isfinite(grasped[0])
     return StateSample(
         step=step,
         object_position_m=_position(_stream_value(packets, OBJECT_STREAM)),
         target_position_m=_position(_stream_value(packets, TARGET_STREAM)),
-        grasped=None if grasped is None or len(grasped) != 1 else grasped[0] >= 0.5,
+        grasped=grasped[0] >= 0.5 if grasped is not None and decided else None,
     )
 
 
@@ -149,12 +160,21 @@ def samples_from_records(records: Sequence[Mapping[str, Any]]) -> list[StateSamp
 
 
 def samples_from_episode(episode_dir: str | Path) -> list[StateSample]:
-    """Read samples from an exported episode directory. Reads files only; verifies no hashes."""
+    """Read samples from an exported episode, checking the transitions file against its hash.
+
+    Raises ``ValueError`` if the path is unsafe or the hash differs. This does not validate the rest
+    of the episode; contract validation is the caller's job and stays outside this module.
+    """
     base = Path(episode_dir)
     manifest = json.loads((base / "episode.json").read_text(encoding="utf-8"))
-    name = Path(manifest["data"]["transitions_artifact"]["path"]).name
-    lines = (base / name).read_text(encoding="utf-8").splitlines()
-    return samples_from_records([json.loads(line) for line in lines])
+    artifact = manifest["data"]["transitions_artifact"]
+    relative = PurePosixPath(artifact["path"])
+    if relative.is_absolute() or ".." in relative.parts:
+        raise ValueError(f"unsafe transitions path: {artifact['path']}")
+    data = (base / relative).read_bytes()
+    if hashlib.sha256(data).hexdigest() != artifact["sha256"]:
+        raise ValueError(f"transitions file does not match its hash: {artifact['path']}")
+    return samples_from_records([json.loads(line) for line in data.decode("utf-8").splitlines()])
 
 
 class PickPlaceJudge:
@@ -165,5 +185,9 @@ class PickPlaceJudge:
 
     def judge(self, episode_dir: str) -> tuple[bool | None, str]:
         """Return (success, evidence note); ``None`` means the evidence does not decide."""
-        outcome = assess(samples_from_episode(episode_dir), self._rubric)
+        try:
+            samples = samples_from_episode(episode_dir)
+        except (ValueError, OSError) as exc:
+            return None, f"insufficient_evidence: {exc}"
+        outcome = assess(samples, self._rubric)
         return outcome.success, f"{outcome.label}: {outcome.reason}"

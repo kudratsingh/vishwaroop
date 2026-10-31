@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -42,18 +43,27 @@ def test_every_frozen_exit_test_has_a_frozen_event(root: Path) -> None:
         assert {et["id"] for et in exit_tests} <= frozen_events
 
 
-def test_frozen_events_record_the_current_file_hashes(root: Path) -> None:
-    """Editing a frozen file without a new version fails here."""
-    import hashlib
-
-    events = [
-        json.loads(line)
-        for line in (root / "work_orders" / "STATUS.jsonl").read_text(encoding="utf-8").splitlines()
-    ]
-    notes = [e["note"] for e in events if e.get("event") == "frozen" and "et" in e]
-    for name in ("M0-exit-tests.json", "M0-protocol.md", "M1-exit-tests.json"):
+@pytest.mark.parametrize(
+    ("prefix", "files"),
+    [
+        ("ET-M0-", ("M0-exit-tests.json", "M0-protocol.md")),
+        ("ET-M1-", ("M1-exit-tests.json",)),
+    ],
+)
+def test_each_latest_frozen_event_records_the_current_file_hashes(
+    root: Path, prefix: str, files: tuple[str, ...]
+) -> None:
+    """Editing a frozen file without appending new frozen events fails here."""
+    latest: dict[str, str] = {}
+    for line in (root / "work_orders" / "STATUS.jsonl").read_text(encoding="utf-8").splitlines():
+        record = json.loads(line)
+        if record.get("event") == "frozen" and record.get("et", "").startswith(prefix):
+            latest[record["et"]] = record["note"]
+    assert latest
+    for name in files:
         digest = hashlib.sha256((root / "evals" / name).read_bytes()).hexdigest()
-        assert any(f"evals/{name} sha256 {digest}" in note for note in notes), name
+        for et, note in latest.items():
+            assert f"evals/{name} sha256 {digest}" in note, (et, name)
 
 
 def test_the_protocol_names_run_and_family_grouping(root: Path) -> None:

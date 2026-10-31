@@ -41,7 +41,7 @@ config/      phases.json, budget.json, repo.json, locks, stack-lock.pending.json
 contracts/v1 the one shared boundary (byte-identical in banshee)
 docs/        PHASES, ARCHITECTURE, CONTEXT_AND_DECISIONS, EVALUATION_PROTOCOL, DATA_AND_SNAPSHOTS, SYNTHETIC_DATA_M3,
              ENVIRONMENT, WORKFLOW, DATA_POLICY, BUDGET_AND_LAUNCHER, REPORT_TEMPLATE, ADR_TEMPLATE, SOURCES, STATUS_BOARD, adr/
-src/vishwaroop/    core/, importer.py, interfaces.py   (sim/, data/, models/, planning/, scoring/, eval/, synth/ to come)
+src/vishwaroop/    core/, importer.py, interfaces.py, outcome/, sim/   (data/, models/, planning/, scoring/, eval/, synth/ to come)
 tests/       CPU tier;  contracts/v1/tests/  conformance
 tools/       status_board, check_immutable, check_hashes, scan_secrets, check_links, budget_preflight
 work_orders/ WO-001..010 + STATUS.jsonl (append-only)      prompts/FIRST_SESSION.md

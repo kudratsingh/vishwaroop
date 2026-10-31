@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import platform
+import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
@@ -108,6 +110,7 @@ class ManiSkillPickCube:
             import gymnasium
             import mani_skill
             import mani_skill.envs
+            import numpy
             import sapien
             import torch
         except ImportError as exc:
@@ -115,6 +118,9 @@ class ManiSkillPickCube:
         self._torch = torch
         self._seed = 0
         self._restores = 0
+        self._steps = 0
+        self._stepped = False
+        self._max_episode_steps = max_episode_steps
         self._env_id = env_id
         self._package_dir = Path(mani_skill.__file__).resolve().parent
         self.version = str(mani_skill.__version__)
@@ -123,6 +129,9 @@ class ManiSkillPickCube:
             "sapien": str(sapien.__version__),
             "torch": str(torch.__version__),
             "gymnasium": str(gymnasium.__version__),
+            "numpy": str(numpy.__version__),
+            "python": sys.version.split()[0],
+            "platform": f"{platform.system()} {platform.machine()}",
         }
         try:
             self._env = gymnasium.make(
@@ -130,6 +139,7 @@ class ManiSkillPickCube:
                 obs_mode="state_dict",
                 control_mode="pd_joint_pos",
                 render_mode=None,
+                render_backend="none",
                 sim_backend="physx_cpu",
                 max_episode_steps=max_episode_steps,
             )
@@ -169,16 +179,21 @@ class ManiSkillPickCube:
         return self._restores
 
     def _packet(self) -> Packet:
+        """Read state. Contacts persist from the last physics step, so until a step has run since
+        the last reset or restore, the cube is reported as not grasped: it starts on the table."""
         task = self._task
+        grasped = self._stepped and bool(task.agent.is_grasping(task.cube)[0])
         return {
             JOINT_STREAM: [float(v) for v in task.agent.robot.get_qpos()[0]],
             "object_position": [float(v) for v in task.cube.pose.p[0]],
             "target_position": [float(v) for v in task.goal_site.pose.p[0]],
-            "object_grasped": [float(bool(task.agent.is_grasping(task.cube)[0]))],
+            "object_grasped": [float(grasped)],
         }
 
     def reset(self, seed: int) -> Packet:
         self._seed = seed
+        self._steps = 0
+        self._stepped = False
         self._env.reset(seed=seed)
         return self._packet()
 
@@ -194,11 +209,17 @@ class ManiSkillPickCube:
     def restore_state(self, state: bytes) -> Packet:
         saved = json.loads(state.decode("utf-8"))
         self._restores += 1
+        self._steps = 0
+        self._stepped = False
         self._env.reset(seed=saved["seed"])
         self._task.set_state_dict(self._to_tensors(saved["state"]))
         return self._packet()
 
     def step(self, action: list[float]) -> Packet:
+        if self._steps >= self._max_episode_steps:
+            raise RuntimeError(f"episode passed its limit of {self._max_episode_steps} steps")
+        self._steps += 1
+        self._stepped = True
         command = self._torch.as_tensor(action, dtype=self._torch.float32).unsqueeze(0)
         self._env.step(command)
         return self._packet()
@@ -210,6 +231,7 @@ class ManiSkillPickCube:
             "control_mode": "pd_joint_pos",
             "sim_backend": "physx_cpu",
             "control_dt_ns": self.dt_ns,
+            "max_episode_steps": self._max_episode_steps,
             "calibration": "none: simulation",
             "preprocessing": "none: state observations",
         }
