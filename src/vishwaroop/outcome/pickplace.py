@@ -14,7 +14,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, fields
 from itertools import pairwise
 from pathlib import Path, PurePosixPath
@@ -180,14 +180,21 @@ def samples_from_episode(episode_dir: str | Path) -> list[StateSample]:
 class PickPlaceJudge:
     """Implements ``interfaces.SuccessJudge`` from an episode's recorded state alone."""
 
-    def __init__(self, rubric: PlaceRubric) -> None:
+    def __init__(
+        self, rubric: PlaceRubric, validate: Callable[[Path], object] | None = None
+    ) -> None:
+        """``validate`` checks the whole episode and raises if it is invalid. This module cannot
+        import the contract, so callers pass it in; ``sim.contract.contract_judge`` does."""
         self._rubric = rubric
+        self._validate = validate
 
     def judge(self, episode_dir: str) -> tuple[bool | None, str]:
         """Return (success, evidence note); ``None`` means the evidence does not decide."""
         try:
+            if self._validate is not None:
+                self._validate(Path(episode_dir) / "episode.json")
             samples = samples_from_episode(episode_dir)
-        except (ValueError, OSError) as exc:
+        except (ValueError, OSError, KeyError, TypeError) as exc:
             return None, f"insufficient_evidence: {exc}"
         outcome = assess(samples, self._rubric)
         return outcome.success, f"{outcome.label}: {outcome.reason}"

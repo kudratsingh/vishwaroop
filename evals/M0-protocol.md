@@ -1,6 +1,6 @@
 # M0 protocol — task rubric, splits, holdouts, sealed budget, baselines
 
-**Version `m0-protocol-2`. Frozen 2026-10-31, before any simulator episode, replay, dataset or training result exists.** It replaces `m0-protocol-1` after an independent review, also before any result. It adds the family-to-partition rule, the label order, `target_position` as a compared stream and the M1 task suite; no threshold is loosened. Numbers live in `evals/M0-exit-tests.json` and `evals/M1-exit-tests.json`. The task choice and its limits are in `docs/adr/ADR-0004-m0-task-choice.md`. Changing anything here after seeing results needs an ADR and a new protocol version; the old version stays.
+**Version `m0-protocol-2`. Frozen 2026-10-31, before any simulator episode, replay, dataset or training result exists.** It replaces `m0-protocol-1` after an independent review, also before any result. It adds the family-to-partition rule, the label order, `target_position` as a compared stream, the task version, the M1 task suite and M1 sample sizes; no threshold is loosened. Numbers live in `evals/M0-exit-tests.json` and `evals/M1-exit-tests.json`. The task choice and its limits are in `docs/adr/ADR-0004-m0-task-choice.md`. Changing anything here after seeing results needs an ADR and a new protocol version; the old version stays.
 
 ## 1. Task
 ManiSkill3 `PickCubeSO100-v1`, joint-position control, state observations, CPU physics, at most 200 control steps per episode. **This is the simulated SO-100, not the owner's SO-101. No transfer claim to any physical arm follows from M0.**
@@ -27,7 +27,7 @@ The rubric shares no code, labels or weights with any policy, reward or learned 
 - `scene_group_id`: `m0-seed-block-<n>`, where block `n` holds seeds `[1000n, 1000n + 999]`. Whole blocks go to one partition.
 - `session_group_id`: the collection run id. A run's episodes stay in one partition.
 - Partition assignment: blocks 0–7 `train`, blocks 8–9 `dev`. M0 assigns no block to `sealed`, and WO-002 creates no `sealed` partition.
-- **A policy family lies wholly in one partition.** `dev` holds whole families never used in `train`, because `audit_splits.py` treats `policy_run_group_id` as a holdout axis.
+- **A policy family lies wholly in one partition.** `dev` holds whole families never used in `train`, because `audit_splits.py` treats `policy_run_group_id` as a holdout axis. Baselines and planners on `m1-suite-1` therefore run as their own dev-only families, `m1-<name>`, even when the same scripted code also ran in `train`.
 - Shift axes frozen for M0: cube and goal placement by seed. Lighting, distractors and object identity do not vary in M0.
 - `contracts/v1/audit_splits.py` must pass on every assembled set.
 
@@ -45,7 +45,7 @@ The rubric shares no code, labels or weights with any policy, reward or learned 
 - M1 task suite `m1-suite-1`: this task on seed blocks 8–9, 200 episodes per planner, with the same seeds across planners. `evals/M1-exit-tests.json` holds the numbers and the ET-M1-4 decision rule.
 
 ## 7. Replay
-Replay restores the saved initial state only, then executes the recorded actions through physics. Deviations are compared on `joint_position` (rad), `object_position` (m) and `target_position` (m) against the frozen tolerance, over 3 repeats, with identical outcome labels required. A non-finite value counts as an infinite deviation. The episode must match the simulator on engine, version, stack, assets, configuration, action meaning, stream meaning and timebase, and its recorded outcome must match the rubric. An undecided episode supports no claim. Forcing state during a replay invalidates the claim.
+Replay restores the saved initial state only, then executes the recorded actions through physics. Deviations are compared on `joint_position` (rad), `object_position` (m) and `target_position` (m) against the frozen tolerance, over 3 repeats, with identical outcome labels required. A non-finite value counts as an infinite deviation. The episode must be from this frozen task and protocol version, must match the simulator on engine, version, stack, assets, configuration, action meaning, stream meaning and timebase, and its recorded outcome must match the rubric. An undecided episode supports no claim. Forcing state during a replay invalidates the claim.
 
 ## 8. What a pass means
 A pass is simulated evidence on this stack, for this task. It says nothing about a physical arm (`docs/EVALUATION_PROTOCOL.md §8`).

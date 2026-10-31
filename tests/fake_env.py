@@ -121,7 +121,11 @@ class FakeArmEnv:
         return self._packet()
 
     def configuration(self) -> dict[str, Any]:
-        return {"fixture": "FABRICATED; not a simulator configuration"}
+        return {
+            "env_id": "fake_place",
+            "embodiment_id": "fabricated_tool_point",
+            "fixture": "FABRICATED; not a simulator configuration",
+        }
 
     def stack_identity(self) -> dict[str, Any]:
         return {"fixture": "FABRICATED; no stack"}

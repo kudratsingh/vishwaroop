@@ -25,12 +25,12 @@ from typing import Any
 from ..outcome.pickplace import PlaceRubric, assess, samples_from_records
 from .contract import validator
 from .env import ManiSkillPickCube, Packet, SimEnv, SimulatorUnavailableError
-from .export import CLOCK_DOMAIN
+from .export import CLOCK_DOMAIN, CONTEXT
 
 INITIAL_STATE_ONLY = "initial_state_only"
 FORCED_INTERMEDIATE_STATES = "forced_intermediate_states"
 _MODES = {INITIAL_STATE_ONLY, FORCED_INTERMEDIATE_STATES}
-_REPO_ROOT = Path(__file__).resolve().parents[3]
+STATUS_LEDGER = Path(__file__).resolve().parents[3] / "work_orders" / "STATUS.jsonl"
 
 
 class ReplayInvalidError(ValueError):
@@ -45,6 +45,9 @@ class ReplayTolerance:
     max_state_deviation: float
     repeats: int
     max_episode_steps: int | None = None
+    env_id: str | None = None
+    task_version: str | None = None
+    protocol_version: str | None = None
 
 
 @dataclass(frozen=True)
@@ -83,18 +86,28 @@ def load_frozen(path: Path) -> tuple[ReplayTolerance, PlaceRubric]:
         max_state_deviation=float(replay["max_state_deviation"]),
         repeats=int(replay["repeats"]),
         max_episode_steps=int(frozen["task"]["max_episode_steps"]),
+        env_id=frozen["task"]["env_id"],
+        task_version=frozen["task"]["version"],
+        protocol_version=frozen["protocol_version"],
     )
     return tolerance, PlaceRubric.from_mapping(frozen["place_rubric"])
 
 
-def require_frozen_file(path: Path, status_ledger: Path) -> None:
-    """Refuse a specification whose sha256 no ``frozen`` event in the status ledger records."""
-    digest = hashlib.sha256(Path(path).read_bytes()).hexdigest()
+def require_frozen_file(path: Path, status_ledger: Path = STATUS_LEDGER) -> None:
+    """Refuse a specification unless it is the one its phase's latest ``frozen`` events record.
+
+    A superseded file is refused too. The commands always use the repository's own ledger.
+    """
+    raw = Path(path).read_bytes()
+    digest = hashlib.sha256(raw).hexdigest()
+    prefix = f"ET-{json.loads(raw)['phase']}-"
+    latest: dict[str, str] = {}
     for line in status_ledger.read_text(encoding="utf-8").splitlines():
         record = json.loads(line)
-        if record.get("event") == "frozen" and digest in record.get("note", ""):
-            return
-    raise ReplayInvalidError(f"{path} sha256 {digest} matches no frozen event in {status_ledger}")
+        if record.get("event") == "frozen" and record.get("et", "").startswith(prefix):
+            latest[record["et"]] = record.get("note", "")
+    if not latest or any(f"sha256 {digest}" not in note for note in latest.values()):
+        raise ReplayInvalidError(f"{path} sha256 {digest} is not the current frozen specification")
 
 
 def _check_tolerance(tolerance: ReplayTolerance) -> None:
@@ -151,14 +164,52 @@ def _check_identity(
         _read_json(episode_dir, configuration["embodiment_artifact"]),
         env.configuration(),
     )
+    settings = env.configuration()
+    _same("embodiment ids", configuration["embodiment_id"], settings.get("embodiment_id"))
+    _same("task ids", manifest["task"]["id"], settings.get("env_id"))
     _same("timebase clock domains", manifest["timebase"]["clock_domain"], CLOCK_DOMAIN)
     for record in records:
-        expected = record["step"] * env.dt_ns
-        if record["dt_ns"] != env.dt_ns or record["t_ns"] != expected:
-            raise ReplayInvalidError(
-                f"timebase differs at step {record['step']}: t_ns {record['t_ns']} and dt_ns "
-                f"{record['dt_ns']}; the simulator gives t_ns {expected} and dt_ns {env.dt_ns}"
-            )
+        _check_record_as_exported(record, env.dt_ns)
+
+
+def _check_frozen_task(
+    manifest: dict[str, Any], settings: dict[str, Any], tolerance: ReplayTolerance
+) -> None:
+    """Refuse an episode from another task, or under another protocol, than the frozen one.
+
+    The simulator is built from what the episode recorded, so comparing the two alone would prove
+    nothing about the frozen specification.
+    """
+    if tolerance.env_id is not None:
+        _same("frozen task ids", settings.get("env_id"), tolerance.env_id)
+    if tolerance.task_version is not None:
+        _same("frozen task versions", manifest["task"]["version"], tolerance.task_version)
+    if tolerance.protocol_version is not None:
+        _same(
+            "protocol versions", manifest["outcome"]["protocol_version"], tolerance.protocol_version
+        )
+
+
+def _check_record_as_exported(record: dict[str, Any], dt_ns: int) -> None:
+    """Refuse a record that differs from what the exporter writes for the same step."""
+    step = record["step"]
+    t_ns = step * dt_ns
+    if record["dt_ns"] != dt_ns or record["t_ns"] != t_ns:
+        raise ReplayInvalidError(
+            f"timebase differs at step {step}: t_ns {record['t_ns']} and dt_ns {record['dt_ns']}; "
+            f"the simulator gives t_ns {t_ns} and dt_ns {dt_ns}"
+        )
+    action = record["action"]
+    if action["decision_t_ns"] != t_ns or action["valid_until_t_ns"] != t_ns + dt_ns:
+        raise ReplayInvalidError(f"timebase differs at step {step}: action times")
+    for name, time_ns in (("observations", t_ns), ("next_observations", t_ns + dt_ns)):
+        for packet in record[name]:
+            if packet["capture_t_ns"] != time_ns or packet["received_t_ns"] != time_ns:
+                raise ReplayInvalidError(f"timebase differs at step {step}: {name} times")
+    for stage in ("filtered", "transmitted", "applied", "sent_t_ns", "applied_t_ns"):
+        if action[stage] is not None:
+            raise ReplayInvalidError(f"step {step} has {stage}, which this simulator never reports")
+    _same("record contexts", record["context"], CONTEXT)
 
 
 def _values(packets: list[dict[str, Any]]) -> dict[str, Any]:
@@ -277,6 +328,7 @@ def replay_episode(
             f"{len(records)} steps exceed the frozen limit of {tolerance.max_episode_steps}"
         )
     _check_identity(base, manifest, env, records)
+    _check_frozen_task(manifest, env.configuration(), tolerance)
     _check_continuity(records)
     recorded = _check_recorded_outcome(base, manifest, records, rubric)
 
@@ -326,45 +378,52 @@ def env_for_manifest(episode_dir: Path, manifest: dict[str, Any]) -> SimEnv:
     )
 
 
+def _strict_json(value: Any) -> Any:
+    """Replace non-finite numbers with text, because a blow-up's report must still be JSON."""
+    if isinstance(value, dict):
+        return {key: _strict_json(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_strict_json(item) for item in value]
+    if isinstance(value, float) and not math.isfinite(value):
+        return str(value)
+    return value
+
+
+def _run(args: argparse.Namespace) -> int:
+    if args.out is not None and (args.out.exists() or not args.out.parent.is_dir()):
+        raise ReplayInvalidError(f"{args.out} exists or has no directory; reports are write-once")
+    require_frozen_file(args.tolerance_file)
+    tolerance, rubric = load_frozen(args.tolerance_file)
+    if args.repeats != tolerance.repeats:
+        raise ReplayInvalidError(
+            f"the frozen protocol says {tolerance.repeats} repeats, not {args.repeats}"
+        )
+    manifest = json.loads((args.episode / "episode.json").read_text(encoding="utf-8"))
+    env = env_for_manifest(args.episode, manifest)
+    report = replay_episode(args.episode, env, tolerance, rubric)
+    text = json.dumps(_strict_json(asdict(report)), indent=2, sort_keys=True, allow_nan=False)
+    if args.out is not None:
+        with args.out.open("x", encoding="utf-8") as stream:
+            stream.write(text + "\n")
+    print(text)
+    return 0 if report.claim_valid else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--episode", type=Path, required=True)
     parser.add_argument("--tolerance-file", type=Path, required=True)
     parser.add_argument("--repeats", type=int, required=True)
     parser.add_argument("--out", type=Path, help="write-once report path")
-    parser.add_argument(
-        "--status-ledger", type=Path, default=_REPO_ROOT / "work_orders" / "STATUS.jsonl"
-    )
     args = parser.parse_args(argv)
-    if args.out is not None and args.out.exists():
-        print(f"REFUSED: {args.out} already exists; reports are write-once")
-        return 2
     try:
-        require_frozen_file(args.tolerance_file, args.status_ledger)
-    except (ValueError, OSError) as exc:
-        print(f"REFUSED: {exc}")
-        return 2
-    tolerance, rubric = load_frozen(args.tolerance_file)
-    if args.repeats != tolerance.repeats:
-        print(f"REFUSED: the frozen protocol says {tolerance.repeats} repeats, not {args.repeats}")
-        return 2
-    manifest = json.loads((args.episode / "episode.json").read_text(encoding="utf-8"))
-    try:
-        env = env_for_manifest(args.episode, manifest)
+        return _run(args)
     except SimulatorUnavailableError as exc:
         print(f"NOT RUN: {exc}")
         return 3
-    try:
-        report = replay_episode(args.episode, env, tolerance, rubric)
-    except (ValueError, OSError) as exc:
-        print(f"REFUSED: {exc}")
+    except (ValueError, OSError, KeyError, TypeError, RuntimeError) as exc:
+        print(f"REFUSED: {type(exc).__name__}: {exc}")
         return 2
-    text = json.dumps(asdict(report), indent=2, sort_keys=True)
-    if args.out is not None:
-        with args.out.open("x", encoding="utf-8") as stream:
-            stream.write(text + "\n")
-    print(text)
-    return 0 if report.claim_valid else 1
 
 
 if __name__ == "__main__":

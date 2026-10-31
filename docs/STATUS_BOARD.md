@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `tools/status_board.py`. Do not edit by hand._
 
-Generated: 2026-10-31 23:15 UTC · ledger records: 50
+Generated: 2026-10-31 23:47 UTC · ledger records: 61
 
 ## Phases
 

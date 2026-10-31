@@ -12,6 +12,8 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
+from ..outcome.pickplace import PickPlaceJudge, PlaceRubric
+
 _CONTRACT_DIR = Path(__file__).resolve().parents[3] / "contracts" / "v1"
 
 
@@ -29,3 +31,8 @@ def validator() -> ModuleType:
 def writer() -> ModuleType:
     """Return the contract's ``writer`` module."""
     return _load("writer")
+
+
+def contract_judge(rubric: PlaceRubric) -> PickPlaceJudge:
+    """A judge that decides only on episodes the contract validator accepts."""
+    return PickPlaceJudge(rubric, validate=validator().validate_episode)

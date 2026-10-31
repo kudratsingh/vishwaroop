@@ -25,6 +25,7 @@ Policy = Callable[[Packet, int], list[float] | None]
 
 SCHEMA_VERSION = "1.0.0"
 CLOCK_DOMAIN = "simulation_steps"
+CONTEXT = {"mode": "scripted_sim", "estimator_valid": True, "intervention": None}
 
 
 @dataclass(frozen=True)
@@ -97,7 +98,7 @@ def _record(
             "applied_t_ns": None,
             "valid_until_t_ns": t_ns + env.dt_ns,
         },
-        "context": {"mode": "scripted_sim", "estimator_valid": True, "intervention": None},
+        "context": dict(CONTEXT),
     }
 
 

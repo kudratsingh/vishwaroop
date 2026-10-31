@@ -32,7 +32,7 @@ These commands do not run ManiSkill, train anything, read the arm repository, or
 | tools: status ledger/board, append-only CI check, hash locks, secrets scan, link check, budget preflight | enforcing paid launcher (WO-003), provider adapter |
 | CI workflow (CPU tier), Makefile, pre-commit hooks | sealed-data storage, physical outcome sensing |
 
-All phases are `not_started`; see `docs/STATUS_BOARD.md`. No paid compute or hardware is authorized by these files, and no remote other than the one in `config/repo.json` (`AGENTS.md §2`).
+Phase M0 is `blocked` on the simulator (`reports/BLOCKER-2026-10-31-m0.md`), and every other phase is `not_started`; see `docs/STATUS_BOARD.md`. No paid compute or hardware is authorized by these files, and no remote other than the one in `config/repo.json` (`AGENTS.md §2`).
 
 ## Layout
 ```

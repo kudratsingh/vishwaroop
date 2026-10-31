@@ -19,7 +19,8 @@
       "id": "ET-M1-1",
       "horizon_steps": 10,
       "min_rmse_reduction_vs_best_baseline": 0.2,
-      "threshold": "learned predictor RMSE at least 20% below the best baseline at every horizon 1..10 steps"
+      "threshold": "learned predictor RMSE at least 20% below the best baseline at every horizon 1..10 steps",
+      "min_dev_episodes": 200
     },
     {
       "id": "ET-M1-2",
@@ -33,7 +34,8 @@
       "min_spearman_std_vs_abs_error": 0.5,
       "interval_nominal_coverage": 0.9,
       "coverage_tolerance_points": 10,
-      "threshold": "Spearman(predicted std, |error|) >= 0.5 and 90% interval coverage within +/- 10 points"
+      "threshold": "Spearman(predicted std, |error|) >= 0.5 and 90% interval coverage within +/- 10 points",
+      "min_dev_episodes": 200
     },
     {
       "id": "ET-M1-4",
@@ -44,7 +46,8 @@
     {
       "id": "ET-M1-5",
       "min_auroc_constraint_violation": 0.75,
-      "threshold": "AUROC >= 0.75 for predicting a constraint violation; abstention rate and coverage reported"
+      "threshold": "AUROC >= 0.75 for predicting a constraint violation; abstention rate and coverage reported",
+      "evaluated_on": "the ET-M1-2 branch dataset, at least 50 initial states"
     }
   ]
 }

@@ -33,6 +33,7 @@ from .replay import (
     env_for_manifest,
     load_frozen,
     replay_episode,
+    require_frozen_file,
 )
 
 Damage = Callable[[Path], None]
@@ -153,19 +154,19 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--episode", type=Path, required=True)
     parser.add_argument("--tolerance-file", type=Path, default=Path("evals/M0-exit-tests.json"))
     args = parser.parse_args(argv)
-    tolerance, rubric = load_frozen(args.tolerance_file)
     try:
+        require_frozen_file(args.tolerance_file)
+        tolerance, rubric = load_frozen(args.tolerance_file)
         env = env_for_manifest(args.episode, _manifest(args.episode))
+        results = run_negative_tests(args.episode, env, tolerance, rubric)
     except SimulatorUnavailableError as exc:
         print(f"NOT RUN: {exc}")
         return 3
-    try:
-        results = run_negative_tests(args.episode, env, tolerance, rubric)
     except PositiveControlError as exc:
         print(f"CONTROL FAILED: {exc}")
         return 4
-    except (ValueError, OSError) as exc:
-        print(f"REFUSED: {exc}")
+    except (ValueError, OSError, KeyError, TypeError, RuntimeError) as exc:
+        print(f"REFUSED: {type(exc).__name__}: {exc}")
         return 2
     print(json.dumps([asdict(result) for result in results], indent=2))
     distinct = len({result.reason for result in results}) == len(results)

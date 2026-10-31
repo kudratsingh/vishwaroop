@@ -9,6 +9,9 @@ import ast
 import hashlib
 import json
 import math
+import os
+import subprocess
+import sys
 from collections.abc import Callable
 from dataclasses import asdict, replace
 from pathlib import Path
@@ -21,6 +24,7 @@ from fake_env import FakeArmEnv, plan_policy, scripted_plan
 from validate import ContractError, validate_episode
 from vishwaroop.outcome.pickplace import PickPlaceJudge, PlaceRubric, assess, samples_from_episode
 from vishwaroop.sim import negative_tests, replay
+from vishwaroop.sim.contract import contract_judge
 from vishwaroop.sim.env import Packet, SimEnv, SimulatorUnavailableError
 from vishwaroop.sim.export import EpisodeSpec, record_episode
 from vishwaroop.sim.negative_tests import CASES, PositiveControlError, run_negative_tests
@@ -737,22 +741,93 @@ def test_frozen_tolerance_loads() -> None:
     assert tolerance.max_episode_steps == 200
     assert tolerance.compare_streams == STREAMS
     assert rubric.rubric_version == "m0-place-1"
+    assert tolerance.env_id == "PickCubeSO100-v1"
+    assert tolerance.task_version == "m0-1"
+    assert tolerance.protocol_version == "m0-protocol-2"
 
 
-def test_require_frozen_file_refuses_an_unrecorded_file(tmp_path: Path) -> None:
-    ledger = ROOT / "work_orders" / "STATUS.jsonl"
-    require_frozen_file(FROZEN, ledger)
+def _ledger(tmp_path: Path, *lines: dict[str, Any]) -> Path:
+    path = tmp_path / "ledger.jsonl"
+    path.write_text("".join(json.dumps(line) + "\n" for line in lines), encoding="utf-8")
+    return path
+
+
+def _frozen_file(tmp_path: Path, name: str, extra: str = "") -> tuple[Path, str]:
+    path = tmp_path / name
+    path.write_text(json.dumps({"phase": "M0", "extra": extra}), encoding="utf-8")
+    return path, hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def test_the_real_frozen_file_is_current() -> None:
+    require_frozen_file(FROZEN)
+
+
+def test_an_unrecorded_file_is_refused(tmp_path: Path) -> None:
     copy = tmp_path / "copy.json"
     copy.write_text(FROZEN.read_text(encoding="utf-8") + " ", encoding="utf-8")
-    with pytest.raises(ReplayInvalidError, match="no frozen event"):
-        require_frozen_file(copy, ledger)
+    with pytest.raises(ReplayInvalidError, match="not the current"):
+        require_frozen_file(copy)
 
 
-def _frozen_episode(tmp_path: Path) -> Path:
+def test_a_superseded_file_is_refused(tmp_path: Path) -> None:
+    old, old_digest = _frozen_file(tmp_path, "old.json", "old")
+    new, new_digest = _frozen_file(tmp_path, "new.json", "new")
+    ledger = _ledger(
+        tmp_path,
+        {"et": "ET-M0-1", "event": "frozen", "note": f"sha256 {old_digest}"},
+        {"et": "ET-M0-1", "event": "frozen", "note": f"sha256 {new_digest}"},
+    )
+    require_frozen_file(new, ledger)
+    with pytest.raises(ReplayInvalidError, match="not the current"):
+        require_frozen_file(old, ledger)
+
+
+def test_every_exit_test_of_the_phase_must_record_the_file(tmp_path: Path) -> None:
+    path, digest = _frozen_file(tmp_path, "file.json")
+    ledger = _ledger(
+        tmp_path,
+        {"et": "ET-M0-1", "event": "frozen", "note": f"sha256 {digest}"},
+        {"et": "ET-M0-2", "event": "frozen", "note": "sha256 another"},
+    )
+    with pytest.raises(ReplayInvalidError):
+        require_frozen_file(path, ledger)
+
+
+def test_a_line_that_is_not_a_frozen_event_counts_for_nothing(tmp_path: Path) -> None:
+    path, digest = _frozen_file(tmp_path, "file.json")
+    ledger = _ledger(tmp_path, {"et": "ET-M0-1", "event": "passed", "note": f"sha256 {digest}"})
+    with pytest.raises(ReplayInvalidError):
+        require_frozen_file(path, ledger)
+
+
+def test_another_phases_frozen_event_counts_for_nothing(tmp_path: Path) -> None:
+    path, digest = _frozen_file(tmp_path, "file.json")
+    ledger = _ledger(tmp_path, {"et": "ET-M1-1", "event": "frozen", "note": f"sha256 {digest}"})
+    with pytest.raises(ReplayInvalidError):
+        require_frozen_file(path, ledger)
+
+
+class FrozenTaskFake(FakeArmEnv):
+    """The fake, declaring the frozen task's identity so the commands' frozen checks apply."""
+
+    def configuration(self) -> dict[str, Any]:
+        return {**super().configuration(), "env_id": "PickCubeSO100-v1"}
+
+
+def _frozen_episode(tmp_path: Path, **changes: Any) -> Path:
     """A fake episode under the frozen rubric, so the commands' frozen checks apply to it."""
-    _, rubric = load_frozen(FROZEN)
-    spec = _spec(rubric=rubric, episode_id="frozen-ep")
-    return record_episode(FakeArmEnv(), plan_policy(scripted_plan(3)), spec, tmp_path / "frozen-ep")
+    tolerance, rubric = load_frozen(FROZEN)
+    spec = _spec(
+        rubric=rubric,
+        episode_id="frozen-ep",
+        task_id="PickCubeSO100-v1",
+        task_version=tolerance.task_version,
+        protocol_version=tolerance.protocol_version,
+        **changes,
+    )
+    return record_episode(
+        FrozenTaskFake(), plan_policy(scripted_plan(3)), spec, tmp_path / "frozen-ep"
+    )
 
 
 def _replay_args(episode: Path, repeats: str = "3") -> list[str]:
@@ -788,7 +863,7 @@ def test_replay_command_writes_its_report_once_and_exits_zero(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     episode = _frozen_episode(tmp_path)
-    _use_fake(monkeypatch, FakeArmEnv())
+    _use_fake(monkeypatch, FrozenTaskFake())
     out = tmp_path / "report.json"
     assert replay_main([*_replay_args(episode), "--out", str(out)]) == 0
     written = json.loads(out.read_text(encoding="utf-8"))
@@ -803,7 +878,7 @@ def test_replay_command_exits_one_on_an_invalid_claim(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     episode = _frozen_episode(tmp_path)
-    _use_fake(monkeypatch, FakeArmEnv(drift=0.01))
+    _use_fake(monkeypatch, FrozenTaskFake(drift=0.01))
     assert replay_main(_replay_args(episode)) == 1
 
 
@@ -811,7 +886,7 @@ def test_replay_command_exits_two_on_a_refusal(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     episode = _frozen_episode(tmp_path)
-    other = FakeArmEnv()
+    other = FrozenTaskFake()
     other.version = "fixture-2"
     _use_fake(monkeypatch, other)
     assert replay_main(_replay_args(episode)) == 2
@@ -825,7 +900,7 @@ def test_negative_command_exits_zero_when_all_five_are_rejected(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     episode = _frozen_episode(tmp_path)
-    _use_fake(monkeypatch, FakeArmEnv())
+    _use_fake(monkeypatch, FrozenTaskFake())
     assert negative_main(_negative_args(episode)) == 0
     assert all(r["rejected"] for r in json.loads(capsys.readouterr().out))
 
@@ -834,7 +909,7 @@ def test_negative_command_exits_four_when_the_control_fails(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     episode = _frozen_episode(tmp_path)
-    _use_fake(monkeypatch, FakeArmEnv(drift=0.01))
+    _use_fake(monkeypatch, FrozenTaskFake(drift=0.01))
     assert negative_main(_negative_args(episode)) == 4
 
 
@@ -842,7 +917,7 @@ def test_negative_command_exits_one_when_a_case_is_accepted(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     episode = _frozen_episode(tmp_path)
-    _use_fake(monkeypatch, FakeArmEnv())
+    _use_fake(monkeypatch, FrozenTaskFake())
     cases = [("no_damage", negative_tests._no_damage, replay.INITIAL_STATE_ONLY, "anything")]
     monkeypatch.setattr(negative_tests, "CASES", cases)
     assert negative_main(_negative_args(episode)) == 1
@@ -852,10 +927,377 @@ def test_negative_command_exits_one_when_reasons_are_not_distinct(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     episode = _frozen_episode(tmp_path)
-    _use_fake(monkeypatch, FakeArmEnv())
+    _use_fake(monkeypatch, FrozenTaskFake())
     case = CASES[1]
     monkeypatch.setattr(negative_tests, "CASES", [case, case])
     assert negative_main(_negative_args(episode)) == 1
+
+
+# ---------------------------------------------------------------------------- pinned gaps
+
+
+class BadRepeatEnv(FakeArmEnv):
+    """Reproduces, except on one repeat, where it applies ``tamper`` to every packet."""
+
+    def __init__(self, repeat: int, tamper: Callable[[Packet], Packet]) -> None:
+        super().__init__()
+        self._bad_repeat = repeat
+        self._tamper = tamper
+
+    def _packet(self) -> Packet:
+        packet = super()._packet()
+        return self._tamper(packet) if self._restores - 1 == self._bad_repeat else packet
+
+
+@pytest.mark.parametrize("repeat", [0, 1, 2])
+def test_a_bad_deviation_on_any_repeat_is_caught(tmp_path: Path, repeat: int) -> None:
+    env = BadRepeatEnv(repeat, lambda p: _offset(p, "joint_position", 0, 0.01))
+    report = replay_episode(_episode(tmp_path), env, TOLERANCE, RUBRIC)
+    assert not report.claim_valid
+    assert f"repeat {repeat} deviated" in report.reason
+
+
+@pytest.mark.parametrize("repeat", [0, 1, 2])
+def test_a_bad_label_on_any_repeat_is_caught(tmp_path: Path, repeat: int) -> None:
+    env = BadRepeatEnv(repeat, lambda p: _set(p, "object_grasped", 0, 1.0))
+    report = replay_episode(_episode(tmp_path), env, TOLERANCE, RUBRIC)
+    assert not report.claim_valid
+    assert f"repeat {repeat} gave outcome" in report.reason
+
+
+def _forge_observation(records: list[dict[str, Any]], step: int, stream: str, value: Any) -> None:
+    for packet in records[step]["observations"]:
+        if packet["stream"] == stream:
+            packet["value"] = value
+
+
+@pytest.mark.parametrize(
+    ("step", "stream", "value"),
+    [
+        (7, "joint_position", [9.0, 9.0, 9.0, 9.0]),
+        (1, "object_position", [9.0, 9.0, 9.0]),
+        (20, "object_grasped", [1.0]),
+    ],
+)
+def test_one_forged_later_observation_is_refused(
+    tmp_path: Path, step: int, stream: str, value: list[float]
+) -> None:
+    episode = _episode(tmp_path)
+    records = _records(episode)
+    original = next(p for p in records[step]["observations"] if p["stream"] == stream)["value"]
+    assert original != value
+    _forge_observation(records, step, stream, value)
+    _rewrite_records(episode, records)
+    with pytest.raises(ReplayInvalidError, match="differ from the state"):
+        replay_episode(episode, FakeArmEnv(), TOLERANCE, RUBRIC)
+
+
+def test_a_timebase_stretched_from_a_later_step_is_refused(tmp_path: Path) -> None:
+    episode = _episode(tmp_path)
+    records = _records(episode)
+    for record in records[5:]:
+        record["t_ns"] += 7
+        record["action"]["decision_t_ns"] += 7
+        record["action"]["valid_until_t_ns"] += 7
+        for packet in (*record["observations"], *record["next_observations"]):
+            packet["capture_t_ns"] += 7
+            packet["received_t_ns"] += 7
+    records[4]["dt_ns"] += 7
+    _rewrite_records(episode, records)
+    with pytest.raises(ReplayInvalidError, match="timebase differs at step 4"):
+        replay_episode(episode, FakeArmEnv(), TOLERANCE, RUBRIC)
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        lambda r: r["action"].update(valid_until_t_ns=r["action"]["valid_until_t_ns"] + 10**12),
+        lambda r: r["next_observations"][0].update(capture_t_ns=r["t_ns"], received_t_ns=r["t_ns"]),
+        lambda r: r["observations"][3].update(received_t_ns=r["t_ns"] + 10**12),
+        lambda r: r["observations"][0].update(capture_t_ns=0, received_t_ns=r["t_ns"]),
+    ],
+)
+def test_changed_action_or_packet_times_are_refused(
+    tmp_path: Path, change: Callable[[dict[str, Any]], None]
+) -> None:
+    episode = _episode(tmp_path)
+    records = _records(episode)
+    change(records[6])
+    _rewrite_records(episode, records)
+    with pytest.raises((ReplayInvalidError, ContractError)):
+        replay_episode(episode, FakeArmEnv(), TOLERANCE, RUBRIC)
+
+
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        (lambda a: a.update(applied=[0.0, 0.0, 0.0, 0.0]), "has applied"),
+        (lambda a: a.update(filtered=[0.0, 0.0, 0.0, 0.0]), "has filtered"),
+        (lambda a: a.update(transmitted=[0.0, 0.0, 0.0, 0.0]), "has transmitted"),
+    ],
+)
+def test_forged_action_stages_are_refused(
+    tmp_path: Path, change: Callable[[dict[str, Any]], None], message: str
+) -> None:
+    episode = _episode(tmp_path)
+    records = _records(episode)
+    change(records[6]["action"])
+    _rewrite_records(episode, records)
+    with pytest.raises(ReplayInvalidError, match=message):
+        replay_episode(episode, FakeArmEnv(), TOLERANCE, RUBRIC)
+
+
+def test_a_changed_context_is_refused(tmp_path: Path) -> None:
+    episode = _episode(tmp_path)
+    records = _records(episode)
+    records[6]["context"]["mode"] = "human_teleop"
+    _rewrite_records(episode, records)
+    with pytest.raises(ReplayInvalidError, match="record contexts"):
+        replay_episode(episode, FakeArmEnv(), TOLERANCE, RUBRIC)
+
+
+def test_an_adapter_that_under_counts_restores_is_caught(tmp_path: Path) -> None:
+    class UnderCounting(FakeArmEnv):
+        def restore_state(self, state: bytes) -> Packet:
+            packet = super().restore_state(state)
+            self._restores = min(self._restores, 1)
+            return packet
+
+    report = replay_episode(_episode(tmp_path), UnderCounting(), TOLERANCE, RUBRIC)
+    assert not report.claim_valid
+    assert "restored 1 times" in report.reason
+
+
+def test_another_engine_with_the_same_version_is_refused(tmp_path: Path) -> None:
+    other = FakeArmEnv()
+    other.engine = "another_engine"
+    with pytest.raises(ReplayInvalidError, match="engine and version"):
+        replay_episode(_episode(tmp_path), other, TOLERANCE, RUBRIC)
+
+
+def test_exactly_the_frozen_step_limit_passes(tmp_path: Path) -> None:
+    episode = _episode(tmp_path)
+    count = len(_records(episode))
+    assert replay_episode(
+        episode, FakeArmEnv(), replace(TOLERANCE, max_episode_steps=count), RUBRIC
+    ).claim_valid
+    with pytest.raises(ReplayInvalidError, match="frozen limit"):
+        replay_episode(
+            episode, FakeArmEnv(), replace(TOLERANCE, max_episode_steps=count - 1), RUBRIC
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("env_id", "PickCube-v1", "frozen task ids"),
+        ("task_version", "other", "frozen task versions"),
+        ("protocol_version", "other", "protocol versions"),
+    ],
+)
+def test_an_episode_from_outside_the_frozen_task_is_refused(
+    tmp_path: Path, field: str, value: str, message: str
+) -> None:
+    frozen, rubric = load_frozen(FROZEN)
+    episode = _frozen_episode(tmp_path)
+    assert replay_episode(episode, FrozenTaskFake(), frozen, rubric).claim_valid
+    with pytest.raises(ReplayInvalidError, match=message):
+        replay_episode(episode, FrozenTaskFake(), replace(frozen, **{field: value}), rubric)
+
+
+@pytest.mark.parametrize(
+    ("section", "field", "value", "message"),
+    [
+        ("task", "id", "other", "task ids"),
+        ("configuration", "embodiment_id", "other", "embodiment ids"),
+        ("task", "version", "other", "frozen task versions"),
+        ("outcome", "protocol_version", "other", "protocol versions"),
+    ],
+)
+def test_an_edited_identity_field_is_refused(
+    tmp_path: Path, section: str, field: str, value: str, message: str
+) -> None:
+    frozen, rubric = load_frozen(FROZEN)
+    episode = _frozen_episode(tmp_path)
+    manifest = _manifest(episode)
+    manifest[section][field] = value
+    _write_manifest(episode, manifest)
+    with pytest.raises(ReplayInvalidError, match=message):
+        replay_episode(episode, FrozenTaskFake(), frozen, rubric)
+
+
+def test_the_real_adapter_is_built_from_the_recording(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[tuple[str, int]] = []
+
+    class StubAdapter:
+        engine = "stub_engine"
+
+        def __init__(self, env_id: str, max_episode_steps: int) -> None:
+            calls.append((env_id, max_episode_steps))
+
+    monkeypatch.setattr(replay, "ManiSkillPickCube", StubAdapter)
+    episode = tmp_path / "ep"
+    episode.mkdir()
+    (episode / "configuration.json").write_text(
+        json.dumps({"env_id": "Recorded-v1", "max_episode_steps": 150}), encoding="utf-8"
+    )
+    manifest = {
+        "simulator": {"engine": "stub_engine"},
+        "configuration": {"embodiment_artifact": {"path": "configuration.json", "sha256": ""}},
+    }
+    assert isinstance(replay.env_for_manifest(episode, manifest), StubAdapter)
+    assert calls == [("Recorded-v1", 150)]
+    manifest["simulator"]["engine"] = "another"
+    with pytest.raises(SimulatorUnavailableError, match="no adapter"):
+        replay.env_for_manifest(episode, manifest)
+
+
+def test_negative_command_exits_one_when_one_case_of_five_is_accepted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    episode = _frozen_episode(tmp_path)
+    _use_fake(monkeypatch, FrozenTaskFake())
+    accepted = ("no_damage", negative_tests._no_damage, replay.INITIAL_STATE_ONLY, "anything")
+    monkeypatch.setattr(negative_tests, "CASES", [*CASES[:4], accepted])
+    assert negative_main(_negative_args(episode)) == 1
+
+
+def test_negative_command_exits_two_on_a_broken_episode(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    episode = _frozen_episode(tmp_path)
+    with (episode / "final-assessment.json").open("ab") as stream:
+        stream.write(b" ")
+    _use_fake(monkeypatch, FrozenTaskFake())
+    assert negative_main(_negative_args(episode)) == 2
+
+
+def test_negative_command_refuses_a_loose_tolerance_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An unfrozen file must not turn a simulator that does not reproduce into a pass."""
+    episode = _frozen_episode(tmp_path)
+    _use_fake(monkeypatch, FrozenTaskFake(drift=0.01))
+    frozen = json.loads(FROZEN.read_text(encoding="utf-8"))
+    frozen["replay"]["max_state_deviation"] = 1e9
+    loose = tmp_path / "loose.json"
+    loose.write_text(json.dumps(frozen), encoding="utf-8")
+    args = ["--episode", str(episode), "--tolerance-file", str(loose)]
+    assert negative_main(args) == 2
+
+
+def test_the_replay_command_has_no_way_to_name_another_ledger(tmp_path: Path) -> None:
+    with pytest.raises(SystemExit):
+        replay_main([*_replay_args(tmp_path), "--status-ledger", "x"])
+
+
+@pytest.mark.parametrize(
+    "tolerance_file",
+    ["evals/M1-exit-tests.json", "evals/M0-protocol.md", "evals/no-such-file.json"],
+)
+def test_a_wrong_tolerance_file_is_a_refusal(tmp_path: Path, tolerance_file: str) -> None:
+    args = ["--episode", str(tmp_path), "--tolerance-file", str(ROOT / tolerance_file)]
+    assert replay_main([*args, "--repeats", "3"]) == 2
+    assert negative_main(args) == 2
+
+
+def test_refusals_exit_two_not_one(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    missing = tmp_path / "missing"
+    assert replay_main(_replay_args(missing)) == 2
+    bad = tmp_path / "bad"
+    bad.mkdir()
+    (bad / "episode.json").write_text("not json", encoding="utf-8")
+    assert replay_main(_replay_args(bad)) == 2
+    episode = _frozen_episode(tmp_path)
+
+    class Crashes(FrozenTaskFake):
+        def step(self, action: list[float]) -> Packet:
+            raise RuntimeError("the simulator crashed")
+
+    _use_fake(monkeypatch, Crashes())
+    assert replay_main(_replay_args(episode)) == 2
+
+
+def test_an_out_path_in_a_missing_directory_is_refused_before_replaying(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    episode = _frozen_episode(tmp_path)
+    env = FrozenTaskFake()
+    _use_fake(monkeypatch, env)
+    out = tmp_path / "missing" / "report.json"
+    assert replay_main([*_replay_args(episode), "--out", str(out)]) == 2
+    assert env.state_restores == 0
+
+
+def test_a_blow_up_report_is_still_strict_json(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    episode = _frozen_episode(tmp_path)
+
+    class BlowsUp(FrozenTaskFake):
+        def step(self, action: list[float]) -> Packet:
+            return _set(super().step(action), "joint_position", 0, math.nan)
+
+    _use_fake(monkeypatch, BlowsUp())
+    out = tmp_path / "report.json"
+    assert replay_main([*_replay_args(episode), "--out", str(out)]) == 1
+    text = out.read_text(encoding="utf-8")
+    assert "Infinity" not in text.replace('"inf"', "")
+
+    def reject(value: str) -> None:
+        raise AssertionError(value)
+
+    report = json.loads(text, parse_constant=reject)
+    assert report["repeats"][0]["max_deviation"] == "inf"
+
+
+@pytest.mark.parametrize("module", ["replay", "negative_tests"])
+def test_the_modules_run_as_commands_and_report_not_run(tmp_path: Path, module: str) -> None:
+    episode = _frozen_episode(tmp_path)
+    args = [sys.executable, "-m", f"vishwaroop.sim.{module}", "--episode", str(episode)]
+    args += ["--tolerance-file", str(FROZEN)]
+    if module == "replay":
+        args += ["--repeats", "3"]
+    done = subprocess.run(
+        args,
+        env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert done.returncode == 3, done.stdout + done.stderr
+    assert "NOT RUN" in done.stdout
+
+
+def test_contract_judge_does_not_decide_on_an_invalid_episode(tmp_path: Path) -> None:
+    episode = _episode(tmp_path)
+    judge = contract_judge(RUBRIC)
+    assert judge.judge(str(episode))[0] is True
+    with (episode / "final-assessment.json").open("ab") as stream:
+        stream.write(b" ")
+    verdict, note = judge.judge(str(episode))
+    assert verdict is None
+    assert "checksum mismatch" in note
+
+
+@pytest.mark.parametrize("data", [None, {}, {"transitions_artifact": None}])
+def test_judge_does_not_crash_on_a_broken_manifest(tmp_path: Path, data: Any) -> None:
+    (tmp_path / "episode.json").write_text(json.dumps({"data": data}), encoding="utf-8")
+    verdict, note = PickPlaceJudge(RUBRIC).judge(str(tmp_path))
+    assert verdict is None
+    assert note.startswith("insufficient_evidence")
+
+
+def test_an_infinite_stream_is_recorded_as_invalid(tmp_path: Path) -> None:
+    class InfEnv(FakeArmEnv):
+        def _packet(self) -> Packet:
+            return _set(super()._packet(), "object_position", 0, math.inf)
+
+    episode = record_episode(InfEnv(), plan_policy(scripted_plan(3)), _spec(), tmp_path / "ep")
+    assert validate_episode(episode / "episode.json")["status"] == "contract_valid"
+    assert _manifest(episode)["outcome"]["success"] is None
 
 
 # ---------------------------------------------------------------------------- the frozen split rule

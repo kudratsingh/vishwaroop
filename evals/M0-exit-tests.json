@@ -7,7 +7,8 @@
   "task": {
     "env_id": "PickCubeSO100-v1",
     "adr": "docs/adr/ADR-0004-m0-task-choice.md",
-    "max_episode_steps": 200
+    "max_episode_steps": 200,
+    "version": "m0-1"
   },
   "place_rubric": {
     "rubric_version": "m0-place-1",

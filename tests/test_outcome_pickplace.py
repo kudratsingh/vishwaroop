@@ -290,6 +290,13 @@ def test_bad_recorded_values_become_invalid_samples(
     assert getattr(samples_from_records(records)[0], field) is None
 
 
+def test_a_value_marked_invalid_is_not_used() -> None:
+    packets = _packets([0.0, 0.0, 0.1], 0.0)
+    packets[0]["valid"] = False
+    records = [{"observations": packets, "next_observations": packets}]
+    assert samples_from_records(records)[0].object_position_m is None
+
+
 def test_rubric_refuses_missing_or_extra_keys() -> None:
     raw = {
         "rubric_version": "x",
@@ -352,6 +359,18 @@ def test_judge_refuses_a_path_outside_the_episode(tmp_path: Path) -> None:
     episode.mkdir()
     (tmp_path / "x.jsonl").write_text("", encoding="utf-8")
     manifest = {"data": {"transitions_artifact": {"path": "../x.jsonl", "sha256": ""}}}
+    (episode / "episode.json").write_text(json.dumps(manifest), encoding="utf-8")
+    verdict, note = PickPlaceJudge(RUBRIC).judge(str(episode))
+    assert verdict is None
+    assert "unsafe" in note
+
+
+def test_judge_refuses_an_absolute_path(tmp_path: Path) -> None:
+    target = tmp_path / "x.jsonl"
+    target.write_text("", encoding="utf-8")
+    manifest = {"data": {"transitions_artifact": {"path": str(target), "sha256": ""}}}
+    episode = tmp_path / "episode"
+    episode.mkdir()
     (episode / "episode.json").write_text(json.dumps(manifest), encoding="utf-8")
     verdict, note = PickPlaceJudge(RUBRIC).judge(str(episode))
     assert verdict is None
