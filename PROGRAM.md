@@ -1,7 +1,7 @@
 # PROGRAM.md — Physical AI Program: trajectory, projects, and plan
 
-**Version 1.0 — 2026-10-31. Owner: Kudrat Singh.**
-Canonical copies: byte-identical at the root of the `omni-drone` and `world-model` repositories (sha256 pinned in each repo's `config/program-lock.json`) and in the owner's "Omni Drone / World Model / Planner" Claude Project.
+**Version 1.1 — 2026-10-31. Owner: Kudrat Singh.**
+Canonical copies: byte-identical at the root of the `banshee` and `vishwaroop` repositories (sha256 pinned in each repo's `config/program-lock.json`) and in the owner's "Omni Drone / World Model / Planner" Claude Project.
 
 This is the single document that says **where the whole program is going and why**. It covers every project the owner is building, not only the two repositories that carry it. Enforceable rules for agents live in `AGENTS.md`; the interface between projects lives in `contracts/v1/`; this document explains the destination, the order of work, and the reasoning behind both.
 
@@ -11,7 +11,7 @@ This is the single document that says **where the whole program is going and why
 
 **Agents**
 1. Read this document once at the start of every session, before the repository's `AGENTS.md` and `START_HERE.md`.
-2. Every work order names the program stage and project phase it serves (for example `PROGRAM §6 → world-model M1`). Work that serves no listed stage is out of scope until the owner adds it here.
+2. Every work order names the program stage and project phase it serves (for example `PROGRAM §6 → vishwaroop M1`). Work that serves no listed stage is out of scope until the owner adds it here.
 3. Nothing in this document authorizes spending, hardware motion, flight, or remote operations. Authorization lives in `AGENTS.md §2` and in dated owner approvals.
 4. If this document and a repository document disagree, stop and report the conflict; do not pick the convenient reading.
 5. Propose changes to this document as an ADR plus a pull request in the repository you work in, titled `PROGRAM: <change>`. The owner approves program changes; the same change is then applied to both repositories so the copies stay identical.
@@ -67,10 +67,10 @@ The owner's Physical AI Leadership Roadmap (Sept 2026) defines competency stages
 | 0 | Robotics foundations: frames, kinematics, control, MuJoCo, ROS 2 | `physical-ai-foundations` | Done through Week 8 (Oct 11, 2026) |
 | 1 | Imitation and RL robot learning in simulation (ManiSkill / Isaac Lab, robomimic) | `vla-rl-so101` (arm project) | In progress (started Oct 26, 2026) |
 | 2 | Model-level policies: VLAs, ACT, Diffusion Policy; fine-tuning and RL post-training | `vla-rl-so101` | In progress |
-| 3 | Agentic embodied system: planner + skills + success detector + recovery (transfer of Incident Commander patterns) | `omni-drone` mission executive (D6+); drone is the home of the "brain" work now that the Microduck is dropped | Planned |
-| 4 | Real hardware: deployment, calibration, sim-to-real, data collection | `vla-rl-so101` on the SO-101; `omni-drone` D2–D6; `rocket-twin` physical rocket | Arm hardware ordered; others planned |
-| 5 | Research / train-time loop: world models, evaluators, synthetic data, verifiers, real-robot RL | `world-model` (all milestones); arm follow-on HIL-SERL | Planned (starts now) |
-| 6 | Product ownership: a platform with missions, reliability, operations, cost | `omni-drone` as a product-like autonomy platform | Planned |
+| 3 | Agentic embodied system: planner + skills + success detector + recovery (transfer of Incident Commander patterns) | `banshee` mission executive (D6+); drone is the home of the "brain" work now that the Microduck is dropped | Planned |
+| 4 | Real hardware: deployment, calibration, sim-to-real, data collection | `vla-rl-so101` on the SO-101; `banshee` D2–D6; `rocket-twin` physical rocket | Arm hardware ordered; others planned |
+| 5 | Research / train-time loop: world models, evaluators, synthetic data, verifiers, real-robot RL | `vishwaroop` (all milestones); arm follow-on HIL-SERL | Planned (starts now) |
+| 6 | Product ownership: a platform with missions, reliability, operations, cost | `banshee` as a product-like autonomy platform | Planned |
 | 7 | Lead / founder readiness: fleet, papers, people, budget judgment | The program as a whole | Ongoing |
 
 Rule kept from the roadmap: **manipulation first; simulation foundations before hardware purchases.** The SO-101 order is the one approved exception because the arm project is sim-first and ships a sim-only milestone before the arm is needed.
@@ -81,7 +81,7 @@ Rule kept from the roadmap: **manipulation first; simulation foundations before 
 
 | Project | What it is | Status (as stated by owner) | Role in the program |
 |---|---|---|---|
-| `vla-rl-so101` ("the arm project") | Few-shot SFT of a pre-trained VLA, then GRPO RL post-training in ManiSkill3 on one rented GPU, then deployment to a real SO-101 arm for tabletop pick-and-place from camera + text | Started Oct 26, 2026. Sim-first; fast iteration, no independent review pass except on RL-loop work orders. Follow-on confirmed: HIL-SERL-style real-robot RL with human interventions | Stages 1, 2, 4. **First data environment, baseline and evaluation subject for `world-model`.** Read-only to the new projects |
+| `vla-rl-so101` ("the arm project") | Few-shot SFT of a pre-trained VLA, then GRPO RL post-training in ManiSkill3 on one rented GPU, then deployment to a real SO-101 arm for tabletop pick-and-place from camera + text | Started Oct 26, 2026. Sim-first; fast iteration, no independent review pass except on RL-loop work orders. Follow-on confirmed: HIL-SERL-style real-robot RL with human interventions | Stages 1, 2, 4. **First data environment, baseline and evaluation subject for `vishwaroop`.** Read-only to the new projects |
 | `coding-agent-from-scratch` | A coding agent whose language model is pretrained from scratch (web text then Python), SFT on language + code, RL on code; openly licensed data only | S rehearsal done; main model is L (477M); XL deferred until L's scorecard exists; $900 cloud cap; repo private until rehearsal passes | ML engineering depth; the owner's "run my own model at home" interest (see §9 rent-vs-buy) |
 | `rocket-twin` | Digital twin of a thrust-vector-controlled model rocket with a 3D frontend (design, inspect parts, watch simulations), PID and RL controllers, then the real printed rocket within NAR limits; also a full-scale rocket in the frontend model | Started Oct 26, 2026. Same fast working style as the arm project | Mechanical/electrical/physics learning; flight-control math shared with the drone. **Not** a world-model warm-up (decided Oct 30, 2026) |
 | `soundings` | Harbor-floor "air traffic control": detect unverified underwater vehicles, investigate, hand off to a human or act within pre-authorized limits (InnovateLA dual-use hackathon, Oct 16–18, 2026) | Not submitted to the hackathon; repo complete and frozen on main; owner says he is still building it out | Stage-3 pattern (planner, ladder, investigation logic) |
@@ -96,10 +96,10 @@ Ground rules for the new repositories with respect to these: **never modify, imp
 ## 5. The two new projects
 
 ### 5.1 Omni Drone — a real, general-purpose aerial autonomy platform
-A flying robot that works in the real world, built **conventionally first**: PX4 flight control, ROS 2, visual-inertial odometry (camera + IMU position tracking without GPS), mapping, navigation, and a mission executive. Capability grows through a **ladder of narrow missions, each with an exit test** (D0 operating envelope → D1 simulation → D2 props-off sensing → D3 optional outdoor checkout → D4 indoor position hold → D5 GPS-denied route → D6 fixed-target inspection → D7+ one mission at a time). Learned components enter only through evidence gates. "Omni" means **broad mission capability**, not a mechanically omnidirectional airframe (that would be an explicit owner decision).
+Repository and Python package: `banshee`. A flying robot that works in the real world, built **conventionally first**: PX4 flight control, ROS 2, visual-inertial odometry (camera + IMU position tracking without GPS), mapping, navigation, and a mission executive. Capability grows through a **ladder of narrow missions, each with an exit test** (D0 operating envelope → D1 simulation → D2 props-off sensing → D3 optional outdoor checkout → D4 indoor position hold → D5 GPS-denied route → D6 fixed-target inspection → D7+ one mission at a time). Learned components enter only through evidence gates. "Omni" means **broad mission capability**, not a mechanically omnidirectional airframe (that would be an explicit owner decision).
 
 ### 5.2 World Model & Planner — learning, planning, evaluation and synthetic-data infrastructure for robot policies
-A standalone platform with three products, each with its own evidence: (1) a compact predictive model, latent planner and **action-chunk scorer**; (2) an action-conditioned, policy-compatible **closed-loop evaluator** for VLA checkpoints; (3) a **synthetic-data engine** whose generated demonstrations are filtered by physics replay and used on the SFT route only. Its first environment is the **arm project's ManiSkill3 setup**, and the arm's VLA is its first baseline and evaluation subject. M4 adapts the dynamics part to drone flight logs, offline and shadow-only, and branches from M0/M1 the moment usable logs exist — it never waits for M2/M3.
+Repository and Python package: `vishwaroop`. A standalone platform with three products, each with its own evidence: (1) a compact predictive model, latent planner and **action-chunk scorer**; (2) an action-conditioned, policy-compatible **closed-loop evaluator** for VLA checkpoints; (3) a **synthetic-data engine** whose generated demonstrations are filtered by physics replay and used on the SFT route only. Its first environment is the **arm project's ManiSkill3 setup**, and the arm's VLA is its first baseline and evaluation subject. M4 adapts the dynamics part to drone flight logs, offline and shadow-only, and branches from M0/M1 the moment usable logs exist — it never waits for M2/M3.
 
 ### 5.3 Why two projects (confirmed Oct 30, 2026)
 - The **sim-to-real gap is large**, especially for a drone (wind, vibration, motion blur, estimator drift). Keeping the drone conventional means crashes and sim-to-real never stall ML progress.
@@ -121,14 +121,14 @@ In pure simulation the physics engine already *is* the perfect world model, so a
 ```
  physical-ai-foundations (done) ──┐
                                    ▼
- vla-rl-so101 (arm, in flight) ── sim tasks, action space, camera setup ──► world-model M0 (sim data today)
+ vla-rl-so101 (arm, in flight) ── sim tasks, action space, camera setup ──► vishwaroop M0 (sim data today)
           │                                                                        │
           │ checkpoints + sim results (immutable exports) ────────────────────────► M1 → M2a (sim) → M2b (real arm)
           │ teleop + autonomous rollouts (immutable exports) ─────────────────────► M3 (synthetic data, SFT route)
           │                                                                        │
           └─ real SO-101 (ordered) ◄─── evaluator-selected checkpoints ◄───────────┘
                                                                                    │
- omni-drone D0 → D1 (SITL) → D2 → [D3 opt] → D4 → D5 → D6 → D7+                    │
+ banshee D0 → D1 (SITL) → D2 → [D3 opt] → D4 → D5 → D6 → D7+                       │
           │                                                                        │
           └─ flight logs (immutable exports) ─────────────────────────────────────► M4 (drone dynamics, offline/shadow)
                                                                                    │
@@ -195,7 +195,7 @@ Stacked on the world-model project; each layer is a paper-shaped result:
 2. **Verifier as reward for online RL on the real arm** — HIL-SERL-style, learned success judge replaces as many human labels as it safely can; measure labels saved and failure modes (reward hacking, false optimism). This is RLVR for robots — the owner's professional edge.
 3. **Data curation closing the loop** — which experience goes back into training (all, quality-filtered, failure-weighted, synthetic-augmented); scaling curves of real success vs data volume and quality.
 
-Guardrails that make these results trustworthy are part of the world-model protocol (`world-model/docs/EVALUATION_PROTOCOL.md`): independent final assessment vs training reward, policy-identity holdouts, sealed confirmation suites with logged access, paired randomized trials, abstention, measured false optimism and selection regret.
+Guardrails that make these results trustworthy are part of the world-model protocol (`vishwaroop/docs/EVALUATION_PROTOCOL.md`): independent final assessment vs training reward, policy-identity holdouts, sealed confirmation suites with logged access, paired randomized trials, abstention, measured false optimism and selection regret.
 
 ### 8.4 Method for making sure a question is novel
 1. Before buying hardware for a build, read the last ~12 months in that sub-area and write a one-page table: paper, hardware, claim, what was left untested. The question comes from the last column.
@@ -269,6 +269,7 @@ Source of detail: the owner's "Lab Purchase Plan v1" (Oct 30, 2026; prices are U
 | 2026-10-30 | Agents work autonomously and iteratively inside the designated new repositories (branches, PRs, merges under CI); separate approval for spending, hardware motion/flight, destructive operations, sealed-suite access, existing-project changes | Confirmed |
 | 2026-10-30 | Never delete or overwrite data, runs, logs, reports; always append or create a new record | Confirmed |
 | 2026-10-31 | One central program document (this file) carried identically in both repositories and in the Claude Project | Confirmed |
+| 2026-10-31 | Project names: the Omni Drone repository and Python package are `banshee`; the World Model & Planner repository and Python package are `vishwaroop`. The descriptive names stay valid in prose and docs; repository paths, package imports, `config/phases.json#project` and contract `producer` values use the short names (ADR-0003) | Confirmed |
 
 ---
 
@@ -315,3 +316,4 @@ Source of detail: the owner's "Lab Purchase Plan v1" (Oct 30, 2026; prices are U
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-10-31 | First consolidated program document, assembled from the Sept–Oct 2026 planning conversations, the Physical AI Leadership Roadmap, the Lab Purchase Plan v1, and the reviewed starter-kit material. |
+| 1.1 | 2026-10-31 | Project names `banshee` and `vishwaroop` adopted (ADR-0003): repository identifiers updated throughout and a §11 decision added. No change to scope, order of work, budgets or authorization. |

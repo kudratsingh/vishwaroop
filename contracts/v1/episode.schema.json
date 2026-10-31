@@ -12,8 +12,8 @@
     "producer": {
       "enum": [
         "arm",
-        "omni_drone",
-        "world_model"
+        "banshee",
+        "vishwaroop"
       ]
     },
     "created_at": {

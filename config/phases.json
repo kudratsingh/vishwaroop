@@ -1,5 +1,5 @@
 {
-  "project": "world-model",
+  "project": "vishwaroop",
   "version": "1.0.0",
   "notes": "Machine-readable phase definitions. docs/PHASES.md is the narrative; a test keeps the two consistent. Thresholds marked 'proposed default' must be frozen in evals/<phase>-exit-tests.json before the phase moves to ready (AGENTS.md section 5.2). Later phases are milestone-level and get detailed when they become next.",
   "phases": [

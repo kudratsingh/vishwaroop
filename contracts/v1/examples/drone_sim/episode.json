@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "episode_id": "fixture-drone-001",
-  "producer": "omni_drone",
+  "producer": "banshee",
   "created_at": "2026-10-30T20:52:00-07:00",
   "environment_kind": "physics_sim",
   "purpose": "schema_fixture",

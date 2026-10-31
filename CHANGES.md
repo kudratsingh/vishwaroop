@@ -22,7 +22,7 @@ Reference inputs: `Omni_Drone_World_Model_Starter_Kits_2026-10-30.zip` (referenc
 | ML/software fundamentals | `AGENTS.md §8` (reproducibility, pins, baselines first, tracking, tests, typed code, dependencies, resource bounds, simplicity, ADRs) and §10 (security) | Owner asked for fundamental rules for agents |
 | Contract release | Schemas unchanged (v1.0.0); utilities reformatted without semantic change; added `validation_ledger.schema.json` and `validate.py --ledger` (append-only evidence); added `writer.py` (write-once reference exporter); added `RELEASE.json`; tests 32 → 41; `SHA256SUMS.json` regenerated; both kits pinned to the new manifest hash | Append-only rule; actionable export path for WO-001 and D1 |
 | Work orders | Six WOs with the standard header (phase, exit tests, size, prerequisites, authorization, files); first three detailed, later ones milestone-level; budget WO renumbered | Review prompt §2; numbering fix |
-| Scaffolding | `src/world_model/core/` (tested), `importer.py` (tested read-only import with completion marker and hash checks), `interfaces.py` (typed Protocols); `pyproject.toml` with ruff/mypy/pytest config | Makes WO-001/WO-006 actionable; typed interfaces per review prompt §7 |
+| Scaffolding | `src/vishwaroop/core/` (tested), `importer.py` (tested read-only import with completion marker and hash checks), `interfaces.py` (typed Protocols); `pyproject.toml` with ruff/mypy/pytest config | Makes WO-001/WO-006 actionable; typed interfaces per review prompt §7 |
 | Docs | `ARCHITECTURE`, `CONTEXT_AND_DECISIONS` (conversation context + contradictions table), `EVALUATION_PROTOCOL`, `DATA_AND_SNAPSHOTS`, `SYNTHETIC_DATA_M3`, `ENVIRONMENT` (what runs where; Macs vs Linux/NVIDIA), `BUDGET_AND_LAUNCHER`, `SOURCES` (dated; hardware sources added; unverified items listed), `REPORT_TEMPLATE` (evidence words, exit-test table, retro, errata), `ADR_TEMPLATE` + two program ADRs | Review prompt §1–§7 |
 | Handoff | `prompts/FIRST_SESSION.md` rewritten under the new authorization; `START_HERE.md` with exact next actions | Review prompt §2–§3 |
 | Verification | `VERIFICATION.md` written from the actual packaging run (environment, commands, outcomes, not run); kit-level `SHA256SUMS.json` | Review prompt §8 |
@@ -32,3 +32,23 @@ Contract schemas and fixtures (fabricated, labelled); validator semantics; split
 
 ## Not done in this pass (honest list)
 No simulator, model, evaluator, generator, or launcher was implemented. No stack pins were resolved (`config/stack-lock.pending.json`). No web re-verification of PX4/ManiSkill/Isaac versions (owner declined the searches); hardware prices were verified on 2026-10-30 and are recorded with dates. No remote repository, CI run on GitHub, paid service, hardware, or other project was touched.
+
+## After import: program-wide rename (2026-10-31, ADR-0003, WO-007)
+The starter kit shipped as `world-model`. The repository and package are now `vishwaroop`, and the sibling project is `banshee`. Paths in this file were updated so they still resolve. The contract `producer` enum and fixtures, `PROGRAM.md` (version 1.1), the shared `AGENTS.md` core (policy version 1.1), manifests and locks changed with it; this repository applied the change second, so it copied those bytes from `banshee` and did not re-author them, as ADR-0003 directs. The one behaviour change: the validator now rejects the retired `producer` values and accepts the new ones. No other behaviour, threshold or authorization changed. The planned M0 task-choice ADR moved from ADR-0003 to ADR-0004 (`docs/adr/ADR-0003-PROGRAM-project-names.md`).
+
+## After import: starter-kit defects fixed (2026-10-31, WO-008)
+The rename did not cause these. This repository tracks them as its WO-008. The fixes were copied byte for byte from `banshee` commit `da128e3`, the source the owner named at that time, in separate commits on the WO-007 branch.
+- **`tools/status_board.py`:** `--phase` and `--et` appends were always refused, because the record carried `"wo": null` and took the work-order path. The command line now drops unset fields before `append()`, and `current_states` tests its keys by `.get()` truthiness. It now refuses a record naming more than one id, which would otherwise mark a phase `passed` without recording the exit test. `tests/test_tools.py` adds tests for these appends through the command line.
+- **`tests/test_project_consistency.py`:** deleted `test_no_fixture_claims_in_reports`, as `banshee` did on the owner's instruction. It failed on any `.md` report in `reports/`, so it blocked every real work-order report.
+- **`.gitignore`:** replaced `*secret*`, which silently dropped `tools/scan_secrets.py` from `git add -A` and hid it from `ruff`, with specific patterns plus `!tools/scan_secrets.py`. `tests/test_tools.py` adds a test for this.
+
+## After import: private GitHub remote (2026-10-31, WO-009)
+The owner asked for the repository to be created. `kudratsingh/vishwaroop` is private, and `main` is protected (ADR-0005). `wo/WO-007-program-rename` stays local until the owner approves its push and pull request, and `main` keeps the kit's old package name until the branch merges.
+
+## After import: work-order freeze, wider secret scan, broad ignore rule (2026-10-31, WO-010)
+Copied byte for byte from `banshee` commit `3a66e3c6a93436f3bd6673708715264d1e4781c8`, where this is its WO-009, on the owner's instruction.
+- **`tools/status_board.py`:** refuses a `created` event for a work order that already has a ledger record.
+- **`tools/check_immutable.py`:** keeps the freeze once any `accepted` event exists, so a line appended later cannot lift it, and rejects replacing a protected file with a symlink.
+- **`tools/scan_secrets.py`:** adds Hugging Face and RunPod token patterns, and now scans files with no extension.
+- **`.gitignore`:** returns to `*secret*`, keeps `secrets/` and `.secrets*`, and keeps the exception for the scanner. This replaces the narrower patterns from WO-008, which left names such as `secret_prod.env`, `mysecret` and `secretkey` trackable.
+- **`tests/test_tools.py`:** adds tests for these.

@@ -5,11 +5,11 @@ Compares the merge base of ``--base`` and ``HEAD`` with ``HEAD`` using ``git dif
 and
 fails on:
 
-- any deletion or rename under a protected path;
+- any deletion, rename or file-type change under a protected path;
 - any modification under ``data/``, ``runs/``, ``artifacts/manifests/`` (write-once);
 - a modification of a ledger (``ledgers/*.jsonl``, ``work_orders/STATUS.jsonl``) or a report
   (``reports/*.md``) that is not a pure append (old content must be a byte prefix of new content);
-- any modification of a work order whose latest status event is ``accepted`` (frozen).
+- any modification of a work order with an ``accepted`` event anywhere in the ledger (frozen).
 
 Derived files (``docs/STATUS_BOARD.md``, ``reports/INDEX.md``) and the READMEs inside protected
 directories are exempt because they are regenerated or documentary.
@@ -46,16 +46,16 @@ def git(*args: str, cwd: Path = ROOT, check: bool = True) -> str:
 
 
 def accepted_work_orders(status_text: str) -> set[str]:
-    """WO ids whose latest status event is ``accepted``."""
-    latest: dict[str, str] = {}
+    """WO ids with an ``accepted`` event anywhere in the ledger; a later line cannot undo it."""
+    accepted: set[str] = set()
     for line in status_text.splitlines():
         if not line.strip():
             continue
         record = json.loads(line)
         wo = record.get("wo")
-        if isinstance(wo, str) and isinstance(record.get("event"), str):
-            latest[wo] = record["event"]
-    return {wo for wo, event in latest.items() if event == "accepted"}
+        if isinstance(wo, str) and record.get("event") == "accepted":
+            accepted.add(wo)
+    return accepted
 
 
 def is_protected(path: str) -> bool:
@@ -87,6 +87,8 @@ def evaluate(base_ref: str, cwd: Path = ROOT) -> list[str]:
             violations.append(f"{path}: deleted (protected paths are never deleted)")
         elif status.startswith("R"):
             violations.append(f"{old_path} -> {path}: renamed (protected paths are never renamed)")
+        elif status.startswith("T"):
+            violations.append(f"{path}: file type changed (protected paths keep their type)")
         elif status.startswith("M"):
             if path.startswith(WRITE_ONCE_PREFIXES):
                 violations.append(f"{path}: modified (write-once; create a new record instead)")

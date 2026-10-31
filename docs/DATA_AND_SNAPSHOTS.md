@@ -14,7 +14,7 @@ Reference photo and fiducial/calibration check at session start; new calibration
 ## 4. Snapshot publication protocol (future, owner-enabled, in the arm project)
 The arm producer finishes a checkpoint and its sim evaluation in a temporary export directory, computes weights/config/preprocessor/result hashes, writes `MANIFEST.json`, atomically renames the directory into the export root, then writes `COMPLETE` last. Each snapshot identifies run family, seed, checkpoint, training dataset, base weights and evaluation protocol. Auto-export is **not installed by this kit** and is never an importer side effect; until the owner adds it, consume completed owner-provided snapshots only.
 
-## 5. Import behaviour (`src/world_model/importer.py`)
+## 5. Import behaviour (`src/vishwaroop/importer.py`)
 - No imports from the arm's training modules; no writes, locks, callbacks, signal handling, GPU allocation or background polling inside the arm repository or its export root.
 - `verify_export(dir)` refuses without `COMPLETE`, without `MANIFEST.json`, on any hash mismatch, or on any path escaping the export directory.
 - `register_import(dir, repo_root)` copies files under `data/imports/<export id>/` (write-once), records `ledgers/imports.jsonl` with every hash and producer identity, and marks the copy read-only.

@@ -2,9 +2,9 @@
 **Phase:** M1
 **Exit tests advanced:** none directly (prerequisite for ET-M1-2 VLA-chunk comparisons and all of M2)
 **Size:** M (can run in parallel with WO-004 in its own worktree)
-**Prerequisites:** `src/world_model/importer.py` (exists, tested on fixtures); at least one completed, owner-provided export from `vla-rl-so101` placed in a read-only location the owner names. Without an export, this WO stops at the registry design and fixture tests.
+**Prerequisites:** `src/vishwaroop/importer.py` (exists, tested on fixtures); at least one completed, owner-provided export from `vla-rl-so101` placed in a read-only location the owner names. Without an export, this WO stops at the registry design and fixture tests.
 **Authorization:** AGENTS §2.1 only. Never edit, launch, or hook into the arm repository (§1.1, §2.3).
-**Files:** `src/world_model/importer.py` (extend), `src/world_model/data/policies.py`, `tests/`, `ledgers/imports.jsonl`, `reports/WO-006-arm-snapshot-importer-and-policy-registry.md`.
+**Files:** `src/vishwaroop/importer.py` (extend), `src/vishwaroop/data/policies.py`, `tests/`, `ledgers/imports.jsonl`, `reports/WO-006-arm-snapshot-importer-and-policy-registry.md`.
 
 ## Objective
 Register arm checkpoints and sim results as immutable, hash-verified inputs with run/family identities, and build the policy-holdout registry that quarantines designated test runs so the evaluator is never calibrated on their real outcomes.
@@ -18,8 +18,8 @@ Any automatic export hook in the arm repo; loading model weights (hash and regis
 ## Verification
 ```bash
 make check
-python -m world_model.importer verify <export dir>           # refuses without COMPLETE / on hash mismatch
-python -m world_model.importer register <export dir>         # copies write-once, appends ledgers/imports.jsonl
+python -m vishwaroop.importer verify <export dir>           # refuses without COMPLETE / on hash mismatch
+python -m vishwaroop.importer register <export dir>         # copies write-once, appends ledgers/imports.jsonl
 python -m pytest tests/test_importer.py tests/test_policies.py -q
 ```
 

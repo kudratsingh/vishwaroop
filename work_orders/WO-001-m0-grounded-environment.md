@@ -2,9 +2,9 @@
 **Phase:** M0
 **Exit tests advanced:** ET-M0-1, ET-M0-2, ET-M0-3, ET-M0-4, ET-M0-5
 **Size:** L (split into PRs: stack lock → adapter + export → replay + negatives → frozen spec)
-**Prerequisites:** none beyond a Linux + NVIDIA machine for the simulator (rented is fine; $0 spend unless the owner approves a rental line in `ledgers/approvals.jsonl`). CPU-tier work (`make check`, scaffolding, specification) proceeds on any machine.
+**Prerequisites:** WO-007, WO-008 and WO-010 `accepted` (status ledger). Otherwise none beyond a Linux + NVIDIA machine for the simulator (rented is fine; $0 spend unless the owner approves a rental line in `ledgers/approvals.jsonl`). CPU-tier work (`make check`, scaffolding, specification) proceeds on any machine.
 **Authorization:** AGENTS §2.1 only, except: any paid rental needs a §2.3 approval recorded first.
-**Files:** `src/world_model/sim/`, `src/world_model/outcome/`, `tests/`, `config/stack-lock.resolved.json`, `evals/M0-*`, `evals/M1-*`, `reports/WO-001-m0-grounded-environment.md`, `docs/adr/`, ignored `data/`, `runs/`.
+**Files:** `src/vishwaroop/sim/`, `src/vishwaroop/outcome/`, `tests/`, `config/stack-lock.resolved.json`, `evals/M0-*`, `evals/M1-*`, `reports/WO-001-m0-grounded-environment.md`, `docs/adr/`, ignored `data/`, `runs/`.
 
 ## Objective
 Produce one genuinely reproducible ManiSkill3 episode with its full evidence chain, so that everything the project later claims rests on a simulator that is pinned, exportable through the contract, replayable from its initial state only, and judged by code that shares nothing with any policy or reward. Then freeze the evaluation specification that M1 will be measured against.
@@ -12,9 +12,9 @@ Produce one genuinely reproducible ManiSkill3 episode with its full evidence cha
 ## Scope
 1. **Environment selection and lock.** Pick the ManiSkill3 task that best matches the arm project's setup. If the arm project has not exported its task configs/action space yet, use a readily available pick-and-place task and **label the embodiment honestly** (no transfer claim). Install on the pinned stack; write `config/stack-lock.resolved.json` (every entry *tested* or *proposed*, dated). Record an ADR for the task choice.
 2. **Deterministic baseline policy.** A scripted or motion-planned controller that succeeds often and fails sometimes; its code path is the only policy in this WO.
-3. **Independent outcome.** `src/world_model/outcome/` computes task success from simulator state (object pose inside the target region, released grasp, dwell) in code with no dependency on the policy or any learned model. Write its rubric to `evals/M0-protocol.md`.
-4. **Logging adapter.** `src/world_model/sim/export.py` records every step as a contract-v1 transition (observations with capture/receive times and validity masks, action stages, context) and exports through `contracts/v1/writer.py` with `environment_kind: physics_sim`, saved initial state and asset manifest, `restore_mode: initial_state_only`.
-5. **Replay.** `src/world_model/sim/replay.py` restores the saved initial state only, executes the recorded actions through physics, and reports per-step deviation and outcome agreement over 3 repeats. Freeze the tolerance in `evals/M0-exit-tests.json` *before* the first replay run.
+3. **Independent outcome.** `src/vishwaroop/outcome/` computes task success from simulator state (object pose inside the target region, released grasp, dwell) in code with no dependency on the policy or any learned model. Write its rubric to `evals/M0-protocol.md`.
+4. **Logging adapter.** `src/vishwaroop/sim/export.py` records every step as a contract-v1 transition (observations with capture/receive times and validity masks, action stages, context) and exports through `contracts/v1/writer.py` with `environment_kind: physics_sim`, saved initial state and asset manifest, `restore_mode: initial_state_only`.
+5. **Replay.** `src/vishwaroop/sim/replay.py` restores the saved initial state only, executes the recorded actions through physics, and reports per-step deviation and outcome agreement over 3 repeats. Freeze the tolerance in `evals/M0-exit-tests.json` *before* the first replay run.
 6. **Negative tests.** Corrupted action semantics (swap two action labels), broken artifact hash, missing asset, wrong timebase (shift `t_ns`), intermediate-state forcing (a replay mode that sets state every step) — each must fail validation or invalidate the replay claim.
 7. **Frozen evaluation specification** (ET-M0-5): `evals/M0-protocol.md` (task rubric, split specification, group ids, policy-holdout plan by run/family, sealed opening budget, baselines) and `evals/M1-exit-tests.json` with the M1 thresholds frozen from the proposed defaults in `config/phases.json` or justified alternatives. Append `frozen` status events for every M1 exit test.
 8. **Report** `reports/WO-001-m0-grounded-environment.md` from the template.
@@ -23,8 +23,8 @@ Produce one genuinely reproducible ManiSkill3 episode with its full evidence cha
 Neural training, VLA fine-tuning, video generation, teleop data, physical hardware, any change to `vla-rl-so101` or other repositories, remote git operations before designation, dataset collection at scale (WO-002).
 
 ## Deliverables
-- `config/stack-lock.resolved.json`; `docs/adr/ADR-0003-m0-task-choice.md`.
-- `src/world_model/sim/{env.py,export.py,replay.py}`, `src/world_model/outcome/pickplace.py`, with unit tests that run on CPU (use recorded fixtures for logic; mark simulator-dependent tests with `@pytest.mark.sim` and skip them when the stack is absent).
+- `config/stack-lock.resolved.json`; `docs/adr/ADR-0004-m0-task-choice.md`.
+- `src/vishwaroop/sim/{env.py,export.py,replay.py}`, `src/vishwaroop/outcome/pickplace.py`, with unit tests that run on CPU (use recorded fixtures for logic; mark simulator-dependent tests with `@pytest.mark.sim` and skip them when the stack is absent).
 - One exported episode directory (ignored path, manifest in `artifacts/manifests/m0-first-episode.json`) and its replay report in `runs/`.
 - `evals/M0-protocol.md`, `evals/M0-exit-tests.json`, `evals/M1-exit-tests.json` (hashed in the report).
 - Report with commands, hashes, failure cases, unresolved pins.
@@ -43,8 +43,8 @@ Neural training, VLA fine-tuning, video generation, teleop data, physical hardwa
 ```bash
 make check
 python contracts/v1/validate.py data/derived/m0/<episode>/episode.json
-python -m world_model.sim.replay --episode data/derived/m0/<episode> --repeats 3 --tolerance-file evals/M0-exit-tests.json
-python -m world_model.sim.negative_tests --episode data/derived/m0/<episode>   # 5/5 must be rejected
+python -m vishwaroop.sim.replay --episode data/derived/m0/<episode> --repeats 3 --tolerance-file evals/M0-exit-tests.json
+python -m vishwaroop.sim.negative_tests --episode data/derived/m0/<episode>   # 5/5 must be rejected
 python tools/status_board.py --render > docs/STATUS_BOARD.md
 ```
 Expected: validator prints `contract_valid`; replay report shows max deviation ≤ frozen tolerance on all 3 repeats and identical outcome labels; negative-test log shows 5 rejections with distinct reasons; `make check` green on the final commit.

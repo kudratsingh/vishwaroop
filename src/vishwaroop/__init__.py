@@ -1,4 +1,5 @@
-"""World Model & Planner: learning, planning, evaluation and synthetic-data infrastructure.
+"""vishwaroop (World Model & Planner): learning, planning, evaluation and synthetic-data
+infrastructure.
 
 Implemented in this starter: ``core`` (append-only record helpers), ``importer`` (read-only
 verification and registration of completed exports), ``interfaces`` (typed Protocols for the modules

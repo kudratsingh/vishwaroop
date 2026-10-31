@@ -1,5 +1,5 @@
 [project]
-name = "world-model"
+name = "vishwaroop"
 version = "0.0.1"
 description = "World Model & Planner: learning, planning, evaluation and synthetic-data infrastructure for robot policies"
 requires-python = ">=3.12"
@@ -17,7 +17,7 @@ where = ["src"]
 testpaths = ["tests", "contracts/v1/tests"]
 pythonpath = ["src", "contracts/v1", "tools"]
 addopts = "-q -p no:cacheprovider"
-filterwarnings = ["error::DeprecationWarning:world_model.*"]
+filterwarnings = ["error::DeprecationWarning:vishwaroop.*"]
 
 [tool.ruff]
 line-length = 100

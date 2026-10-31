@@ -81,6 +81,130 @@ def test_phase_and_exit_test_events(tmp_path: Path, root: Path) -> None:
     assert "WO-001" in board
 
 
+def _cli_append(tmp_path: Path, root: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Point the command line's append() at a temporary repository and return its ledger."""
+    repo = _mini_repo(tmp_path, root)
+    ledger = repo / "work_orders" / "STATUS.jsonl"
+    real_append = status_board.append
+
+    def append_to_temp(record: dict[str, object]) -> dict[str, object]:
+        return real_append(
+            record, ledger=ledger, phases_path=repo / "config" / "phases.json", root=repo
+        )
+
+    monkeypatch.setattr(status_board, "append", append_to_temp)
+    return ledger
+
+
+def test_cli_appends_phase_and_exit_test_events(
+    tmp_path: Path, root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ledger = _cli_append(tmp_path, root, monkeypatch)
+    phases = json.loads((root / "config" / "phases.json").read_text())["phases"]
+    phase, et = phases[0]["id"], phases[0]["exit_tests"][0]["id"]
+    assert status_board.main(["--append", "--phase", phase, "--event", "ready"]) == 0
+    assert status_board.main(["--append", "--et", et, "--event", "frozen"]) == 0
+    first, second = (json.loads(line) for line in ledger.read_text().splitlines())
+    assert first["phase"] == phase and first["event"] == "ready"
+    assert second["et"] == et and second["event"] == "frozen"
+    for record in (first, second):
+        assert "wo" not in record
+        assert None not in record.values()
+
+
+def test_cli_still_refuses_invalid_phase_and_exit_test_events(
+    tmp_path: Path, root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ledger = _cli_append(tmp_path, root, monkeypatch)
+    assert status_board.main(["--append", "--phase", "NOPE", "--event", "ready"]) == 2
+    assert status_board.main(["--append", "--et", "ET-NOPE-1", "--event", "frozen"]) == 2
+    assert not ledger.exists() or ledger.read_text() == ""
+
+
+def test_cli_refuses_records_naming_more_than_one_id(
+    tmp_path: Path, root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ledger = _cli_append(tmp_path, root, monkeypatch)
+    phases = json.loads((root / "config" / "phases.json").read_text())["phases"]
+    phase, et = phases[0]["id"], phases[0]["exit_tests"][0]["id"]
+    assert status_board.main(["--append", "--phase", phase, "--event", "ready"]) == 0
+    assert status_board.main(["--append", "--phase", phase, "--event", "in_progress"]) == 0
+    before = ledger.read_text()
+    combined = ["--append", "--phase", phase, "--et", et, "--event", "passed", "--report", "r.md"]
+    assert status_board.main(combined) == 2
+    assert status_board.main(["--append", "--wo", "WO-001", "--et", et, "--event", "frozen"]) == 2
+    assert ledger.read_text() == before
+
+
+def test_created_is_refused_once_a_work_order_has_a_record(tmp_path: Path, root: Path) -> None:
+    repo = _mini_repo(tmp_path, root)
+    ledger = repo / "work_orders" / "STATUS.jsonl"
+    kw = {"ledger": ledger, "phases_path": repo / "config" / "phases.json", "root": repo}
+    status_board.append({"wo": "WO-001", "event": "created"}, **kw)
+    with pytest.raises(status_board.StatusError, match="cannot be created again"):
+        status_board.append({"wo": "WO-001", "event": "created"}, **kw)
+    status_board.append({"wo": "WO-001", "event": "ready"}, **kw)
+    status_board.append({"wo": "WO-001", "event": "in_progress"}, **kw)
+    status_board.append(
+        {"wo": "WO-001", "event": "accepted", "report": "reports/WO-001.md", "commit": "abc"}, **kw
+    )
+    before = ledger.read_text()
+    with pytest.raises(status_board.StatusError, match="cannot be created again"):
+        status_board.append({"wo": "WO-001", "event": "created"}, **kw)
+    assert ledger.read_text() == before
+    assert check_immutable.accepted_work_orders(before) == {"WO-001"}
+
+
+def test_current_states_ignores_null_keys_in_older_records() -> None:
+    wos, phases, ets = status_board.current_states(
+        [
+            {"wo": None, "phase": "D0", "et": None, "event": "ready"},
+            {"wo": None, "phase": None, "et": "ET-D0-1", "event": "frozen"},
+            {"wo": "WO-001", "phase": None, "et": None, "event": "ready"},
+        ]
+    )
+    assert set(wos) == {"WO-001"} and set(phases) == {"D0"} and set(ets) == {"ET-D0-1"}
+
+
+def _gitignore_ignores(tmp_path: Path, root: Path, name: str) -> bool:
+    repo = tmp_path / "ignore-repo"
+    repo.mkdir()
+    shutil.copy(root / ".gitignore", repo / ".gitignore")
+    _git(repo, "init", "-q")
+    result = subprocess.run(
+        ["git", "check-ignore", "-q", "--no-index", name],
+        cwd=repo,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode in {0, 1}, result.stderr
+    return result.returncode == 0
+
+
+def test_gitignore_keeps_the_secret_scanner_tracked(tmp_path: Path, root: Path) -> None:
+    assert not _gitignore_ignores(tmp_path, root, "tools/scan_secrets.py")
+
+
+def test_no_tracked_file_is_ignored(root: Path) -> None:
+    if not (root / ".git").exists():
+        pytest.skip("not a git checkout")
+    result = subprocess.run(
+        ["git", "ls-files", "-ci", "--exclude-standard"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert result.stdout == ""
+
+
+@pytest.mark.parametrize(
+    "name", ["secret_prod.env", "mysecret", "secretkey", "secrets/key.txt", ".secrets.json"]
+)
+def test_gitignore_ignores_secret_file_names(tmp_path: Path, root: Path, name: str) -> None:
+    assert _gitignore_ignores(tmp_path, root, name)
+
+
 def test_render_on_real_repo_config(root: Path) -> None:
     board = status_board.render(
         ledger=root / "work_orders" / "STATUS.jsonl",
@@ -164,6 +288,29 @@ def test_append_only_rejects_rename_of_protected_path(tmp_path: Path) -> None:
     assert any("renamed" in v for v in violations)
 
 
+def test_append_only_freeze_survives_a_later_status_line(tmp_path: Path) -> None:
+    repo = _git_repo(tmp_path)
+    with (repo / "work_orders" / "STATUS.jsonl").open("a") as ledger:
+        ledger.write('{"wo":"WO-001","event":"created"}\n')
+    (repo / "work_orders" / "WO-001-demo.md").write_text("# WO-001 | edited\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "try to unfreeze")
+    violations = check_immutable.evaluate("main", cwd=repo)
+    assert any("WO-001-demo.md" in v and "frozen" in v for v in violations)
+
+
+def test_append_only_rejects_replacing_protected_files_with_symlinks(tmp_path: Path) -> None:
+    repo = _git_repo(tmp_path)
+    for path in (repo / "work_orders" / "WO-001-demo.md", repo / "ledgers" / "runs.jsonl"):
+        path.unlink()
+        path.symlink_to(repo / "free.txt")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "swap for symlinks")
+    violations = check_immutable.evaluate("main", cwd=repo)
+    assert any("WO-001-demo.md" in v and "file type changed" in v for v in violations)
+    assert any("runs.jsonl" in v and "file type changed" in v for v in violations)
+
+
 # ----------------------------------------------------------------------------- secrets and paths
 
 
@@ -178,6 +325,33 @@ def test_secret_scan_flags_patterns_and_paths(tmp_path: Path) -> None:
     assert any("AWS access key id" in h for h in hits)
     assert any("macOS home path" in h for h in hits)
     assert not any(h.startswith("clean.md") for h in hits)
+
+
+@pytest.mark.parametrize(
+    ("prefix", "label"), [("hf_", "Hugging Face token"), ("rpa_", "RunPod API key")]
+)
+def test_secret_scan_flags_ml_service_tokens(tmp_path: Path, prefix: str, label: str) -> None:
+    token = prefix + "aB3" * 10
+    (tmp_path / "notes.md").write_text(f"export KEY={token}\n")
+    (tmp_path / "too_short.md").write_text(f"{prefix}{'aB3' * 9}\n")
+    hits = scan_secrets.scan(tmp_path)
+    assert hits == [f"notes.md:1: {label}"]
+
+
+@pytest.mark.parametrize("wrap", ["Bearer%20{}", "token%3D{}", 'note {{"text": "line1\\n{}"}}'])
+@pytest.mark.parametrize("prefix", ["hf_", "rpa_"])
+def test_secret_scan_flags_tokens_after_encoding(tmp_path: Path, wrap: str, prefix: str) -> None:
+    (tmp_path / "record.jsonl").write_text(wrap.format(prefix + "aB3" * 10) + "\n")
+    assert len(scan_secrets.scan(tmp_path)) == 1
+
+
+def test_secret_scan_reads_files_with_no_extension(tmp_path: Path) -> None:
+    token = "hf_" + "aB3" * 10
+    (tmp_path / "credentials").write_text(f"{token}\n")
+    (tmp_path / ".env").write_text(f"{token}\n")
+    (tmp_path / "binary").write_bytes(b"\xff\xfe\x00 not text")
+    hits = scan_secrets.scan(tmp_path)
+    assert sorted(hits) == [".env:1: Hugging Face token", "credentials:1: Hugging Face token"]
 
 
 def test_repository_has_no_secrets_or_machine_paths(root: Path) -> None:

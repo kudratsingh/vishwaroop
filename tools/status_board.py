@@ -108,11 +108,11 @@ def current_states(
     phases: dict[str, dict[str, Any]] = {}
     ets: dict[str, dict[str, Any]] = {}
     for r in records:
-        if "wo" in r:
+        if r.get("wo"):
             wos[r["wo"]] = r
-        elif "phase" in r:
+        elif r.get("phase"):
             phases[r["phase"]] = r
-        elif "et" in r:
+        elif r.get("et"):
             ets[r["et"]] = r
     return wos, phases, ets
 
@@ -123,6 +123,8 @@ def validate_append(
     wos, phases, _ets = current_states(records)
     phase_ids = {p["id"] for p in phases_cfg["phases"]}
     et_ids = {et["id"] for p in phases_cfg["phases"] for et in p["exit_tests"]}
+    if sum(1 for key in ("wo", "phase", "et") if record.get(key)) > 1:
+        raise StatusError("record must name exactly one of --wo, --phase, or --et")
     if "wo" in record:
         if record["wo"] not in wo_files(root):
             raise StatusError(
@@ -130,6 +132,10 @@ def validate_append(
             )
         if record["event"] not in WO_EVENTS:
             raise StatusError(f"invalid WO event {record['event']}")
+        if record["event"] == "created" and record["wo"] in wos:
+            raise StatusError(
+                f"{record['wo']}: already has a ledger record; cannot be created again"
+            )
         prev = wos.get(record["wo"], {}).get("event", "created")
         if record["event"] != "created" and record["event"] not in WO_TRANSITIONS[prev]:
             raise StatusError(f"{record['wo']}: cannot go from {prev} to {record['event']}")
@@ -276,7 +282,7 @@ def main(argv: list[str] | None = None) -> int:
             "commit": args.commit,
             "actor": args.actor,
         }
-        written = append(record)
+        written = append({key: value for key, value in record.items() if value is not None})
         print(json.dumps(written, sort_keys=True))
         return 0
     except (StatusError, FileNotFoundError, json.JSONDecodeError, KeyError) as exc:
