@@ -55,3 +55,8 @@ Copied byte for byte from `banshee` commit `3a66e3c6a93436f3bd6673708715264d1e47
 
 ## After import: rename merged and accepted (2026-10-31)
 Pull request 1 merged as `85027d4` on the owner's approval, after the owner's check across the two repositories passed at `banshee` `3a66e3c`. WO-007, WO-008 and WO-010 are accepted, with reports under `reports/`.
+
+## After import: M0 and M1 specification frozen (2026-10-31, WO-001)
+Before any simulator run or training: `evals/M0-exit-tests.json`, `evals/M0-protocol.md`, `evals/M1-exit-tests.json` and ADR-0004. Replay deviation is measured in rad and m, not the "normalized joint units" `config/phases.json` proposed, which nothing defined. M1 thresholds are the proposed defaults, unchanged.
+
+**Program decision:** shared files become a pinned dependency, `ironclad`, extracted by `banshee`. No further shared file is copied, including the tooling lock. This repository upgrades by bumping a version in its own work order.

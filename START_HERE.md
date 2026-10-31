@@ -32,8 +32,8 @@ See `docs/CONTEXT_AND_DECISIONS.md §5` and `PROGRAM.md §12`: first ManiSkill3 
 ## 6. Exact next actions
 WO-007, WO-008, WO-009 and WO-010 are `accepted`, so WO-001 is unblocked. Branch from the updated `main`.
 
-1. `make check` green → append `in_progress` for WO-001 (`python tools/status_board.py --append --wo WO-001 --event ready`, then `--event in_progress`) and `ready` for phase M0.
-2. Branch `wo/WO-001-m0`; write `evals/M0-exit-tests.json` with the frozen replay tolerance and dataset thresholds (from `config/phases.json` proposed defaults or justified alternatives) **before** any simulator run; append `frozen` for ET-M0-3 and ET-M0-6.
+1. `make check` green. Branch from `main`.
+2. `evals/M0-exit-tests.json`, `evals/M0-protocol.md` and `evals/M1-exit-tests.json` are frozen, and their `frozen` events are appended. Phase M0 and WO-001 are `in_progress`. Exit tests are frozen before `ready`, as `AGENTS.md §5.3` requires.
 3. Implement outcome code + tests; export adapter + tests on fixtures; open PR(s); merge per `AGENTS.md §4.6`.
 4. On a GPU machine (only with an approval line if rented): resolve the stack lock, export the first episode, replay, negative tests.
 5. Write `reports/WO-001-m0-grounded-environment.md`; append `accepted`; `make board`; continue to WO-002.

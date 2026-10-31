@@ -1,0 +1,34 @@
+{
+  "phase": "M0",
+  "frozen_on": "2026-10-31",
+  "frozen_before": "any simulator episode, replay or dataset exists for this project",
+  "task": {
+    "env_id": "PickCubeSO100-v1",
+    "adr": "docs/adr/ADR-0004-m0-task-choice.md",
+    "max_episode_steps": 200
+  },
+  "place_rubric": {
+    "rubric_version": "m0-place-1",
+    "target_radius_m": 0.015625,
+    "rest_height_m": 0.0125,
+    "rest_height_tolerance_m": 0.005,
+    "min_lift_above_rest_m": 0.02,
+    "max_step_motion_m": 0.001,
+    "dwell_steps": 10
+  },
+  "replay": {
+    "compare_streams": ["joint_position", "object_position"],
+    "max_state_deviation": 0.001,
+    "units_note": "Joint positions in rad, object position in m. config/phases.json proposed 'normalized joint units', which nothing defined; rad is stricter over the arm's joint ranges, and it was chosen before any result existed.",
+    "repeats": 3,
+    "require_identical_outcome_label": true
+  },
+  "exit_tests": [
+    {"id": "ET-M0-1", "threshold": "100% of CPU-tier checks green"},
+    {"id": "ET-M0-2", "threshold": "validate.py returns contract_valid; zero null pins in the simulator section of the stack lock"},
+    {"id": "ET-M0-3", "threshold": "max per-step deviation <= 0.001 on all 3 repeats, per the replay block; identical outcome label"},
+    {"id": "ET-M0-4", "threshold": "5/5 negative tests rejected; 2/2 inspected outcomes agree"},
+    {"id": "ET-M0-5", "threshold": "evals/M0-protocol.md, this file and evals/M1-exit-tests.json present and hashed; the policy-holdout plan names run/family grouping; frozen events exist for every M1 exit test"},
+    {"id": "ET-M0-6", "threshold": ">= 200 episodes; >= 30% failures; >= 3 distinct failure modes; audit_splits.py passes"}
+  ]
+}

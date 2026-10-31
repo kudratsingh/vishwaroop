@@ -82,7 +82,6 @@ Copied byte for byte from `banshee` commit `3a66e3c`.
 These predate the rename and are outside it.
 - `docs/BUDGET_AND_LAUNCHER.md` cites `tests/test_budget_preflight.py`, which does not exist. Those tests are in `tests/test_tools.py`.
 - The `python -m vishwaroop.*` commands in the work orders need `PYTHONPATH=src` or an install, and no document says so. Without it, the module is not found (exit 1).
-- `START_HERE.md §6` and `prompts/FIRST_SESSION.md` step 3 mark WO-001 and M0 `ready` before the exit tests are frozen, which `AGENTS.md §5.3` does not allow.
 - `PROGRAM.md §12` row 7 says no remote is designated for either project, which is no longer true of either project. Fixing it needs a program change, authored in `banshee`.
 
 ### Retro note
