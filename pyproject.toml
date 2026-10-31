@@ -1,0 +1,48 @@
+[project]
+name = "world-model"
+version = "0.0.1"
+description = "World Model & Planner: learning, planning, evaluation and synthetic-data infrastructure for robot policies"
+requires-python = ">=3.12"
+readme = "README.md"
+dependencies = ["jsonschema>=4.26,<5"]
+
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "contracts/v1/tests"]
+pythonpath = ["src", "contracts/v1", "tools"]
+addopts = "-q -p no:cacheprovider"
+filterwarnings = ["error::DeprecationWarning:world_model.*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tools", "tests", "contracts/v1"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N", "S", "C4", "SIM", "RUF"]
+ignore = [
+  "S101",   # asserts are fine in tests and as invariants
+  "S603",   # subprocess without shell is the intended pattern in tools
+  "S607",   # git is invoked by name in tools on purpose
+  "RUF012", # mutable class attributes are not used for config here
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "B011"]
+"contracts/v1/tests/**" = ["S", "B011", "E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+mypy_path = ["src", "contracts/v1", "tools"]
+ignore_missing_imports = true

@@ -1,0 +1,27 @@
+{
+  "status": "unresolved_do_not_claim_reproducible",
+  "resolved_by": "WO-001 writes config/stack-lock.resolved.json; every entry marked tested or proposed with a date",
+  "tooling_test_environment": {
+    "python": "3.13.18",
+    "jsonschema": "4.26.0",
+    "pytest": "9.1.1",
+    "ruff": "0.16.9",
+    "mypy": "2.3.1",
+    "note": "Tested at packaging time (2026-10-31) for the CPU tier only; not a robotics/ML environment."
+  },
+  "robotics_runtime": {
+    "os_image_digest": null,
+    "python": null,
+    "cuda": null,
+    "nvidia_driver": null,
+    "mani_skill_version_or_commit": null,
+    "sapien_version": null,
+    "pytorch_version": null,
+    "lerobot_commit": null,
+    "base_vla_family": null,
+    "base_vla_weights_sha256": null,
+    "tokenizer_preprocessor_sha256": null,
+    "vulkan_loader_icd_verified": null
+  },
+  "rule": "null is a blocker to resolve in WO-001, never permission to use latest."
+}

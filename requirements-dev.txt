@@ -1,0 +1,7 @@
+# CPU-tier tooling only. Tested at packaging time with Python 3.13.18 on Linux (see VERIFICATION.md).
+# Robotics/ML stacks (ManiSkill3, PX4, ROS 2, PyTorch, Isaac Lab) are NOT installed from this file;
+# they live in separate environments pinned by config/stack-lock.resolved.json once the first work order resolves them.
+jsonschema==4.26.0
+pytest==9.1.1
+ruff==0.16.9
+mypy==2.3.1

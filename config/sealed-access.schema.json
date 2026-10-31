@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:physical-ai-program:sealed-access:1.0.0",
+  "title": "One line of ledgers/sealed_access.jsonl: a single authorized opening of a sealed evaluation suite",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_id", "ts", "suite_id", "milestone_id", "protocol_version", "frozen_candidate_hashes",
+    "analysis_code_sha256", "approver", "approval_ref", "opened_at", "released_outputs", "reason",
+    "prior_openings", "resulting_status", "replacement_suite_id"
+  ],
+  "properties": {
+    "record_id": {"type": "string", "minLength": 1},
+    "ts": {"type": "string", "format": "date-time"},
+    "suite_id": {"type": "string", "minLength": 1},
+    "milestone_id": {"type": "string", "minLength": 1},
+    "protocol_version": {"type": "string", "minLength": 1},
+    "frozen_candidate_hashes": {"type": "array", "items": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "minItems": 1},
+    "analysis_code_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "approver": {"type": "string", "minLength": 1},
+    "approval_ref": {"type": "string", "minLength": 1, "description": "ledgers/approvals.jsonl record_id"},
+    "opened_at": {"type": "string", "format": "date-time"},
+    "released_outputs": {"type": "array", "items": {"type": "string"}},
+    "reason": {"type": "string", "minLength": 1},
+    "prior_openings": {"type": "integer", "minimum": 0},
+    "resulting_status": {"enum": ["sealed", "regression"]},
+    "replacement_suite_id": {"anyOf": [{"type": "string", "minLength": 1}, {"type": "null"}]}
+  }
+}

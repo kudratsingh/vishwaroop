@@ -1,0 +1,138 @@
+{
+  "schema_version": "1.0.0",
+  "episode_id": "fixture-imagined-001",
+  "producer": "world_model",
+  "created_at": "2026-10-30T20:52:00-07:00",
+  "environment_kind": "imagined",
+  "purpose": "schema_fixture",
+  "task": {
+    "id": "fixture_only",
+    "version": "1",
+    "instruction": "Do not execute hardware",
+    "criteria_artifact": {
+      "path": "rubric.json",
+      "sha256": "42b10432d12a624cd922e3f377afac0a5ac00f4b1220a4059563df96a4a76a31"
+    }
+  },
+  "configuration": {
+    "embodiment_id": "fabricated_arm",
+    "embodiment_artifact": {
+      "path": "configuration.json",
+      "sha256": "b0ac46406fc3da8087a8df717bea10f517d6ee0f9518142bdaf6754b309bd3fc"
+    },
+    "controller_artifact": {
+      "path": "configuration.json",
+      "sha256": "b0ac46406fc3da8087a8df717bea10f517d6ee0f9518142bdaf6754b309bd3fc"
+    },
+    "calibration_artifact": {
+      "path": "configuration.json",
+      "sha256": "b0ac46406fc3da8087a8df717bea10f517d6ee0f9518142bdaf6754b309bd3fc"
+    },
+    "preprocessing_artifact": {
+      "path": "configuration.json",
+      "sha256": "b0ac46406fc3da8087a8df717bea10f517d6ee0f9518142bdaf6754b309bd3fc"
+    },
+    "stack_artifact": {
+      "path": "configuration.json",
+      "sha256": "b0ac46406fc3da8087a8df717bea10f517d6ee0f9518142bdaf6754b309bd3fc"
+    }
+  },
+  "policy": {
+    "origin": "scripted",
+    "checkpoint_id": null,
+    "training_run_id": null,
+    "family_id": null,
+    "weights_artifact": null,
+    "config_artifact": null
+  },
+  "provenance": {
+    "parent_episode_ids": [
+      "fixture-arm-001"
+    ],
+    "source_episode_artifacts": [],
+    "generator_model_artifact": {
+      "path": "generator.json",
+      "sha256": "dcdf673a071ef323ca4a977697c815d58204c7af8fb638ae67d40771e933e11a"
+    }
+  },
+  "split": {
+    "partition": "dev",
+    "suite_id": "fixtures-not-evidence",
+    "scene_group_id": "fixture-scene-imagined_arm",
+    "session_group_id": "fixture-session-imagined_arm",
+    "policy_run_group_id": null,
+    "inherited_from_parent": true
+  },
+  "timebase": {
+    "unit": "nanoseconds",
+    "clock_domain": "fixture_monotonic",
+    "alignment_artifact": null
+  },
+  "frames": [
+    "joint_coordinates"
+  ],
+  "streams": [
+    {
+      "name": "state",
+      "kind": "state",
+      "frame_id": "joint_coordinates",
+      "units": [
+        "rad",
+        "rad"
+      ],
+      "shape": [
+        2
+      ],
+      "dtype": "float64",
+      "role": "input"
+    }
+  ],
+  "action_spec": {
+    "representation": "absolute_joint_position",
+    "labels": [
+      "joint_1",
+      "joint_2"
+    ],
+    "units": [
+      "rad",
+      "rad"
+    ],
+    "frame_id": "joint_coordinates",
+    "semantics": "FABRICATED examples, not real platform limits or commands",
+    "lower": [
+      -1.0,
+      -1.0
+    ],
+    "upper": [
+      1.0,
+      1.0
+    ]
+  },
+  "simulator": null,
+  "validation": {
+    "statuses": [],
+    "evidence": []
+  },
+  "outcome": {
+    "protocol_version": "fixture",
+    "rubric_version": "fixture",
+    "assessment_method": "unknown",
+    "success": null,
+    "terminated": false,
+    "truncated": true,
+    "reason": "Fixture ends; no experiment occurred",
+    "final_assessment_artifact": null,
+    "training_reward_artifact": null,
+    "paired_trial_id": null,
+    "reviewer_ids": []
+  },
+  "notes": "FABRICATED serialization example. No simulator, VLA, or real robot was used.",
+  "data": {
+    "format": "jsonl",
+    "record_count": 2,
+    "transitions_artifact": {
+      "path": "transitions.jsonl",
+      "sha256": "135db948116746291c3c1fd3b27b5a10b47ccef12825f1e2b934e868e7ef7ab3"
+    }
+  }
+}

@@ -1,0 +1,667 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "episode_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "producer": {
+      "enum": [
+        "arm",
+        "omni_drone",
+        "world_model"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "environment_kind": {
+      "enum": [
+        "real",
+        "physics_sim",
+        "imagined"
+      ]
+    },
+    "purpose": {
+      "enum": [
+        "training",
+        "demonstration",
+        "evaluation",
+        "shadow",
+        "schema_fixture"
+      ]
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "instruction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "criteria_artifact": {
+          "$ref": "#/$defs/artifact"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "instruction",
+        "criteria_artifact"
+      ]
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "embodiment_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "embodiment_artifact": {
+          "$ref": "#/$defs/artifact"
+        },
+        "controller_artifact": {
+          "$ref": "#/$defs/artifact"
+        },
+        "calibration_artifact": {
+          "$ref": "#/$defs/artifact"
+        },
+        "preprocessing_artifact": {
+          "$ref": "#/$defs/artifact"
+        },
+        "stack_artifact": {
+          "$ref": "#/$defs/artifact"
+        }
+      },
+      "required": [
+        "embodiment_id",
+        "embodiment_artifact",
+        "controller_artifact",
+        "calibration_artifact",
+        "preprocessing_artifact",
+        "stack_artifact"
+      ]
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "origin": {
+          "enum": [
+            "trained",
+            "teleop",
+            "scripted",
+            "none"
+          ]
+        },
+        "checkpoint_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "training_run_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "family_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "weights_artifact": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/artifact"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "config_artifact": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/artifact"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "origin",
+        "checkpoint_id",
+        "training_run_id",
+        "family_id",
+        "weights_artifact",
+        "config_artifact"
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "parent_episode_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "source_episode_artifacts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/artifact"
+          },
+          "minItems": 0
+        },
+        "generator_model_artifact": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/artifact"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "parent_episode_ids",
+        "source_episode_artifacts",
+        "generator_model_artifact"
+      ]
+    },
+    "split": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "partition": {
+          "enum": [
+            "train",
+            "dev",
+            "sealed",
+            "regression"
+          ]
+        },
+        "suite_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scene_group_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "session_group_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "policy_run_group_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "inherited_from_parent": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "partition",
+        "suite_id",
+        "scene_group_id",
+        "session_group_id",
+        "policy_run_group_id",
+        "inherited_from_parent"
+      ]
+    },
+    "timebase": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "const": "nanoseconds"
+        },
+        "clock_domain": {
+          "type": "string",
+          "minLength": 1
+        },
+        "alignment_artifact": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/artifact"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "unit",
+        "clock_domain",
+        "alignment_artifact"
+      ]
+    },
+    "frames": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "streams": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "enum": [
+              "state",
+              "rgb",
+              "depth",
+              "imu",
+              "reference",
+              "other"
+            ]
+          },
+          "frame_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "units": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          },
+          "shape": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minItems": 1
+          },
+          "dtype": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "enum": [
+              "input",
+              "supervision_only",
+              "reference_only"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "kind",
+          "frame_id",
+          "units",
+          "shape",
+          "dtype",
+          "role"
+        ]
+      },
+      "minItems": 1
+    },
+    "action_spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "representation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "units": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "frame_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "semantics": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lower": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 1
+        },
+        "upper": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "representation",
+        "labels",
+        "units",
+        "frame_id",
+        "semantics",
+        "lower",
+        "upper"
+      ]
+    },
+    "simulator": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "engine": {
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "initial_state_artifact": {
+              "$ref": "#/$defs/artifact"
+            },
+            "asset_manifest_artifact": {
+              "$ref": "#/$defs/artifact"
+            },
+            "restore_mode": {
+              "const": "initial_state_only"
+            }
+          },
+          "required": [
+            "engine",
+            "version",
+            "initial_state_artifact",
+            "asset_manifest_artifact",
+            "restore_mode"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "statuses": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "generated",
+              "replay_checked",
+              "physically_evaluated"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "enum": [
+                  "generation",
+                  "physics_replay",
+                  "physical_assessment"
+                ]
+              },
+              "assessed_episode_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "artifact": {
+                "$ref": "#/$defs/artifact"
+              }
+            },
+            "required": [
+              "kind",
+              "assessed_episode_id",
+              "artifact"
+            ]
+          },
+          "minItems": 0
+        }
+      },
+      "required": [
+        "statuses",
+        "evidence"
+      ]
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "protocol_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rubric_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "assessment_method": {
+          "enum": [
+            "independent_sim_state",
+            "physical_sensor_and_review",
+            "blinded_review",
+            "unknown"
+          ]
+        },
+        "success": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "terminated": {
+          "type": "boolean"
+        },
+        "truncated": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "final_assessment_artifact": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/artifact"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "training_reward_artifact": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/artifact"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "paired_trial_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reviewer_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        }
+      },
+      "required": [
+        "protocol_version",
+        "rubric_version",
+        "assessment_method",
+        "success",
+        "terminated",
+        "truncated",
+        "reason",
+        "final_assessment_artifact",
+        "training_reward_artifact",
+        "paired_trial_id",
+        "reviewer_ids"
+      ]
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "const": "jsonl"
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "transitions_artifact": {
+          "$ref": "#/$defs/artifact"
+        }
+      },
+      "required": [
+        "format",
+        "record_count",
+        "transitions_artifact"
+      ]
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "schema_version",
+    "episode_id",
+    "producer",
+    "created_at",
+    "environment_kind",
+    "purpose",
+    "task",
+    "configuration",
+    "policy",
+    "provenance",
+    "split",
+    "timebase",
+    "frames",
+    "streams",
+    "action_spec",
+    "simulator",
+    "validation",
+    "outcome",
+    "data",
+    "notes"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:omni-world:trajectory:episode:1.0.0",
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ]
+    }
+  }
+}

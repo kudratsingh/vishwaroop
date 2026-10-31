@@ -1,0 +1,72 @@
+# Status board — world-model
+
+_Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `tools/status_board.py`. Do not edit by hand._
+
+Generated: 2026-10-31 07:51 UTC · ledger records: 6
+
+## Phases
+
+| Phase | Name | State | Exit tests (passed / frozen / total) | Prerequisites | Work orders |
+|---|---|---|---|---|---|
+| M0 | Grounded development environment | **not_started** | 0 / 0 / 6 | — | WO-001, WO-002, WO-003 |
+| M1 | Compact predictor, latent planner, action-chunk scorer | **not_started** | 0 / 0 / 5 | M0 | WO-004, WO-005, WO-006 |
+| M2a | Closed-loop policy evaluator (simulation) | **not_started** | 0 / 0 / 5 | M1 | — |
+| M2b | Real-arm evaluator validation | **not_started** | 0 / 0 / 4 | M2a | — |
+| M3 | Synthetic-data engine (SFT route) | **not_started** | 0 / 0 / 5 | M0 | — |
+| M4 | Drone dynamics adaptation (offline and shadow only) | **not_started** | 0 / 0 / 4 | M1 | — |
+| M5 | Future: verifier at test time (best-of-N action chunks) | **not_started** | 0 / 0 / 2 | M2b | — |
+| M6 | Future: verifier as reward for real-robot RL | **not_started** | 0 / 0 / 2 | M5 | — |
+| M7 | Future: data curation loop | **not_started** | 0 / 0 / 1 | M3, M5 | — |
+| M8 | Future: new embodiment (LEAP hand on a stand) | **not_started** | 0 / 0 / 1 | M2b | — |
+
+## Exit tests
+
+| Exit test | Phase | Statement | Threshold | State | Report |
+|---|---|---|---|---|---|
+| ET-M0-1 | M0 | CPU-tier checks (contract tests, unit tests, lint, types, hash locks) pass before and after adapter work. | 100% of CPU-tier checks green | not_run | — |
+| ET-M0-2 | M0 | One real simulator episode is exported through contracts/v1/writer.py and validates, including every referenced artifact hash, with a fully resolved stack lock. | validate.py returns contract_valid; zero null pins in the simulator section | not_run | — |
+| ET-M0-3 | M0 | Replay from the saved INITIAL state only, executing recorded actions through physics, reproduces the episode on the pinned stack across repeats. | proposed default: max per-step state deviation <= 1e-3 (normalized joint units; object position in m) on all 3 repeats, identical outcome label; freeze the exact number in evals/M0-exit-tests.json before running | not_run | — |
+| ET-M0-4 | M0 | The task outcome is computed independently from simulator state by code that shares nothing with the policy or any reward model, agrees with inspection on one success and one failure episode, and every negative test is rejected. | 5/5 negative tests fail validation or invalidate the replay claim; 2/2 inspected outcomes agree | not_run | — |
+| ET-M0-5 | M0 | The evaluation specification is frozen and hashed before any neural training: task rubric, split specification, group ids, policy-holdout plan (by training run/family), sealed opening budget, baselines. | all listed files present and hashed; policy-holdout plan names run/family grouping | not_run | — |
+| ET-M0-6 | M0 | A dataset of scripted and perturbed-policy episodes containing both successes and failures is collected, validated, and split-audited. | proposed default: >= 200 episodes, >= 30% failures across >= 3 distinct failure modes, audit passes; freeze before collection | not_run | — |
+| ET-M1-1 | M1 | Multi-step prediction error versus horizon is reported for the learned predictors against constant/linear and nominal baselines on held-out dev episodes. | proposed default: learned predictor RMSE at least 20% below the best baseline at every horizon 1..10 steps; freeze H and margin before training | not_run | — |
+| ET-M1-2 | M1 | Action sensitivity is validated against physics: from each restored initial state at least two alternative action chunks are executed in the simulator and the predictor's ranking of their outcomes agrees with the simulator's. | proposed default: >= 50 initial states; pairwise ordering accuracy >= 80% | not_run | — |
+| ET-M1-3 | M1 | Predictive uncertainty is calibrated against actual error on held-out data. | proposed default: Spearman(predicted std, |error|) >= 0.5 and 90% interval coverage within +/- 10 points | not_run | — |
+| ET-M1-4 | M1 | Learned-model MPC is compared with nominal-model MPC and the scripted baseline on the frozen task suite with matched interaction budgets, reporting success with Wilson intervals, compute and latency. | pre-declared; proposed default: learned-model MPC success non-inferior to nominal within 5 points, or a reported negative result | not_run | — |
+| ET-M1-5 | M1 | The action-chunk scorer scores progress, clearance, constraint violations and uncertainty for logged prefixes plus candidate chunks, abstains when uncertain, and is validated against executed simulator branches. It makes no full-episode success claim. | proposed default: AUROC >= 0.75 for predicting a constraint violation; abstention rate and coverage reported | not_run | — |
+| ET-M2a-1 | M2a | Policy-compatibility suite: the evaluator supplies images (resolution, history), proprioception, instruction and timing exactly as the checkpoint expects. | 100% of compatibility tests pass for each supported checkpoint family | not_run | — |
+| ET-M2a-2 | M2a | Branch consistency: evaluator rollouts of a checkpoint from restored initial states agree with simulator rollouts in outcome. | proposed default: outcome agreement >= 85% on dev initial states | not_run | — |
+| ET-M2a-3 | M2a | Ranking reliability on held-out policy runs (holdout by training run/family, never adjacent checkpoints). | proposed default: Spearman >= 0.7; top-1 correct on >= 80% of pairs with a pre-declared visible gap | not_run | — |
+| ET-M2a-4 | M2a | False optimism is measured at the chosen decision threshold and the evaluator abstains with 'insufficient evidence' outside its validated range. | proposed default: false optimism <= 10%; abstention behaviour demonstrated on out-of-range inputs | not_run | — |
+| ET-M2a-5 | M2a | The success judge used for evaluation is independent of any training reward model, and reward-vs-judge disagreement tracking is in place. | no shared weights or labels between training reward and final judge; disagreement report produced | not_run | — |
+| ET-M2b-1 | M2b | The physical protocol is frozen (objects, placement template, camera mounts and calibration ids, reset procedure, timeout, rubric, sensors, blinding) and the rubric is double-labelled on about 20 mixed episodes. | proposed default: reviewer agreement >= 90% with adjudication rules recorded | not_run | — |
+| ET-M2b-2 | M2b | Ranking on held-out real checkpoint pairs using matched placements with randomized within-pair order and paired analysis. | proposed default: selection regret <= 5 points; false optimism <= 10%; sample size frozen from a precision plan | not_run | — |
+| ET-M2b-3 | M2b | Physical episodes saved at the validated selection error and cost per evaluated checkpoint are reported. | reported with denominators; no threshold on the value itself | not_run | — |
+| ET-M2b-4 | M2b | One sealed confirmation suite is opened once under logged owner authorization and the result is reported regardless of outcome. | exactly one opening; frozen candidate hashes recorded before access | not_run | — |
+| ET-M3-1 | M3 | Generation starts from initial frames rendered from known simulator scenes whose initial state and asset hashes were saved first; scene-consistency checks reject injected mismatches. | 100% of injected mismatches rejected | not_run | — |
+| ET-M3-2 | M3 | Inverse-dynamics actions are replayed from the initial state only and judged on task predicates; executability and false accept/reject rates are measured on an audited sample. | proposed default: false acceptance <= 10% on >= 100 audited trajectories | not_run | — |
+| ET-M3-3 | M3 | Matched-budget downstream ablation on the SFT route: real-only, real plus ordinary augmentation, real plus generated, with multiple seeds and held-out success with intervals. | proposed default: >= 3 seeds per arm; a benefit is claimed only if real+generated beats real+augmentation by a frozen margin; a negative result is a valid delivery | not_run | — |
+| ET-M3-4 | M3 | Total generation, filtering and training cost per accepted trajectory is reported including rejected generations. | reported; no threshold on the value | not_run | — |
+| ET-M3-5 | M3 | Generated demonstrations feed only the SFT route; GRPO uses on-policy samples only. | no code path routes IDM-labelled data into the GRPO objective | not_run | — |
+| ET-M4-1 | M4 | Drone episodes are imported read-only through the contract and validate. | 100% of imported episodes contract_valid | not_run | — |
+| ET-M4-2 | M4 | The residual model improves multi-step motion prediction over the nominal model on held-out flights, with per-condition breakdown. | proposed default: >= 15% lower RMSE than nominal at the frozen horizon on held-out flights | not_run | — |
+| ET-M4-3 | M4 | Uncertainty is calibrated and a gating rule (trust the learned model only when calibrated uncertainty is below a bound) is proposed and evaluated offline; shadow predictions are logged only. | no code path can emit a setpoint; gating rule documented with offline evidence | not_run | — |
+| ET-M4-4 | M4 | An exported model manifest (contracts/v1/model-manifest.template.json) records inputs, normalization, timestep, horizon, uncertainty outputs and validity limits; command_authority is false. | manifest complete; command_authority == false | not_run | — |
+| ET-M5-1 | M5 | Real-arm success versus N is measured with paired trials against N=1 and the GRPO-tuned policy. | to be frozen when the phase becomes next | not_run | — |
+| ET-M5-2 | M5 | Compute per episode and the N at which gains stop are reported. | reported | not_run | — |
+| ET-M6-1 | M6 | Human labels saved at matched success are measured; reward-vs-independent-assessment disagreement is tracked throughout. | to be frozen when the phase becomes next | not_run | — |
+| ET-M6-2 | M6 | Failure modes (reward hacking, false optimism) are documented with examples. | reported | not_run | — |
+| ET-M7-1 | M7 | Scaling curves of held-out real success versus data volume and curation strategy with intervals. | to be frozen when the phase becomes next | not_run | — |
+| ET-M8-1 | M8 | Selection regret versus real on held-out hand policies, with and without cheap tactile input. | to be frozen when the phase becomes next | not_run | — |
+
+## Work orders
+
+| WO | Title | Phase | State | Last event (UTC) | Report |
+|---|---|---|---|---|---|
+| WO-001 | M0 grounded environment: one reproducible simulator episode and its evidence chain | M0 | **created** | 2026-10-31T07:51:47.865888Z | — |
+| WO-002 | M0 dataset: scripted and perturbed episodes with successes and failures | M0 | **created** | 2026-10-31T07:51:47.916399Z | — |
+| WO-003 | Supervised resource and spend enforcement (local, no paid execution) | M0 | **created** | 2026-10-31T07:51:47.961798Z | — |
+| WO-004 | M1 predictors: nominal + residual ensemble, compact latent model, calibration | M1 | **created** | 2026-10-31T07:51:47.999197Z | — |
+| WO-005 | M1 planner (CEM MPC) and action-chunk scorer with simulator-branch validation | M1 | **created** | 2026-10-31T07:51:48.038418Z | — |
+| WO-006 | Read-only arm snapshot import and policy-holdout registry | M1 | **created** | 2026-10-31T07:51:48.074460Z | — |
+

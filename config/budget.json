@@ -1,0 +1,13 @@
+{
+  "version": "1.0.0",
+  "currency": "USD",
+  "paid_execution_enabled": false,
+  "approved_run_cap_usd": 0,
+  "approved_project_cap_usd": 0,
+  "owner_approval_artifact": null,
+  "provider_shutdown_verified": false,
+  "max_wall_seconds": 60,
+  "max_steps": 100,
+  "max_parallel_jobs": 1,
+  "notes": "No spending authorized for this repository. Caps change only by a dated owner approval recorded in ledgers/approvals.jsonl; an agent may not edit the caps. Local limits cover future supervised execution; provider teardown is separately required (docs/BUDGET_AND_LAUNCHER.md)."
+}

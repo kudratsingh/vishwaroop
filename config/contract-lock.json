@@ -1,0 +1,7 @@
+{
+  "schema_version": "1.0.0",
+  "release": "1.0.0+kit.2026-10-31",
+  "manifest_sha256": "28a2bab148bd83a32bab547ddcc1318d081e2401ce0a8c627138de64a7ec116c",
+  "path": "contracts/v1",
+  "note": "One immutable contract release, byte-identical in both repositories; verified by tools/check_hashes.py on every CI run. Not a third project or runtime service."
+}

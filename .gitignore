@@ -1,0 +1,57 @@
+# environments and caches
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.pyc
+*.egg-info/
+build/
+dist/
+
+# secrets — never tracked
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*_token*
+*secret*
+
+# large / append-only operational data (manifests are tracked, bytes are not)
+data/raw/
+data/derived/
+data/imports/
+runs/*/
+artifacts/sha256/
+checkpoints/
+raw_logs/
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.bag
+*.mcap
+*.ulg
+*.mp4
+*.mkv
+*.avi
+*.h5
+*.hdf5
+*.parquet
+*.npz
+
+# keep directory markers and manifests
+!data/README.md
+!runs/README.md
+!artifacts/README.md
+!artifacts/manifests/
+!**/.gitkeep
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

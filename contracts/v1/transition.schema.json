@@ -1,0 +1,296 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "episode_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "step": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "t_ns": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "dt_ns": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "stream": {
+            "type": "string",
+            "minLength": 1
+          },
+          "capture_t_ns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "received_t_ns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "artifact": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/artifact"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "stream",
+          "capture_t_ns",
+          "received_t_ns",
+          "valid",
+          "value",
+          "artifact"
+        ]
+      },
+      "minItems": 1
+    },
+    "next_observations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "stream": {
+            "type": "string",
+            "minLength": 1
+          },
+          "capture_t_ns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "received_t_ns": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "valid": {
+            "type": "boolean"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "artifact": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/artifact"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "stream",
+          "capture_t_ns",
+          "received_t_ns",
+          "valid",
+          "value",
+          "artifact"
+        ]
+      },
+      "minItems": 1
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requested": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 1
+        },
+        "filtered": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "transmitted": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "applied": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "decision_t_ns": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sent_t_ns": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "applied_t_ns": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "valid_until_t_ns": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "requested",
+        "filtered",
+        "transmitted",
+        "applied",
+        "decision_t_ns",
+        "sent_t_ns",
+        "applied_t_ns",
+        "valid_until_t_ns"
+      ]
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "estimator_valid": {
+          "type": "boolean"
+        },
+        "intervention": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "mode",
+        "estimator_valid",
+        "intervention"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "episode_id",
+    "step",
+    "t_ns",
+    "dt_ns",
+    "observations",
+    "next_observations",
+    "action",
+    "context"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:omni-world:trajectory:transition:1.0.0",
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ]
+    }
+  }
+}

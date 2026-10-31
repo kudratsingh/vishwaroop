@@ -1,0 +1,15 @@
+{
+  "run_id": "preflight-fixture-not-an-executed-run",
+  "billing_mode": "local_unmetered",
+  "gpu_count": 0,
+  "gpu_hourly_usd": 0,
+  "planned_steps": 3,
+  "measured_seconds_per_step": 0.01,
+  "setup_seconds": 0.01,
+  "evaluation_seconds": 0.01,
+  "transfer_shutdown_seconds": 0,
+  "hard_wall_seconds": 10,
+  "storage_egress_tax_usd": 0,
+  "cost_margin_fraction": 0.2,
+  "timing_note": "Fabricated arithmetic fixture, not measured training throughput."
+}

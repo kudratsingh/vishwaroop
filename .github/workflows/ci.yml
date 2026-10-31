@@ -1,0 +1,66 @@
+name: ci
+
+on:
+  push:
+    branches: ["main", "wo/**"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: "cpu | sim (sim requires a self-hosted runner with the pinned stack; otherwise reports not-run)"
+        default: "cpu"
+
+# Least privilege: the CPU tier only reads the repository. Nothing here has secrets.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  cpu-tier:
+    name: cpu-tier
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history so the append-only check can diff against the PR base
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install CPU-tier tooling
+        run: python -m pip install --upgrade pip && python -m pip install -r requirements-dev.txt
+      - name: Lint and format
+        run: make lint
+      - name: Types
+        run: make type
+      - name: Tests (CPU tier)
+        run: make test
+      - name: Contract and program hash locks
+        run: make hashes
+      - name: Secrets and absolute-path scan
+        run: make secrets
+      - name: Markdown links
+        run: make links
+      - name: Append-only check (pull requests only)
+        if: github.event_name == 'pull_request'
+        run: python tools/check_immutable.py --base "origin/${{ github.base_ref }}"
+
+  sim-tier:
+    # Placeholder gate. This job does NOT run a simulator on GitHub-hosted runners; it records "not run"
+    # unless a self-hosted runner labelled `sim` with the pinned stack is attached by the owner (AGENTS.md section 4.4).
+    name: sim-tier (manual)
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.tier == 'sim'
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          echo "Simulator tier requested, but no self-hosted runner with the pinned stack is configured."
+          echo "Status: not run. Run locally per docs/WORKFLOW.md section 6 and attach the report to the PR."
+          exit 0
