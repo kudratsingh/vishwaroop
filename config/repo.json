@@ -1,9 +1,9 @@
 {
-  "designated": false,
-  "owner_account": null,
-  "remote": null,
+  "designated": true,
+  "owner_account": "kudratsingh",
+  "remote": "https://github.com/kudratsingh/vishwaroop.git",
   "visibility": "private",
   "default_branch": "main",
   "required_checks": ["cpu-tier"],
-  "notes": "Until designated=true is set by the owner, all git work is local (AGENTS.md section 2.2). Agents never create a remote, never guess an account, never make the repository public."
+  "notes": "Designated on the owner's request of 2026-10-31 (ADR-0005, ledgers/approvals.jsonl). Agents never create another remote, never guess an account, never make the repository public (AGENTS.md section 2.2)."
 }
