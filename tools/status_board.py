@@ -123,6 +123,8 @@ def validate_append(
     wos, phases, _ets = current_states(records)
     phase_ids = {p["id"] for p in phases_cfg["phases"]}
     et_ids = {et["id"] for p in phases_cfg["phases"] for et in p["exit_tests"]}
+    if sum(1 for key in ("wo", "phase", "et") if record.get(key)) > 1:
+        raise StatusError("record must name exactly one of --wo, --phase, or --et")
     if "wo" in record:
         if record["wo"] not in wo_files(root):
             raise StatusError(

@@ -121,6 +121,21 @@ def test_cli_still_refuses_invalid_phase_and_exit_test_events(
     assert not ledger.exists() or ledger.read_text() == ""
 
 
+def test_cli_refuses_records_naming_more_than_one_id(
+    tmp_path: Path, root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ledger = _cli_append(tmp_path, root, monkeypatch)
+    phases = json.loads((root / "config" / "phases.json").read_text())["phases"]
+    phase, et = phases[0]["id"], phases[0]["exit_tests"][0]["id"]
+    assert status_board.main(["--append", "--phase", phase, "--event", "ready"]) == 0
+    assert status_board.main(["--append", "--phase", phase, "--event", "in_progress"]) == 0
+    before = ledger.read_text()
+    combined = ["--append", "--phase", phase, "--et", et, "--event", "passed", "--report", "r.md"]
+    assert status_board.main(combined) == 2
+    assert status_board.main(["--append", "--wo", "WO-001", "--et", et, "--event", "frozen"]) == 2
+    assert ledger.read_text() == before
+
+
 def test_current_states_ignores_null_keys_in_older_records() -> None:
     wos, phases, ets = status_board.current_states(
         [
