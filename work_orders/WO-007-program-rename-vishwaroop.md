@@ -12,11 +12,9 @@ Serves `PROGRAM §5.2, §11, §14`.
 Apply the owner's name decision in this repository under ADR-0003, copying unchanged the shared files the `banshee` repository authored.
 
 ## Source of the copied files
-`banshee` commit `da128e31307fd71351e787ac99c971d13d508fe9`, on its branch `wo/WO-006-program-rename`. The owner's instruction left the hash as a placeholder, `<FINAL HASH>`, and the agent had to resolve it while that branch was still moving:
+`banshee` commit `da128e31307fd71351e787ac99c971d13d508fe9`, on its branch `wo/WO-006-program-rename`, which the owner named as the final source commit on 2026-10-31. All five hashes computed from the commit object match its ADR-0003 table. Earlier instructions left the hash as a placeholder while that branch was still moving, so the copies came in stages:
 - **Shared files:** copied from `95f7a343fed5ab7726bad9178f6778c530136675` in commit `a8a58b1`. They are byte-identical at `da128e3`.
-- **Tooling fixes:** first copied from `95f7a34` in commit `b42d391`, when it was the branch head and the only commit carrying WO-008. `banshee` follow-up `e412aea` then closed a regression in that fix, so `.gitignore`, `tools/status_board.py` and `tests/test_tools.py` were re-copied from `da128e3`.
-
-At 09:47 UTC `da128e3` was the head of that branch with a clean working tree, unchanged for 19 minutes, and all five hashes computed from the commit object matched its ADR-0003 table. If the owner meant another commit, the copy is mechanical to repeat.
+- **Tooling fixes:** first copied from `95f7a34` in commit `b42d391`. `banshee` follow-up `e412aea` then closed a regression in that fix, so `.gitignore`, `tools/status_board.py` and `tests/test_tools.py` were re-copied from `da128e3` in commit `d6e1460`. This repository tracks these fixes as its own WO-008.
 
 ## First copy superseded
 The first copy of the shared files was written at 09:03:41 UTC from `banshee`'s uncommitted working tree, and its bytes match `banshee` commit `e39c4c7`. The owner's message dates it 09:11 UTC, the time `banshee` recorded reading this working tree; there was only one copy. It was never committed here.
@@ -31,7 +29,7 @@ The owner held and replaced it because it was an earlier draft. Compared with th
 - Copy these byte for byte from the source commit, without editing them: `PROGRAM.md`, `contracts/v1/` (whole tree), `config/contract-lock.json`, `config/program-lock.json`, `docs/adr/ADR-0003-PROGRAM-project-names.md`, and the `AGENTS.md` bytes before `## 13.`.
 - Splice `AGENTS.md`: the `banshee` core plus this repository's own section 13, updated for the new package name.
 - Make WO-001 wait on WO-007, in WO-001's prerequisites, `START_HERE.md` and `prompts/FIRST_SESSION.md`, because the owner made the rename the first work item.
-- In separate commits, copy the three WO-008 tooling fixes from the source commit: `.gitignore`, `tools/status_board.py`, and the test files WO-008 lists, `tests/test_tools.py` and `tests/test_project_consistency.py`.
+- In separate commits, copy the three tooling fixes from the source commit: `.gitignore`, `tools/status_board.py`, and the test files `tests/test_tools.py` and `tests/test_project_consistency.py`. This repository tracks them as its own WO-008.
 - Move the planned M0 task-choice ADR from ADR-0003 to ADR-0004.
 - Regenerate the repository manifest. The manifest check would otherwise fail because files moved.
 
@@ -50,7 +48,7 @@ The renamed package; the copied shared files; the copied tooling fixes; a regene
 3. Copy the shared files from the source commit, then confirm the five hashes against its ADR-0003 table.
 4. Regenerate the repository manifest last, then run the verification below.
 5. Copy the tooling fixes in a separate commit, regenerate the manifest again, and repeat the verification.
-6. Report the hash confirmation to the owner. Merge once the owner has it.
+6. Report the hash confirmation and head commit to the owner. Merge when the owner says to.
 7. Owner action: replace the Claude Project copy of `PROGRAM.md` with version 1.1. Agents cannot do this from the repository.
 8. At acceptance, write the report below, then regenerate the repository manifest, because a new file invalidates it.
 

@@ -7,3 +7,6 @@
 {"actor":"claude-code-vishwaroop","event":"created","note":"owner name decision 2026-10-31; ADR-0003","record_id":"status-20261031T090329398578Z-53522e","ts":"2026-10-31T09:03:29.398578Z","wo":"WO-007"}
 {"actor":"claude-code-vishwaroop","event":"ready","note":"approval recorded in ledgers/approvals.jsonl","record_id":"status-20261031T090329431265Z-5858d6","ts":"2026-10-31T09:03:29.431265Z","wo":"WO-007"}
 {"actor":"claude-code-vishwaroop","event":"in_progress","note":"branch wo/WO-007-program-rename","record_id":"status-20261031T090329463365Z-cc5b51","ts":"2026-10-31T09:03:29.463365Z","wo":"WO-007"}
+{"actor":"claude-code-vishwaroop","event":"created","note":"owner instruction 2026-10-31; tooling fixes copied from banshee da128e3","record_id":"status-20261031T100758623762Z-3329bf","ts":"2026-10-31T10:07:58.623762Z","wo":"WO-008"}
+{"actor":"claude-code-vishwaroop","event":"ready","note":"approval recorded in ledgers/approvals.jsonl","record_id":"status-20261031T100758667441Z-9ae454","ts":"2026-10-31T10:07:58.667441Z","wo":"WO-008"}
+{"actor":"claude-code-vishwaroop","event":"in_progress","note":"on branch wo/WO-007-program-rename, commits b42d391 and d6e1460","record_id":"status-20261031T100758710684Z-988463","ts":"2026-10-31T10:07:58.710684Z","wo":"WO-008"}

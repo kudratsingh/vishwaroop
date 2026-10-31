@@ -14,7 +14,7 @@ Status words: **confirmed** (owner decision), **proposed default** (suggested, n
 | 8 | Fundamental ML/software rules for agents | `AGENTS.md §8, §10` | confirmed |
 | 9 | Autonomous iterative development; branches/PRs/merges in designated repos; no approval request per ordinary PR | `AGENTS.md §2.1, §4.6`, ADR-0002, `prompts/FIRST_SESSION.md` | confirmed |
 | 10 | Separate approval for spending, hardware motion, paid compute outside envelope, deployment, destructive ops, access, publication, existing-project changes, scope/safety changes, sealed access | `AGENTS.md §2.3`, `ledgers/approvals.jsonl` | confirmed |
-| 11 | Remote operations only for an explicitly designated repository; never invent a remote or make public | `config/repo.json`, `AGENTS.md §2.2`, `docs/WORKFLOW.md §8` | confirmed (remote: unknown) |
+| 11 | Remote operations only for an explicitly designated repository; never invent a remote or make public | `config/repo.json`, `AGENTS.md §2.2`, `docs/WORKFLOW.md §8` | confirmed (remote: none designated for this repository) |
 | 12 | Git/subagent/CI workflow: worktrees, ownership, integrating agent, merge rule, tiers, rollback, least privilege | `AGENTS.md §4`, `docs/WORKFLOW.md`, `.github/workflows/ci.yml` | confirmed |
 | 13 | One shared versioned contract, identical in both kits, with conformance tests and labelled fixtures | `contracts/v1/`, `config/contract-lock.json`, `tools/check_hashes.py` | confirmed |
 | 14 | Contract steward, release and compatibility rules, migration requirement; model manifests in the same boundary | `contracts/v1/RELEASE.json`, `contracts/v1/README.md`, `AGENTS.md §11` | confirmed |

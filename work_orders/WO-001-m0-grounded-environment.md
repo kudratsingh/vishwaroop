@@ -2,7 +2,7 @@
 **Phase:** M0
 **Exit tests advanced:** ET-M0-1, ET-M0-2, ET-M0-3, ET-M0-4, ET-M0-5
 **Size:** L (split into PRs: stack lock → adapter + export → replay + negatives → frozen spec)
-**Prerequisites:** WO-007 `accepted` (status ledger). Otherwise none beyond a Linux + NVIDIA machine for the simulator (rented is fine; $0 spend unless the owner approves a rental line in `ledgers/approvals.jsonl`). CPU-tier work (`make check`, scaffolding, specification) proceeds on any machine.
+**Prerequisites:** WO-007 and WO-008 `accepted` (status ledger). Otherwise none beyond a Linux + NVIDIA machine for the simulator (rented is fine; $0 spend unless the owner approves a rental line in `ledgers/approvals.jsonl`). CPU-tier work (`make check`, scaffolding, specification) proceeds on any machine.
 **Authorization:** AGENTS §2.1 only, except: any paid rental needs a §2.3 approval recorded first.
 **Files:** `src/vishwaroop/sim/`, `src/vishwaroop/outcome/`, `tests/`, `config/stack-lock.resolved.json`, `evals/M0-*`, `evals/M1-*`, `reports/WO-001-m0-grounded-environment.md`, `docs/adr/`, ignored `data/`, `runs/`.
 

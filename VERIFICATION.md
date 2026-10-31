@@ -7,7 +7,7 @@
 Environment: Python 3.13.7 on macOS 26.5.2 (Darwin 25.5.0, arm64), with the pins in `requirements-dev.txt`. The baseline `make check` on the unmodified import, also measured here, passed before any edit (82 tests).
 
 ### Identity
-Copied byte for byte from `banshee`, and byte-identical at its commit `da128e31307fd71351e787ac99c971d13d508fe9`. Each value below was computed from the files in this repository and matches the hash table in ADR-0003.
+Copied byte for byte from `banshee`, and byte-identical at its commit `da128e31307fd71351e787ac99c971d13d508fe9`, the final source the owner named. Each value below was computed from the files in this repository and matches the hash table in ADR-0003.
 
 | Item | sha256 |
 |---|---|
@@ -39,7 +39,7 @@ Run in a throwaway clone, on a scratch commit of this tree.
 | Fresh `git init && git add -A` on this tree | tracks every file in `SHA256SUMS.json` |
 
 ### Cross-repository check: against `banshee` commit `da128e3`
-This repository applied the change second, so it copied the shared files and authored none of them. It then compared the `banshee` commit object with this tree: `contracts/v1/` as a whole tree, `PROGRAM.md`, both lock files, ADR-0003 and the `AGENTS.md` core. All were byte-identical at 09:49 UTC, as were the WO-008 files `.gitignore`, `tools/status_board.py`, `tests/test_tools.py` and `tests/test_project_consistency.py`. That commit is on the `banshee` branch `wo/WO-006-program-rename`, not on its `main`, so this confirms the shared files on the two rename branches. Neither repository has merged this change.
+This repository applied the change second, so it copied the shared files and authored none of them. It then compared the `banshee` commit object with this tree: `contracts/v1/` as a whole tree, `PROGRAM.md`, both lock files, ADR-0003 and the `AGENTS.md` core. All were byte-identical at 10:07 UTC, as were the WO-008 files `.gitignore`, `tools/status_board.py`, `tests/test_tools.py` and `tests/test_project_consistency.py`. That commit is on the `banshee` branch `wo/WO-006-program-rename`, not on its `main`, so this confirms the shared files on the two rename branches. Neither repository has merged this change.
 
 ### First copy superseded
 The first copy was an earlier draft and was replaced on the owner's instruction. `work_orders/WO-007-program-rename-vishwaroop.md` records what changed and why.
@@ -50,8 +50,8 @@ The first copy was an earlier draft and was replaced on the owner's instruction.
 - `omni-world` in `contracts/v1/RELEASE.json` and the schema `$id` URNs, the contract's own name, and in ADR-0003 and WO-007, which say it stays.
 - "Omni Drone", "World Model & Planner", "world model" and "world-model" as descriptive prose, which the owner's decision keeps valid.
 
-### Starter-kit defects, fixed by copying `banshee` WO-008
-These came with the kit. The fixes were copied byte for byte from the source commit, in their own commits. "Before" was measured at `a8a58b1`, the rename commit, and "After" on this tree:
+### Starter-kit defects, fixed under WO-008
+These came with the kit, and this repository tracks them as its WO-008. The fixes were copied byte for byte from the source commit, in their own commits. "Before" was measured at `a8a58b1`, the rename commit, and "After" on this tree:
 
 | Defect | Before | After |
 |---|---|---|
@@ -74,7 +74,7 @@ These predate the rename and are outside it.
 Copying from a moving working tree produced a draft that had to be replaced. Next time, copy shared files only from a commit object and check them against that commit's own hash table. Run the owner's exact check with the system binary in the real checkout: a session-level `grep` wrapper and a clean clone each hid stale binary caches here. The two repositories also depend on each other here: `banshee` waits on this confirmation, and this repository needs its final commit, so whoever holds the final hash should state it.
 
 ### Next work order
-WO-001, once WO-007 is `accepted`.
+WO-001, once WO-007 and WO-008 are `accepted`.
 
 ### Not run
 No GitHub CI (no remote is designated here), so the Python 3.12 leg of the CI matrix has not run. No simulator, no hardware. The owner's Claude Project copy of `PROGRAM.md` has not been updated to version 1.1; only the owner can do that.
