@@ -4,7 +4,7 @@
 **Size:** L (split into PRs: stack lock → adapter + export → replay + negatives → frozen spec)
 **Prerequisites:** WO-007, WO-008 and WO-010 `accepted` (status ledger). Otherwise none beyond a Linux + NVIDIA machine for the simulator (rented is fine; $0 spend unless the owner approves a rental line in `ledgers/approvals.jsonl`). CPU-tier work (`make check`, scaffolding, specification) proceeds on any machine.
 **Authorization:** AGENTS §2.1 only, except: any paid rental needs a §2.3 approval recorded first.
-**Files:** `src/vishwaroop/sim/`, `src/vishwaroop/outcome/`, `tests/`, `config/stack-lock.resolved.json`, `evals/M0-*`, `evals/M1-*`, `reports/WO-001-m0-grounded-environment.md`, `docs/adr/`, ignored `data/`, `runs/`.
+**Files:** `src/vishwaroop/sim/`, `src/vishwaroop/outcome/`, `tests/`, `pyproject.toml`, `config/stack-lock.resolved.json`, `evals/M0-*`, `evals/M1-*`, `reports/WO-001-m0-grounded-environment.md`, `reports/BLOCKER-*`, `docs/adr/`, `docs/ARCHITECTURE.md`, `docs/ENVIRONMENT.md`, `docs/PHASES.md`, `docs/STATUS_BOARD.md`, `config/phases.json`, `README.md`, `START_HERE.md`, `AGENTS.md` section 13, `CHANGES.md`, `VERIFICATION.md`, `prompts/`, `ledgers/approvals.jsonl`, this work order, `work_orders/WO-002-*` (sealed partition wording only), `work_orders/STATUS.jsonl`, `SHA256SUMS.json`, ignored `data/`, `runs/`.
 
 ## Objective
 Produce one genuinely reproducible ManiSkill3 episode with its full evidence chain, so that everything the project later claims rests on a simulator that is pinned, exportable through the contract, replayable from its initial state only, and judged by code that shares nothing with any policy or reward. Then freeze the evaluation specification that M1 will be measured against.

@@ -55,3 +55,15 @@ Copied byte for byte from `banshee` commit `3a66e3c6a93436f3bd6673708715264d1e47
 
 ## After import: rename merged and accepted (2026-10-31)
 Pull request 1 merged as `85027d4` on the owner's approval, after the owner's check across the two repositories passed at `banshee` `3a66e3c`. WO-007, WO-008 and WO-010 are accepted, with reports under `reports/`.
+
+## After import: M0 and M1 specification frozen (2026-10-31, WO-001)
+Before any simulator run or training: `evals/M0-exit-tests.json`, `evals/M0-protocol.md`, `evals/M1-exit-tests.json` and ADR-0004. Replay deviation is measured in rad and m, not the "normalized joint units" `config/phases.json` proposed, which nothing defined. M1 thresholds are the proposed defaults, unchanged. `config/phases.json` and `docs/PHASES.md` now state the frozen values. `START_HERE.md` and the first-session prompt no longer mark M0 `ready` before its exit tests are frozen, which fixes a defect `VERIFICATION.md` had listed. WO-001's Files line grew to cover these documents, and WO-002 no longer creates a sealed partition, matching the frozen protocol.
+
+**Program decision:** shared files become a pinned dependency, `ironclad`, built by its own agent. No shared file is edited here or copied across, including the tooling lock. This repository migrates in its own work order when v1.0.0 is tagged.
+
+**Merge and review rule (`AGENTS.md §13.8`):** agents merge their own pull requests on green required checks, and owner approval is only for the authorization matrix. A full review comes first only for work orders that close exit tests, touch the contract, or integrate RL or evaluator components.
+
+## After import: WO-001 CPU-tier work (2026-10-31)
+Adds the independent outcome (`src/vishwaroop/outcome/`), contract export, initial-state-only replay and the five negative tests (`src/vishwaroop/sim/`), tested on a fabricated fake environment. The ManiSkill3 adapter is written and has **not run**. WO-001's simulator steps are blocked (`reports/BLOCKER-2026-10-31-m0.md`). Package code reaches the contract through `src/vishwaroop/sim/contract.py`; what else the `ironclad` migration touches is unknown until it exists.
+
+An independent review before the push found that this code failed open in several ways, including NaN read as a perfect replay, zero repeats passing, and a forged recorded outcome going unnoticed. All were fixed with regression tests before anything was pushed, and the protocol became `m0-protocol-2` before any result.

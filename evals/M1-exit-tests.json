@@ -1,0 +1,53 @@
+{
+  "phase": "M1",
+  "protocol_version": "m0-protocol-2",
+  "frozen_on": "2026-10-31",
+  "frozen_before": "any neural training or prediction result exists for this project",
+  "source": "the proposed defaults in config/phases.json, adopted unchanged",
+  "task_suite": {
+    "id": "m1-suite-1",
+    "task": "PickCubeSO100-v1 under evals/M0-protocol.md",
+    "seed_blocks": [
+      8,
+      9
+    ],
+    "episodes_per_planner": 200,
+    "same_seeds_across_planners": true
+  },
+  "exit_tests": [
+    {
+      "id": "ET-M1-1",
+      "horizon_steps": 10,
+      "min_rmse_reduction_vs_best_baseline": 0.2,
+      "threshold": "learned predictor RMSE at least 20% below the best baseline at every horizon 1..10 steps",
+      "min_dev_episodes": 200
+    },
+    {
+      "id": "ET-M1-2",
+      "min_initial_states": 50,
+      "min_alternative_chunks_per_state": 2,
+      "min_pairwise_ordering_accuracy": 0.8,
+      "threshold": ">= 50 initial states; pairwise ordering accuracy >= 80%"
+    },
+    {
+      "id": "ET-M1-3",
+      "min_spearman_std_vs_abs_error": 0.5,
+      "interval_nominal_coverage": 0.9,
+      "coverage_tolerance_points": 10,
+      "threshold": "Spearman(predicted std, |error|) >= 0.5 and 90% interval coverage within +/- 10 points",
+      "min_dev_episodes": 200
+    },
+    {
+      "id": "ET-M1-4",
+      "non_inferiority_margin_points": 5,
+      "threshold": "learned-model MPC success non-inferior to nominal within 5 points, or a reported negative result",
+      "decision_rule": "On m1-suite-1, learned-model success minus nominal-model success is at least -5 points as a point estimate, with its paired interval reported. An undecided episode counts as not successful and is reported."
+    },
+    {
+      "id": "ET-M1-5",
+      "min_auroc_constraint_violation": 0.75,
+      "threshold": "AUROC >= 0.75 for predicting a constraint violation; abstention rate and coverage reported",
+      "evaluated_on": "the ET-M1-2 branch dataset, at least 50 initial states"
+    }
+  ]
+}

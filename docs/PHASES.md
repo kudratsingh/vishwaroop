@@ -30,10 +30,10 @@ Phase states: `not_started → ready → in_progress → (blocked ↔) → passe
 |---|---|---|---|
 | ET-M0-1 | CPU-tier checks pass before and after adapter work | CI run ids | 100% green |
 | ET-M0-2 | One real simulator episode exported through `writer.py` validates with every artifact hash and a fully resolved stack lock | `validate.py` output; `config/stack-lock.resolved.json` | `contract_valid`; zero null simulator pins |
-| ET-M0-3 | Initial-state-only replay reproduces the episode across repeats on the pinned stack | replay report, 3 repeats, outcome labels | *proposed default:* max per-step deviation ≤ 1e-3 (normalized joint units; object position in m), identical outcome; freeze before running |
+| ET-M0-3 | Initial-state-only replay reproduces the episode across repeats on the pinned stack | replay report, 3 repeats, outcome labels | *frozen:* max per-step deviation ≤ 0.001 (joints in rad; object and target positions in m) on all 3 repeats, identical outcome |
 | ET-M0-4 | Outcome computed independently from simulator state; agrees with inspection on one success and one failure; all negative tests rejected | outcome code hash; inspection notes; negative-test log | 5/5 negatives rejected (corrupted action semantics, broken hash, missing asset, wrong timebase, intermediate-state forcing); 2/2 inspections agree |
 | ET-M0-5 | Evaluation specification frozen and hashed before any neural training (rubric, splits, group ids, policy-holdout plan by run/family, sealed opening budget, baselines) | `evals/M0-protocol.md`, `evals/M0-exit-tests.json` hashes; `frozen` events for M1 exit tests | all files present and hashed |
-| ET-M0-6 | Dataset of scripted and perturbed-policy episodes with successes and failures, validated and split-audited | dataset manifest; `audit_splits.py` output; failure breakdown | *proposed default:* ≥ 200 episodes, ≥ 30% failures across ≥ 3 failure modes |
+| ET-M0-6 | Dataset of scripted and perturbed-policy episodes with successes and failures, validated and split-audited | dataset manifest; `audit_splits.py` output; failure breakdown | *frozen:* ≥ 200 episodes, ≥ 30% failures across ≥ 3 failure modes |
 
 **Honesty note.** If a faithful SO-101 simulation adapter is not yet available, use a readily available ManiSkill3 task, label the embodiment honestly, and make no transfer claim. The arm project's task configs and action space are the preferred target once exported (`PROGRAM.md §6`).
 
@@ -45,11 +45,11 @@ Phase states: `not_started → ready → in_progress → (blocked ↔) → passe
 
 | Exit test | Statement | Evidence | Threshold |
 |---|---|---|---|
-| ET-M1-1 | Multi-step error vs horizon for learned predictors vs constant/linear and nominal baselines on held-out dev episodes | tables with CIs | *proposed default:* ≥ 20% lower RMSE than the best baseline at horizons 1–10 |
-| ET-M1-2 | Action sensitivity validated against physics: ≥ 2 alternative chunks executed from each restored initial state; predictor ranking agrees with the simulator | branch dataset; agreement table | *proposed default:* ≥ 50 initial states; pairwise ordering accuracy ≥ 80% |
-| ET-M1-3 | Uncertainty calibrated against actual error | calibration data; coverage | *proposed default:* Spearman(std, \|error\|) ≥ 0.5; 90% interval coverage within ±10 points |
-| ET-M1-4 | Learned-model MPC vs nominal-model MPC vs scripted baseline on the frozen suite, matched budgets, Wilson intervals, compute and latency | comparison table; cost lines | *proposed default:* non-inferior within 5 points, or a reported negative |
-| ET-M1-5 | Action-chunk scorer scores progress, clearance, constraint violations and uncertainty; abstains when uncertain; validated on executed branches | scorer evaluation; abstention coverage | *proposed default:* AUROC ≥ 0.75 for constraint-violation prediction |
+| ET-M1-1 | Multi-step error vs horizon for learned predictors vs constant/linear and nominal baselines on held-out dev episodes | tables with CIs | *frozen:* ≥ 20% lower RMSE than the best baseline at horizons 1–10 |
+| ET-M1-2 | Action sensitivity validated against physics: ≥ 2 alternative chunks executed from each restored initial state; predictor ranking agrees with the simulator | branch dataset; agreement table | *frozen:* ≥ 50 initial states; pairwise ordering accuracy ≥ 80% |
+| ET-M1-3 | Uncertainty calibrated against actual error | calibration data; coverage | *frozen:* Spearman(std, \|error\|) ≥ 0.5; 90% interval coverage within ±10 points |
+| ET-M1-4 | Learned-model MPC vs nominal-model MPC vs scripted baseline on the frozen suite, matched budgets, Wilson intervals, compute and latency | comparison table; cost lines | *frozen:* non-inferior within 5 points on `m1-suite-1`, or a reported negative |
+| ET-M1-5 | Action-chunk scorer scores progress, clearance, constraint violations and uncertainty; abstains when uncertain; validated on executed branches | scorer evaluation; abstention coverage | *frozen:* AUROC ≥ 0.75 for constraint-violation prediction |
 
 **Boundaries.** Real logs validate executed actions only; counterfactual claims need the simulator branch protocol above. The scorer is an action-chunk scorer, not a policy evaluator.
 

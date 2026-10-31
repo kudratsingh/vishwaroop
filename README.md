@@ -25,14 +25,14 @@ These commands do not run ManiSkill, train anything, read the arm repository, or
 ## Current status (2026-10-31)
 | Implemented and tested here | Specified, not implemented |
 |---|---|
-| contract v1 (schemas, validator with append-only ledger merge, split audit, write-once reference writer, fixtures, 41 tests) | ManiSkill3 adapter, export, replay (WO-001) |
+| contract v1 (schemas, validator with append-only ledger merge, split audit, write-once reference writer, fixtures, 41 tests) | first real simulator episode, replay and negative tests (WO-001; export and replay logic exist, the adapter has **not run**) |
 | core record helpers: append-only ledgers, content-addressed artifacts, write-once run dirs, structured logs, strict config | dataset collection and registry (WO-002, WO-006) |
-| read-only export importer with completion-marker and hash verification | predictors, planner, scorer (WO-004, WO-005) |
+| read-only export importer with completion-marker and hash verification; independent pick-and-place outcome; contract export, replay and negative-test logic, tested on a fabricated fake | predictors, planner, scorer (WO-004, WO-005) |
 | typed Protocol interfaces for every planned module | evaluator, synthetic engine, drone adaptation (M2–M4) |
 | tools: status ledger/board, append-only CI check, hash locks, secrets scan, link check, budget preflight | enforcing paid launcher (WO-003), provider adapter |
 | CI workflow (CPU tier), Makefile, pre-commit hooks | sealed-data storage, physical outcome sensing |
 
-All phases are `not_started`; see `docs/STATUS_BOARD.md`. No paid compute or hardware is authorized by these files, and no remote other than the one in `config/repo.json` (`AGENTS.md §2`).
+Phase M0 is `blocked` on the simulator (`reports/BLOCKER-2026-10-31-m0.md`), and every other phase is `not_started`; see `docs/STATUS_BOARD.md`. No paid compute or hardware is authorized by these files, and no remote other than the one in `config/repo.json` (`AGENTS.md §2`).
 
 ## Layout
 ```
@@ -41,7 +41,7 @@ config/      phases.json, budget.json, repo.json, locks, stack-lock.pending.json
 contracts/v1 the one shared boundary (byte-identical in banshee)
 docs/        PHASES, ARCHITECTURE, CONTEXT_AND_DECISIONS, EVALUATION_PROTOCOL, DATA_AND_SNAPSHOTS, SYNTHETIC_DATA_M3,
              ENVIRONMENT, WORKFLOW, DATA_POLICY, BUDGET_AND_LAUNCHER, REPORT_TEMPLATE, ADR_TEMPLATE, SOURCES, STATUS_BOARD, adr/
-src/vishwaroop/    core/, importer.py, interfaces.py   (sim/, data/, models/, planning/, scoring/, eval/, synth/ to come)
+src/vishwaroop/    core/, importer.py, interfaces.py, outcome/, sim/   (data/, models/, planning/, scoring/, eval/, synth/ to come)
 tests/       CPU tier;  contracts/v1/tests/  conformance
 tools/       status_board, check_immutable, check_hashes, scan_secrets, check_links, budget_preflight
 work_orders/ WO-001..010 + STATUS.jsonl (append-only)      prompts/FIRST_SESSION.md
