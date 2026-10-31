@@ -12,7 +12,7 @@ Serves `PROGRAM §10`. In `banshee` this work is its WO-009; work-order numbers 
 Stop an accepted work order and its freeze from being reset, make the secret scan catch the tokens this program is most likely to hold, and close the gap the narrower ignore rules left.
 
 ## Source of the copied files
-`banshee` commit `1880773f24e0b4c857e9dbc905b2a90e73fb24de`, on its branch `wo/WO-006-program-rename`, which the owner named on 2026-10-31. The five files below compare equal to that commit's git objects.
+`banshee` commit `3a66e3c6a93436f3bd6673708715264d1e4781c8`, on its branch `wo/WO-006-program-rename`, which the owner named on 2026-10-31. The five files below compare equal to that commit's git objects. They first landed here from `1880773` and are unchanged since `26f0ce2`.
 
 ## Scope
 Copied byte for byte, none of it authored here:

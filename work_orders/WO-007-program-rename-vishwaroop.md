@@ -3,7 +3,7 @@
 **Exit tests advanced:** none; this is program housekeeping ahead of WO-001.
 **Size:** S
 **Prerequisites:** none. Owner decisions dated 2026-10-31, recorded in `ledgers/approvals.jsonl`.
-**Authorization:** AGENTS §2.1, plus the §2.3 contract-change and §4.9 test-change approvals recorded in `ledgers/approvals.jsonl`. The owner's waiver of the §11.3 major-release rule and instruction to delete one test reached this repository second-hand; `ledgers/corrections.jsonl` quotes them. Pushing this branch and opening one pull request has its own approval there. None of this authorizes a merge, another remote, a purchase or any hardware action.
+**Authorization:** AGENTS §2.1, plus the §2.3 contract-change and §4.9 test-change approvals recorded in `ledgers/approvals.jsonl`. The owner's waiver of the §11.3 major-release rule and instruction to delete one test reached this repository second-hand; `ledgers/corrections.jsonl` quotes them. Pushing this branch and opening one pull request has its own approval in `ledgers/approvals.jsonl`. None of this authorizes a merge, another remote, a purchase or any hardware action.
 **Files:** `src/vishwaroop/` (moved from the old package directory), `pyproject.toml`, `tests/`, `tools/status_board.py`, `.gitignore`, `config/`, `contracts/v1/`, `PROGRAM.md`, `AGENTS.md`, `README.md`, `START_HERE.md`, `CHANGES.md`, `REQUIREMENTS_CHECKLIST.md`, `VERIFICATION.md`, `SHA256SUMS.json`, `docs/`, `prompts/`, `work_orders/`, `ledgers/approvals.jsonl`, `ledgers/corrections.jsonl`, `reports/WO-007-program-rename-vishwaroop.md`.
 
 Serves `PROGRAM §5.2, §11, §14`.
@@ -12,9 +12,9 @@ Serves `PROGRAM §5.2, §11, §14`.
 Apply the owner's name decision in this repository under ADR-0003, copying unchanged the shared files the `banshee` repository authored.
 
 ## Source of the copied files
-`banshee` commit `1880773f24e0b4c857e9dbc905b2a90e73fb24de`, on its branch `wo/WO-006-program-rename`, which the owner named as the source commit on 2026-10-31. All five hashes computed from the commit object match its ADR-0003 table. Earlier instructions left the hash as a placeholder while that branch was still moving, so the copies came in stages:
-- **Shared files:** copied from `95f7a343fed5ab7726bad9178f6778c530136675` in commit `a8a58b1`. They are byte-identical at `1880773`.
-- **Tooling fixes:** first copied from `95f7a34` in commit `b42d391`. `banshee` follow-up `e412aea` then closed a regression in that fix, so `.gitignore`, `tools/status_board.py` and `tests/test_tools.py` were re-copied from `da128e3` in commit `d6e1460`. This repository tracks these fixes as its own WO-008, and its WO-010 later took newer copies from `1880773`.
+`banshee` commit `3a66e3c6a93436f3bd6673708715264d1e4781c8`, on its branch `wo/WO-006-program-rename`, which the owner named as the source commit on 2026-10-31. All five hashes computed from the commit object match its ADR-0003 table. Earlier instructions left the hash as a placeholder while that branch was still moving, so the copies came in stages:
+- **Shared files:** copied from `95f7a343fed5ab7726bad9178f6778c530136675` in commit `a8a58b1`. They are byte-identical at `3a66e3c`.
+- **Tooling fixes:** first copied from `95f7a34` in commit `b42d391`. `banshee` follow-up `e412aea` then closed a regression in that fix, so `.gitignore`, `tools/status_board.py` and `tests/test_tools.py` were re-copied from `da128e3` in commit `d6e1460`. This repository tracks these fixes as its own WO-008, and its WO-010 later took newer copies, which match `3a66e3c`.
 
 ## First copy superseded
 The first copy of the shared files was written at 09:03:41 UTC from `banshee`'s uncommitted working tree, and its bytes match `banshee` commit `e39c4c7`. The owner's message dates it 09:11 UTC, the time `banshee` recorded reading this working tree; there was only one copy. It was never committed here.

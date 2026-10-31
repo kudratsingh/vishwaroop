@@ -7,7 +7,7 @@
 Environment: Python 3.13.7 on macOS 26.5.2 (Darwin 25.5.0, arm64), with the pins in `requirements-dev.txt`. The baseline `make check` on the unmodified import, also measured here, passed before any edit (82 tests).
 
 ### Identity
-Copied byte for byte from `banshee`, and byte-identical at its commit `1880773f24e0b4c857e9dbc905b2a90e73fb24de`, the source commit the owner named. Each value below was computed from the files in this repository and matches the hash table in ADR-0003.
+Copied byte for byte from `banshee`, and byte-identical at its commit `3a66e3c6a93436f3bd6673708715264d1e4781c8`, the source commit the owner named. Each value below was computed from the files in this repository and matches the hash table in ADR-0003.
 
 | Item | sha256 |
 |---|---|
@@ -41,8 +41,8 @@ Run in a throwaway clone, on a scratch commit of this tree.
 | `git check-ignore` on `secret_prod.env`, `mysecret`, `secretkey`, `my_secret_key.txt` and `secret_config.py` | all ignored; `tools/scan_secrets.py` is not |
 | `git ls-files -ci --exclude-standard` | no tracked file is ignored |
 
-### Cross-repository check: against `banshee` commit `1880773`
-This repository applied the change second, so it copied the shared files and authored none of them. It then compared the `banshee` commit object with this tree: `contracts/v1/` as a whole tree, `PROGRAM.md`, both lock files, ADR-0003 and the `AGENTS.md` core. All were byte-identical at 10:33 UTC, as were `.gitignore`, `tools/status_board.py`, `tools/scan_secrets.py`, `tools/check_immutable.py`, `tests/test_tools.py` and `tests/test_project_consistency.py`. That commit is on the `banshee` branch `wo/WO-006-program-rename`, not on its `main`. Neither repository has merged this change. The owner confirms the match across the two repositories before merging.
+### Cross-repository check: against `banshee` commit `3a66e3c`
+This repository applied the change second, so it copied the shared files and authored none of them. It then compared the `banshee` commit object with this tree: `contracts/v1/` as a whole tree, `PROGRAM.md`, both lock files, ADR-0003 and the `AGENTS.md` core. All were byte-identical at 10:57 UTC, as were `.gitignore`, `tools/status_board.py`, `tools/scan_secrets.py`, `tools/check_immutable.py`, `tests/test_tools.py` and `tests/test_project_consistency.py`. That commit is on the `banshee` branch `wo/WO-006-program-rename`, not on its `main`. Neither repository has merged this change. The owner confirms the match across the two repositories before merging.
 
 ### First copy superseded
 The first copy was an earlier draft and was replaced on the owner's instruction. `work_orders/WO-007-program-rename-vishwaroop.md` records what changed and why.
@@ -61,7 +61,7 @@ Read back from GitHub. `reports/WO-009-designate-github-remote.md` has the detai
 - "Omni Drone", "World Model & Planner", "world model" and "world-model" as descriptive prose, which the owner's decision keeps valid.
 
 ### Starter-kit defects, fixed under WO-008
-These came with the kit, and this repository tracks them as its WO-008. The fixes were copied byte for byte from the source commit, in their own commits. "Before" was measured at `a8a58b1`, the rename commit, and "After" on this tree:
+These came with the kit, and this repository tracks them as its WO-008. The fixes were copied byte for byte from `banshee` commits `95f7a34` and `da128e3`, in this repository's commits `b42d391` and `d6e1460`. WO-010 later took newer copies. "Before" was measured at `a8a58b1`, the rename commit, and "After" on this tree:
 
 | Defect | Before | After |
 |---|---|---|
@@ -72,10 +72,11 @@ These came with the kit, and this repository tracks them as its WO-008. The fixe
 One cost comes with these copies: no test now checks reports for unbacked claims. `AGENTS.md §7` still requires evidence, by rule only.
 
 ### Work-order freeze, secret scan and ignore rule (WO-010)
-Copied byte for byte from `banshee` commit `1880773`.
+Copied byte for byte from `banshee` commit `3a66e3c`.
 - WO-008's narrower `.gitignore` patterns left `my_secret_key.txt`, `secret_config.py`, `secret_prod.env`, `mysecret` and `secretkey` trackable (measured). On the owner's decision, `.gitignore` is back to `*secret*`, keeping `secrets/` and `.secrets*`, with an exception for the scanner. All five names are now ignored (measured).
 - **Cost of the broad rule:** any new file with "secret" in its path is silently ignored. `git add -A` leaves it out and `make check` stays green (measured: this repository's WO-010 file hit this under its first name, and was renamed). `test_no_tracked_file_is_ignored` covers only files that are already tracked.
-- **Scanner limits that remain:** `tools/scan_secrets.py` now scans files with no extension and adds Hugging Face and RunPod patterns, but it still does not read `.env` files. A file named `prod.env` is neither ignored nor scanned (measured), a gap the kit shipped with. In any file, it does not catch a bare value with no recognizable pattern (measured).
+- **Scanner limits that remain:** `tools/scan_secrets.py` now scans files with no extension and adds Hugging Face and RunPod patterns. It reads a file named exactly `.env`, because that name has no suffix, but not `.env.local`, `prod.env` or `secret_prod.env` (measured). A file named `prod.env` is neither ignored nor scanned (measured), a gap the kit shipped with. In any file, it does not catch a bare value with no recognizable pattern (measured).
+- **Side effect:** the scanner walks the working tree, not git's index, so a git-ignored local `.env` holding a recognizable credential now turns `make secrets` and `make check` red (measured).
 
 ### Found during review, not fixed here
 These predate the rename and are outside it.

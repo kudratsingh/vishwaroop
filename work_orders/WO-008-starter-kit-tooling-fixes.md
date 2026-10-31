@@ -12,7 +12,7 @@ Serves `PROGRAM §10`.
 Make the first-session steps in `START_HERE.md` and `prompts/FIRST_SESSION.md` work as written. The defects came with the starter kit; the rename did not cause them.
 
 ## Scope
-Copied byte for byte from `banshee` commit `da128e31307fd71351e787ac99c971d13d508fe9`, the final source the owner named. This repository authors none of these four files:
+Copied byte for byte from `banshee` commit `da128e31307fd71351e787ac99c971d13d508fe9`, the source the owner named at that time. This repository authors none of these four files:
 1. `.gitignore`: the kit's `*secret*` pattern also matched `tools/scan_secrets.py`, so `git add -A` dropped the scanner and `ruff` skipped it. The pattern is replaced by specific ones plus an exception for the scanner.
 2. `tools/status_board.py`, with its tests in `tests/test_tools.py`: `--phase` and `--et` appends were always refused. They now work, and a record naming more than one id is refused.
 3. `tests/test_project_consistency.py`: `test_no_fixture_claims_in_reports` failed on any `.md` report in `reports/`, so it blocked every real report. It is deleted.
