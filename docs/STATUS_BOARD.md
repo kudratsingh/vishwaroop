@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `tools/status_board.py`. Do not edit by hand._
 
-Generated: 2026-10-31 10:33 UTC · ledger records: 19
+Generated: 2026-10-31 22:15 UTC · ledger records: 22
 
 ## Phases
 
@@ -69,8 +69,8 @@ Generated: 2026-10-31 10:33 UTC · ledger records: 19
 | WO-004 | M1 predictors: nominal + residual ensemble, compact latent model, calibration | M1 | **created** | 2026-10-31T07:51:47.999197Z | — |
 | WO-005 | M1 planner (CEM MPC) and action-chunk scorer with simulator-branch validation | M1 | **created** | 2026-10-31T07:51:48.038418Z | — |
 | WO-006 | Read-only arm snapshot import and policy-holdout registry | M1 | **created** | 2026-10-31T07:51:48.074460Z | — |
-| WO-007 | Program-wide rename of this repository and package to vishwaroop | M0 | **in_progress** | 2026-10-31T09:03:29.463365Z | — |
-| WO-008 | Fix three starter-kit tooling defects found during the rename review | M0 | **in_progress** | 2026-10-31T10:07:58.710684Z | — |
+| WO-007 | Program-wide rename of this repository and package to vishwaroop | M0 | **accepted** | 2026-10-31T22:15:23.725834Z | reports/WO-007-program-rename-vishwaroop.md |
+| WO-008 | Fix three starter-kit tooling defects found during the rename review | M0 | **accepted** | 2026-10-31T22:15:23.768846Z | reports/WO-008-starter-kit-tooling-fixes.md |
 | WO-009 | Designate the private GitHub remote and create the repository | M0 | **accepted** | 2026-10-31T10:19:25.741665Z | reports/WO-009-designate-github-remote.md |
-| WO-010 | Protect accepted work orders, widen the secret scan, restore the broad ignore rule | M0 | **in_progress** | 2026-10-31T10:23:14.356122Z | — |
+| WO-010 | Protect accepted work orders, widen the secret scan, restore the broad ignore rule | M0 | **accepted** | 2026-10-31T22:15:23.806356Z | reports/WO-010-status-freeze-and-token-scan.md |
 
