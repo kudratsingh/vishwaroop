@@ -25,9 +25,9 @@ These commands do not run ManiSkill, train anything, read the arm repository, or
 ## Current status (2026-10-31)
 | Implemented and tested here | Specified, not implemented |
 |---|---|
-| contract v1 (schemas, validator with append-only ledger merge, split audit, write-once reference writer, fixtures, 41 tests) | ManiSkill3 adapter, export, replay (WO-001) |
+| contract v1 (schemas, validator with append-only ledger merge, split audit, write-once reference writer, fixtures, 41 tests) | first real simulator episode, replay and negative tests (WO-001; export and replay logic exist, the adapter has **not run**) |
 | core record helpers: append-only ledgers, content-addressed artifacts, write-once run dirs, structured logs, strict config | dataset collection and registry (WO-002, WO-006) |
-| read-only export importer with completion-marker and hash verification | predictors, planner, scorer (WO-004, WO-005) |
+| read-only export importer with completion-marker and hash verification; independent pick-and-place outcome; contract export, replay and negative-test logic, tested on a fabricated fake | predictors, planner, scorer (WO-004, WO-005) |
 | typed Protocol interfaces for every planned module | evaluator, synthetic engine, drone adaptation (M2–M4) |
 | tools: status ledger/board, append-only CI check, hash locks, secrets scan, link check, budget preflight | enforcing paid launcher (WO-003), provider adapter |
 | CI workflow (CPU tier), Makefile, pre-commit hooks | sealed-data storage, physical outcome sensing |

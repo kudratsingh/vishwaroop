@@ -31,6 +31,8 @@ Resolved by WO-001. Proposed starting point (versions are **proposed, not tested
 - Can: everything in the tooling env; LeRobot teleop/recording with the SO-101 (MPS for small policies); CAD, printing, docs.
 - Cannot: ManiSkill3/SAPIEN GPU sim, Isaac Lab, VLA fine-tuning at useful speed, tier-1 world-model training. These rent until the workstation exists.
 
+Measured on the owner's M3 Pro on 2026-10-31 (`reports/BLOCKER-2026-10-31-m0.md`): `mani_skill` 3.0.1 and `sapien` 3.0.3 install and import on Python 3.11, but creating an environment fails without a Vulkan driver, even for state-only CPU physics. Whether a driver is enough is **not run**.
+
 ## 5. Stack lock discipline
 - `config/stack-lock.pending.json` lists the pins that must be resolved. `null` is a blocker, not "use latest".
 - WO-001 writes `config/stack-lock.resolved.json` with: OS image digest or distro+kernel, Python, CUDA, driver, `mani_skill` version/commit, `sapien` version, `torch` version, base VLA weights sha256 (when imported), tokenizer/preprocessor sha256, and the date. Mark each entry **tested** (ran here) or **proposed**.

@@ -18,7 +18,7 @@ git status   # if this is not yet a git repository: git init -b main && git add 
 `make check` must be green. If it is not, fixing it is the first task and gets its own PR.
 
 ## 3. Status today (2026-10-31)
-- Every phase `not_started`. See `docs/STATUS_BOARD.md` for work-order states: WO-007 (the program-wide rename, ADR-0003), WO-008, WO-009 and WO-010 are `accepted`, and WO-001 is next. Nothing has run on a simulator. Fixtures are fabricated.
+- Every phase `not_started`. See `docs/STATUS_BOARD.md` for work-order states: WO-007 (the program-wide rename, ADR-0003), WO-008, WO-009 and WO-010 are `accepted`. WO-001 is `blocked` on its simulator steps; its CPU-tier parts are done (`reports/BLOCKER-2026-10-31-m0.md`). Nothing has run on a simulator. Fixtures are fabricated.
 - `config/repo.json`: the private remote `kudratsingh/vishwaroop` is designated (ADR-0005). No other remote may be added. `main` is protected, so changes reach it through pull requests.
 - `config/budget.json`: $0 approved → no paid compute; the arm and coding-agent budgets are separate projects' and do not transfer.
 - Hardware: the SO-101 is ordered, not confirmed arrived; it is not needed for M0/M1.
@@ -34,8 +34,8 @@ WO-007, WO-008, WO-009 and WO-010 are `accepted`, so WO-001 is unblocked. Branch
 
 1. `make check` green. Branch from `main`.
 2. `evals/M0-exit-tests.json`, `evals/M0-protocol.md` and `evals/M1-exit-tests.json` are frozen, and their `frozen` events are appended. Phase M0 and WO-001 are `in_progress`. Exit tests are frozen before `ready`, as `AGENTS.md §5.3` requires.
-3. Implement outcome code + tests; export adapter + tests on fixtures; open PR(s); merge per `AGENTS.md §4.6`.
-4. On a GPU machine (only with an approval line if rented): resolve the stack lock, export the first episode, replay, negative tests.
+3. Outcome code, export, replay and negative tests are done, and tested on a fabricated fake. The real adapter in `src/vishwaroop/sim/env.py` has not run.
+4. **Blocked:** the simulator needs a machine where it starts (`reports/BLOCKER-2026-10-31-m0.md`). Then resolve the stack lock, write the scripted baseline, export the first episode, replay, and run the negative tests.
 5. Write `reports/WO-001-m0-grounded-environment.md`; append `accepted`; `make board`; continue to WO-002.
 
 The first-session prompt the owner pastes into a fresh agent is `prompts/FIRST_SESSION.md`.

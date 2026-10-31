@@ -35,3 +35,5 @@
 {"actor":"claude-code-vishwaroop","event":"in_progress","note":"CPU-tier work; simulator not available yet","phase":"M0","record_id":"status-20261031T222409669274Z-fa7c7b","ts":"2026-10-31T22:24:09.669274Z"}
 {"actor":"claude-code-vishwaroop","event":"ready","note":"prerequisites accepted; exit tests frozen","record_id":"status-20261031T222409702959Z-f0431b","ts":"2026-10-31T22:24:09.702959Z","wo":"WO-001"}
 {"actor":"claude-code-vishwaroop","event":"in_progress","note":"CPU-tier parts first","record_id":"status-20261031T222409736828Z-0440e3","ts":"2026-10-31T22:24:09.736828Z","wo":"WO-001"}
+{"actor":"claude-code-vishwaroop","event":"blocked","note":"simulator needs a Vulkan driver or a rented GPU; reports/BLOCKER-2026-10-31-m0.md","record_id":"status-20261031T222924082737Z-9af479","ts":"2026-10-31T22:29:24.082737Z","wo":"WO-001"}
+{"actor":"claude-code-vishwaroop","event":"blocked","note":"reports/BLOCKER-2026-10-31-m0.md","phase":"M0","record_id":"status-20261031T222924116562Z-d320e2","ts":"2026-10-31T22:29:24.116562Z"}

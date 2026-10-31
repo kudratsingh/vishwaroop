@@ -60,3 +60,6 @@ Pull request 1 merged as `85027d4` on the owner's approval, after the owner's ch
 Before any simulator run or training: `evals/M0-exit-tests.json`, `evals/M0-protocol.md`, `evals/M1-exit-tests.json` and ADR-0004. Replay deviation is measured in rad and m, not the "normalized joint units" `config/phases.json` proposed, which nothing defined. M1 thresholds are the proposed defaults, unchanged.
 
 **Program decision:** shared files become a pinned dependency, `ironclad`, extracted by `banshee`. No further shared file is copied, including the tooling lock. This repository upgrades by bumping a version in its own work order.
+
+## After import: WO-001 CPU-tier work (2026-10-31)
+Adds the independent outcome (`src/vishwaroop/outcome/`), contract export, initial-state-only replay and the five negative tests (`src/vishwaroop/sim/`), tested on a fabricated fake environment. The ManiSkill3 adapter is written and has **not run**. WO-001's simulator steps are blocked (`reports/BLOCKER-2026-10-31-m0.md`). Contract access sits in `src/vishwaroop/sim/contract.py`, so the future `ironclad` version bump changes one module.

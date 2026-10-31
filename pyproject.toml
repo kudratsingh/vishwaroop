@@ -18,6 +18,7 @@ testpaths = ["tests", "contracts/v1/tests"]
 pythonpath = ["src", "contracts/v1", "tools"]
 addopts = "-q -p no:cacheprovider"
 filterwarnings = ["error::DeprecationWarning:vishwaroop.*"]
+markers = ["sim: needs the pinned simulator stack; skipped when it is absent"]
 
 [tool.ruff]
 line-length = 100
