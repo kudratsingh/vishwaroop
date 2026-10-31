@@ -2,13 +2,13 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `tools/status_board.py`. Do not edit by hand._
 
-Generated: 2026-10-31 10:07 UTC · ledger records: 12
+Generated: 2026-10-31 10:18 UTC · ledger records: 15
 
 ## Phases
 
 | Phase | Name | State | Exit tests (passed / frozen / total) | Prerequisites | Work orders |
 |---|---|---|---|---|---|
-| M0 | Grounded development environment | **not_started** | 0 / 0 / 6 | — | WO-001, WO-002, WO-003, WO-007, WO-008 |
+| M0 | Grounded development environment | **not_started** | 0 / 0 / 6 | — | WO-001, WO-002, WO-003, WO-007, WO-008, WO-009 |
 | M1 | Compact predictor, latent planner, action-chunk scorer | **not_started** | 0 / 0 / 5 | M0 | WO-004, WO-005, WO-006 |
 | M2a | Closed-loop policy evaluator (simulation) | **not_started** | 0 / 0 / 5 | M1 | — |
 | M2b | Real-arm evaluator validation | **not_started** | 0 / 0 / 4 | M2a | — |
@@ -71,4 +71,5 @@ Generated: 2026-10-31 10:07 UTC · ledger records: 12
 | WO-006 | Read-only arm snapshot import and policy-holdout registry | M1 | **created** | 2026-10-31T07:51:48.074460Z | — |
 | WO-007 | Program-wide rename of this repository and package to vishwaroop | M0 | **in_progress** | 2026-10-31T09:03:29.463365Z | — |
 | WO-008 | Fix three starter-kit tooling defects found during the rename review | M0 | **in_progress** | 2026-10-31T10:07:58.710684Z | — |
+| WO-009 | Designate the private GitHub remote and create the repository | M0 | **in_progress** | 2026-10-31T10:16:32.283671Z | — |
 
