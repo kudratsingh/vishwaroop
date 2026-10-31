@@ -22,7 +22,7 @@ Run in a throwaway clone, on a scratch commit of this tree.
 
 | Check | Result |
 |---|---|
-| `make check` (lint, types, tests, hash locks, secrets, links) | passed; 82 tests, 41 of them contract conformance |
+| `make check` (lint, types, tests, hash locks, secrets, links) | passed; 85 tests, 41 of them contract conformance |
 | `make immutable` against the import commit | passed; the same tool failed as it should on a scratch control commit that removed a ledger line |
 | `tools/check_hashes.py --verify-kit-manifest` | passed |
 | `contracts/v1/validate.py` on all three fixtures | exit 0 |
@@ -33,9 +33,12 @@ Run in a throwaway clone, on a scratch commit of this tree.
 | `PYTHONPATH=src python -m vishwaroop.importer verify` on a missing directory | refused, exit 2 |
 | Wheel built from the clone | `vishwaroop-0.0.1-py3-none-any.whl`, containing the `vishwaroop` package |
 | `grep -rn` for the old underscore package name, outside `.git` | no hits |
+| `tools/status_board.py --append` with `--phase M0` and with `--et ET-M0-3`, in the clone | accepted, exit 0 |
+| A file under `reports/`, in the clone | `tests/test_project_consistency.py` passes |
+| Fresh `git init && git add -A` on this tree | tracks every file in `SHA256SUMS.json` |
 
 ### Cross-repository check: against `banshee` commit `95f7a34`
-This repository applied the change second, so it copied the shared files and authored none of them. It then compared the `banshee` commit object with this tree: `contracts/v1/` as a whole tree, `PROGRAM.md`, both lock files, ADR-0003 and the `AGENTS.md` core. All were byte-identical at 09:23 UTC. That commit is on the `banshee` branch `wo/WO-006-program-rename`, not on its `main`, so this confirms the shared files on the two rename branches. Neither repository has merged this change.
+This repository applied the change second, so it copied the shared files and authored none of them. It then compared the `banshee` commit object with this tree: `contracts/v1/` as a whole tree, `PROGRAM.md`, both lock files, ADR-0003 and the `AGENTS.md` core. All were byte-identical at 09:25 UTC. That commit is on the `banshee` branch `wo/WO-006-program-rename`, not on its `main`, so this confirms the shared files on the two rename branches. Neither repository has merged this change.
 
 ### First copy superseded
 The first copy was an earlier draft and was replaced on the owner's instruction. `work_orders/WO-007-program-rename-vishwaroop.md` records what changed and why.
@@ -46,11 +49,18 @@ The first copy was an earlier draft and was replaced on the owner's instruction.
 - `omni-world` in `contracts/v1/RELEASE.json` and the schema `$id` URNs, the contract's own name, and in ADR-0003 and WO-007, which say it stays.
 - "Omni Drone", "World Model & Planner", "world model" and "world-model" as descriptive prose, which the owner's decision keeps valid.
 
-### Starter-kit defects
-Measured on this tree. The next commit on this branch copies the `banshee` fixes (its WO-008).
-- `.gitignore`: `*secret*` also matches `tools/scan_secrets.py`. `git add -A`, the command `START_HERE.md` gives for the first import, leaves the tool out, and a clean clone then fails at test collection. The import commit here force-adds it. `ruff` also honours `.gitignore`, so `make lint` skips that one file: 25 files are checked, not the 26 in the packaging record below.
-- `tools/status_board.py`: `--phase` and `--et` appends are always refused, exit 2. `START_HERE.md` and `prompts/FIRST_SESSION.md` both need them.
-- `tests/test_project_consistency.py::test_no_fixture_claims_in_reports` fails on any file in `reports/`, so it blocks every real report.
+### Starter-kit defects, fixed by copying `banshee` WO-008
+These came with the kit. The fixes were copied byte for byte from the source commit, in their own commit. Measured on this tree and on the commit before it:
+
+| Defect | Before | After |
+|---|---|---|
+| `.gitignore`: `*secret*` also matches `tools/scan_secrets.py` | a fresh `git add -A` drops the tool, and `make lint` checks 25 files | `git add -A` tracks every manifest file, and `make lint` checks 26 |
+| `tools/status_board.py`: `--phase` and `--et` appends | refused, exit 2 | accepted, exit 0 |
+| `tests/test_project_consistency.py::test_no_fixture_claims_in_reports` | any file in `reports/` fails the test | test deleted, so real reports pass |
+
+Two costs come with these copies:
+- **The `.gitignore` fix also narrows the rule.** `my_secret_key.txt`, `db_secret.json`, `secret.txt`, `prod-secrets.env` and `secret_config.py` were ignored by the shipped rule, and `git add -A` now tracks them (measured). `tools/scan_secrets.py` still catches a recognizable credential in such a file, such as `api_key = "..."`, but not a bare value with no pattern (measured).
+- **No test now checks reports for unbacked claims.** `AGENTS.md §7` still requires evidence, by rule only.
 
 ### Found during review, not fixed here
 These predate the rename and are outside it.

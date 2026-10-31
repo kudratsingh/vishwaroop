@@ -107,13 +107,3 @@ def test_status_ledger_is_valid_jsonl(root: Path) -> None:
         assert line.strip(), f"STATUS.jsonl:{number} empty line"
         record = json.loads(line)
         assert "event" in record and ("wo" in record or "phase" in record or "et" in record)
-
-
-def test_no_fixture_claims_in_reports(root: Path) -> None:
-    """Reports directory must not contain milestone reports in the starter (nothing has run)."""
-    reports = [
-        p for p in (root / "reports").glob("*.md") if p.name not in {"README.md", "INDEX.md"}
-    ]
-    assert reports == [], (
-        f"starter kit must not ship milestone reports: {[p.name for p in reports]}"
-    )

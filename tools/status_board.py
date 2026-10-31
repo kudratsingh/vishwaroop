@@ -108,11 +108,11 @@ def current_states(
     phases: dict[str, dict[str, Any]] = {}
     ets: dict[str, dict[str, Any]] = {}
     for r in records:
-        if "wo" in r:
+        if r.get("wo"):
             wos[r["wo"]] = r
-        elif "phase" in r:
+        elif r.get("phase"):
             phases[r["phase"]] = r
-        elif "et" in r:
+        elif r.get("et"):
             ets[r["et"]] = r
     return wos, phases, ets
 
@@ -276,7 +276,7 @@ def main(argv: list[str] | None = None) -> int:
             "commit": args.commit,
             "actor": args.actor,
         }
-        written = append(record)
+        written = append({key: value for key, value in record.items() if value is not None})
         print(json.dumps(written, sort_keys=True))
         return 0
     except (StatusError, FileNotFoundError, json.JSONDecodeError, KeyError) as exc:

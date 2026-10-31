@@ -81,6 +81,63 @@ def test_phase_and_exit_test_events(tmp_path: Path, root: Path) -> None:
     assert "WO-001" in board
 
 
+def _cli_append(tmp_path: Path, root: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Point the command line's append() at a temporary repository and return its ledger."""
+    repo = _mini_repo(tmp_path, root)
+    ledger = repo / "work_orders" / "STATUS.jsonl"
+    real_append = status_board.append
+
+    def append_to_temp(record: dict[str, object]) -> dict[str, object]:
+        return real_append(
+            record, ledger=ledger, phases_path=repo / "config" / "phases.json", root=repo
+        )
+
+    monkeypatch.setattr(status_board, "append", append_to_temp)
+    return ledger
+
+
+def test_cli_appends_phase_and_exit_test_events(
+    tmp_path: Path, root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ledger = _cli_append(tmp_path, root, monkeypatch)
+    phases = json.loads((root / "config" / "phases.json").read_text())["phases"]
+    phase, et = phases[0]["id"], phases[0]["exit_tests"][0]["id"]
+    assert status_board.main(["--append", "--phase", phase, "--event", "ready"]) == 0
+    assert status_board.main(["--append", "--et", et, "--event", "frozen"]) == 0
+    first, second = (json.loads(line) for line in ledger.read_text().splitlines())
+    assert first["phase"] == phase and first["event"] == "ready"
+    assert second["et"] == et and second["event"] == "frozen"
+    for record in (first, second):
+        assert "wo" not in record
+        assert None not in record.values()
+
+
+def test_cli_still_refuses_invalid_phase_and_exit_test_events(
+    tmp_path: Path, root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ledger = _cli_append(tmp_path, root, monkeypatch)
+    assert status_board.main(["--append", "--phase", "NOPE", "--event", "ready"]) == 2
+    assert status_board.main(["--append", "--et", "ET-NOPE-1", "--event", "frozen"]) == 2
+    assert not ledger.exists() or ledger.read_text() == ""
+
+
+def test_current_states_ignores_null_keys_in_older_records() -> None:
+    wos, phases, ets = status_board.current_states(
+        [
+            {"wo": None, "phase": "D0", "et": None, "event": "ready"},
+            {"wo": None, "phase": None, "et": "ET-D0-1", "event": "frozen"},
+            {"wo": "WO-001", "phase": None, "et": None, "event": "ready"},
+        ]
+    )
+    assert set(wos) == {"WO-001"} and set(phases) == {"D0"} and set(ets) == {"ET-D0-1"}
+
+
+def test_gitignore_keeps_the_secret_scanner_tracked(root: Path) -> None:
+    lines = (root / ".gitignore").read_text().splitlines()
+    assert "*secret*" not in lines
+    assert "!tools/scan_secrets.py" in lines
+
+
 def test_render_on_real_repo_config(root: Path) -> None:
     board = status_board.render(
         ledger=root / "work_orders" / "STATUS.jsonl",
