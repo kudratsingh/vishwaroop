@@ -7,7 +7,7 @@
 Environment: Python 3.13.7 on macOS 26.5.2 (Darwin 25.5.0, arm64), with the pins in `requirements-dev.txt`. The baseline `make check` on the unmodified import, also measured here, passed before any edit (82 tests).
 
 ### Identity
-Copied byte for byte from `banshee`, and byte-identical at its commit `da128e31307fd71351e787ac99c971d13d508fe9`, the final source the owner named. Each value below was computed from the files in this repository and matches the hash table in ADR-0003.
+Copied byte for byte from `banshee`, and byte-identical at its commit `1880773f24e0b4c857e9dbc905b2a90e73fb24de`, the source commit the owner named. Each value below was computed from the files in this repository and matches the hash table in ADR-0003.
 
 | Item | sha256 |
 |---|---|
@@ -22,7 +22,7 @@ Run in a throwaway clone, on a scratch commit of this tree.
 
 | Check | Result |
 |---|---|
-| `make check` (lint, types, tests, hash locks, secrets, links) | passed; 86 tests, 41 of them contract conformance |
+| `make check` (lint, types, tests, hash locks, secrets, links) | passed; 104 tests, 41 of them contract conformance |
 | `make immutable` against `main` | passed; the same tool failed as it should on a scratch control commit that removed a line from `work_orders/STATUS.jsonl` |
 | `tools/check_hashes.py --verify-kit-manifest` | passed |
 | `contracts/v1/validate.py` on all three fixtures | exit 0 |
@@ -37,9 +37,12 @@ Run in a throwaway clone, on a scratch commit of this tree.
 | `tools/status_board.py --append` naming both `--phase` and `--et`, in the clone | refused, exit 2 |
 | A file under `reports/`, in the clone | `tests/test_project_consistency.py` passes |
 | Fresh `git init && git add -A` on this tree | tracks every file in `SHA256SUMS.json` |
+| Second `created` event for a work order, in the clone | refused, exit 2 |
+| `git check-ignore` on `secret_prod.env`, `mysecret`, `secretkey`, `my_secret_key.txt` and `secret_config.py` | all ignored; `tools/scan_secrets.py` is not |
+| `git ls-files -ci --exclude-standard` | no tracked file is ignored |
 
-### Cross-repository check: against `banshee` commit `da128e3`
-This repository applied the change second, so it copied the shared files and authored none of them. It then compared the `banshee` commit object with this tree: `contracts/v1/` as a whole tree, `PROGRAM.md`, both lock files, ADR-0003 and the `AGENTS.md` core. All were byte-identical at 10:19 UTC, as were the WO-008 files `.gitignore`, `tools/status_board.py`, `tests/test_tools.py` and `tests/test_project_consistency.py`. That commit is on the `banshee` branch `wo/WO-006-program-rename`, not on its `main`, so this confirms the shared files on the two rename branches. Neither repository has merged this change.
+### Cross-repository check: against `banshee` commit `1880773`
+This repository applied the change second, so it copied the shared files and authored none of them. It then compared the `banshee` commit object with this tree: `contracts/v1/` as a whole tree, `PROGRAM.md`, both lock files, ADR-0003 and the `AGENTS.md` core. All were byte-identical at 10:33 UTC, as were `.gitignore`, `tools/status_board.py`, `tools/scan_secrets.py`, `tools/check_immutable.py`, `tests/test_tools.py` and `tests/test_project_consistency.py`. That commit is on the `banshee` branch `wo/WO-006-program-rename`, not on its `main`. Neither repository has merged this change. The owner confirms the match across the two repositories before merging.
 
 ### First copy superseded
 The first copy was an earlier draft and was replaced on the owner's instruction. `work_orders/WO-007-program-rename-vishwaroop.md` records what changed and why.
@@ -49,7 +52,7 @@ Read back from GitHub. `reports/WO-009-designate-github-remote.md` has the detai
 - `kudratsingh/vishwaroop` is private, with default branch `main`. The owner asked for it on 2026-10-31.
 - `main` was pushed at `654bc0d`. CI run 41192093373 passed on that commit, on `cpu-tier (3.12)` and `cpu-tier (3.13)`.
 - `main` requires pull requests with 0 approvals and both `cpu-tier` checks, administrators included. Force-push and deletion are disallowed.
-- This rename branch is committed locally and not pushed, on the owner's instruction. CI on the rename is **not run**.
+- The owner approved pushing this branch and opening one pull request to `main`. When this commit was made, CI had **not run** on it; the pull request shows the result. The owner merges it, together with the `banshee` pull request.
 
 ### Old names left on purpose
 - `Omni_Drone_World_Model_Starter_Kits_2026-10-30.zip` in `CHANGES.md`, a real file name.
@@ -66,9 +69,13 @@ These came with the kit, and this repository tracks them as its WO-008. The fixe
 | `tools/status_board.py`: `--phase` and `--et` appends | refused, exit 2 | accepted, exit 0; a record naming more than one id is refused |
 | `tests/test_project_consistency.py::test_no_fixture_claims_in_reports` | any `.md` report in `reports/` fails the test; `README.md` and `INDEX.md` are exempt | test deleted, so real reports pass |
 
-Two costs come with these copies:
-- **The `.gitignore` fix also narrows the rule.** The shipped `*secret*` ignored every name containing "secret". The copied patterns still ignore `db_secret.json`, `secret.txt`, `secret.json`, `prod-secrets.env`, `api_secret.txt` and `client_secrets.yaml`, but `git add -A` now tracks `my_secret_key.txt`, `secret_config.py`, `secret_prod.env`, `mysecret` and `secretkey` (measured). `tools/scan_secrets.py` catches a recognizable credential such as `api_key = "..."` in the first two of those. It reads only a list of suffixes and a few named files such as `Makefile`, so `.env` files and other extensionless names get no scan: the last three are not read at all (measured). In any file, it does not catch a bare value with no recognizable pattern (measured).
-- **No test now checks reports for unbacked claims.** `AGENTS.md §7` still requires evidence, by rule only.
+One cost comes with these copies: no test now checks reports for unbacked claims. `AGENTS.md §7` still requires evidence, by rule only.
+
+### Work-order freeze, secret scan and ignore rule (WO-010)
+Copied byte for byte from `banshee` commit `1880773`.
+- WO-008's narrower `.gitignore` patterns left `my_secret_key.txt`, `secret_config.py`, `secret_prod.env`, `mysecret` and `secretkey` trackable (measured). On the owner's decision, `.gitignore` is back to `*secret*`, keeping `secrets/` and `.secrets*`, with an exception for the scanner. All five names are now ignored (measured).
+- **Cost of the broad rule:** any new file with "secret" in its path is silently ignored. `git add -A` leaves it out and `make check` stays green (measured: this repository's WO-010 file hit this under its first name, and was renamed). `test_no_tracked_file_is_ignored` covers only files that are already tracked.
+- **Scanner limits that remain:** `tools/scan_secrets.py` now scans files with no extension and adds Hugging Face and RunPod patterns, but it still does not read `.env` files. A file named `prod.env` is neither ignored nor scanned (measured), a gap the kit shipped with. In any file, it does not catch a bare value with no recognizable pattern (measured).
 
 ### Found during review, not fixed here
 These predate the rename and are outside it.
@@ -78,13 +85,16 @@ These predate the rename and are outside it.
 - `PROGRAM.md §12` row 7 says no remote is designated for either project, which is no longer true of either project. Fixing it needs a program change, authored in `banshee`.
 
 ### Retro note
-Copying from a moving working tree produced a draft that had to be replaced. Next time, copy shared files only from a commit object and check them against that commit's own hash table. Run the owner's exact check with the system binary in the real checkout: a session-level `grep` wrapper and a clean clone each hid stale binary caches here. The two repositories also depend on each other here: `banshee` waits on this confirmation, and this repository needs its final commit, so whoever holds the final hash should state it.
+Copying from a moving working tree produced a draft that had to be replaced. Next time, copy shared files only from a commit object and check them against that commit's own hash table. Run the owner's exact check with the system binary in the real checkout: a session-level `grep` wrapper and a clean clone each hid stale binary caches here. The two repositories also depend on each other here: `banshee` waits on this confirmation, and this repository needs its final commit, so whoever holds the final hash should state it. Dry-run a copied ignore rule against this repository's own paths before adopting it: that is how the WO-010 file name was caught.
 
 ### Next work order
-WO-001, once WO-007 and WO-008 are `accepted`.
+WO-001, once WO-007, WO-008 and WO-010 are `accepted`.
+
+### Claude Project copy
+Verified by the owner's assistant on 2026-10-31, not by an agent in this repository, which cannot read that copy: `claude/PROGRAM.md` in the Project is version 1.1, sha256 `58f4c930...`, the same bytes as both repositories.
 
 ### Not run
-GitHub CI has not run on this rename branch, so the Python 3.12 leg has not run on these bytes; it passed only on `main` at `654bc0d`, before the rename. No simulator, no hardware. The owner's Claude Project copy of `PROGRAM.md` has not been updated to version 1.1; only the owner can do that.
+When this commit was made, GitHub CI had not run on this rename branch, so the Python 3.12 leg had not run on these bytes; it had passed only on `main` at `654bc0d`, before the rename. No simulator, no hardware.
 
 ## Packaging record (before the rename)
 

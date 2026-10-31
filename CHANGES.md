@@ -44,3 +44,11 @@ The rename did not cause these. This repository tracks them as its WO-008. The f
 
 ## After import: private GitHub remote (2026-10-31, WO-009)
 The owner asked for the repository to be created. `kudratsingh/vishwaroop` is private, and `main` is protected (ADR-0005). `wo/WO-007-program-rename` stays local until the owner approves its push and pull request, so `main` keeps the kit's old package name until then.
+
+## After import: work-order freeze, wider secret scan, broad ignore rule (2026-10-31, WO-010)
+Copied byte for byte from `banshee` commit `1880773f24e0b4c857e9dbc905b2a90e73fb24de`, where this is its WO-009, on the owner's instruction.
+- **`tools/status_board.py`:** refuses a `created` event for a work order that already has a ledger record.
+- **`tools/check_immutable.py`:** keeps the freeze once any `accepted` event exists, so a line appended later cannot lift it, and rejects replacing a protected file with a symlink.
+- **`tools/scan_secrets.py`:** adds Hugging Face and RunPod token patterns, and now scans files with no extension.
+- **`.gitignore`:** returns to `*secret*`, keeps `secrets/` and `.secrets*`, and keeps the exception for the scanner. This replaces the narrower patterns from WO-008, which left names such as `secret_prod.env`, `mysecret` and `secretkey` trackable.
+- **`tests/test_tools.py`:** adds tests for these.

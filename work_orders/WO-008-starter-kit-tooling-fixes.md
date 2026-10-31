@@ -17,7 +17,7 @@ Copied byte for byte from `banshee` commit `da128e31307fd71351e787ac99c971d13d50
 2. `tools/status_board.py`, with its tests in `tests/test_tools.py`: `--phase` and `--et` appends were always refused. They now work, and a record naming more than one id is refused.
 3. `tests/test_project_consistency.py`: `test_no_fixture_claims_in_reports` failed on any `.md` report in `reports/`, so it blocked every real report. It is deleted.
 
-The copies landed in commits `b42d391` and `d6e1460`. This work order also records them and puts WO-008 in the order before WO-001.
+The copies landed in commits `b42d391` and `d6e1460`. This work order also records them and puts WO-008 in the order before WO-001. WO-010 later replaced `.gitignore`, `tools/status_board.py` and `tests/test_tools.py` with newer copies, and restored the broad ignore rule.
 
 ## Out of scope
 - Anything in `contracts/v1/`, `PROGRAM.md` or the `AGENTS.md` core (WO-007).

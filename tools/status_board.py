@@ -132,6 +132,10 @@ def validate_append(
             )
         if record["event"] not in WO_EVENTS:
             raise StatusError(f"invalid WO event {record['event']}")
+        if record["event"] == "created" and record["wo"] in wos:
+            raise StatusError(
+                f"{record['wo']}: already has a ledger record; cannot be created again"
+            )
         prev = wos.get(record["wo"], {}).get("event", "created")
         if record["event"] != "created" and record["event"] not in WO_TRANSITIONS[prev]:
             raise StatusError(f"{record['wo']}: cannot go from {prev} to {record['event']}")

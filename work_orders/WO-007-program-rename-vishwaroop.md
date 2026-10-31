@@ -3,7 +3,7 @@
 **Exit tests advanced:** none; this is program housekeeping ahead of WO-001.
 **Size:** S
 **Prerequisites:** none. Owner decisions dated 2026-10-31, recorded in `ledgers/approvals.jsonl`.
-**Authorization:** AGENTS §2.1, plus the §2.3 contract-change and §4.9 test-change approvals recorded in `ledgers/approvals.jsonl`. The owner's waiver of the §11.3 major-release rule and instruction to delete one test reached this repository second-hand; `ledgers/corrections.jsonl` quotes them. This does not authorize a remote, a purchase or any hardware action.
+**Authorization:** AGENTS §2.1, plus the §2.3 contract-change and §4.9 test-change approvals recorded in `ledgers/approvals.jsonl`. The owner's waiver of the §11.3 major-release rule and instruction to delete one test reached this repository second-hand; `ledgers/corrections.jsonl` quotes them. Pushing this branch and opening one pull request has its own approval there. None of this authorizes a merge, another remote, a purchase or any hardware action.
 **Files:** `src/vishwaroop/` (moved from the old package directory), `pyproject.toml`, `tests/`, `tools/status_board.py`, `.gitignore`, `config/`, `contracts/v1/`, `PROGRAM.md`, `AGENTS.md`, `README.md`, `START_HERE.md`, `CHANGES.md`, `REQUIREMENTS_CHECKLIST.md`, `VERIFICATION.md`, `SHA256SUMS.json`, `docs/`, `prompts/`, `work_orders/`, `ledgers/approvals.jsonl`, `ledgers/corrections.jsonl`, `reports/WO-007-program-rename-vishwaroop.md`.
 
 Serves `PROGRAM §5.2, §11, §14`.
@@ -12,9 +12,9 @@ Serves `PROGRAM §5.2, §11, §14`.
 Apply the owner's name decision in this repository under ADR-0003, copying unchanged the shared files the `banshee` repository authored.
 
 ## Source of the copied files
-`banshee` commit `da128e31307fd71351e787ac99c971d13d508fe9`, on its branch `wo/WO-006-program-rename`, which the owner named as the final source commit on 2026-10-31. All five hashes computed from the commit object match its ADR-0003 table. Earlier instructions left the hash as a placeholder while that branch was still moving, so the copies came in stages:
-- **Shared files:** copied from `95f7a343fed5ab7726bad9178f6778c530136675` in commit `a8a58b1`. They are byte-identical at `da128e3`.
-- **Tooling fixes:** first copied from `95f7a34` in commit `b42d391`. `banshee` follow-up `e412aea` then closed a regression in that fix, so `.gitignore`, `tools/status_board.py` and `tests/test_tools.py` were re-copied from `da128e3` in commit `d6e1460`. This repository tracks these fixes as its own WO-008.
+`banshee` commit `1880773f24e0b4c857e9dbc905b2a90e73fb24de`, on its branch `wo/WO-006-program-rename`, which the owner named as the source commit on 2026-10-31. All five hashes computed from the commit object match its ADR-0003 table. Earlier instructions left the hash as a placeholder while that branch was still moving, so the copies came in stages:
+- **Shared files:** copied from `95f7a343fed5ab7726bad9178f6778c530136675` in commit `a8a58b1`. They are byte-identical at `1880773`.
+- **Tooling fixes:** first copied from `95f7a34` in commit `b42d391`. `banshee` follow-up `e412aea` then closed a regression in that fix, so `.gitignore`, `tools/status_board.py` and `tests/test_tools.py` were re-copied from `da128e3` in commit `d6e1460`. This repository tracks these fixes as its own WO-008, and its WO-010 later took newer copies from `1880773`.
 
 ## First copy superseded
 The first copy of the shared files was written at 09:03:41 UTC from `banshee`'s uncommitted working tree, and its bytes match `banshee` commit `e39c4c7`. The owner's message dates it 09:11 UTC, the time `banshee` recorded reading this working tree; there was only one copy. It was never committed here.
@@ -35,8 +35,8 @@ The owner held and replaced it because it was an earlier draft. Compared with th
 
 ## Out of scope
 - Any write to the `banshee` repository, which has its own session and work orders. It is read only, to take and compare the shared files.
-- Merging to `main` before the owner has the hash confirmation.
-- Any remote, purchase, hardware action or milestone work (WO-001 onward).
+- Merging to `main`. The owner merges this pull request and the `banshee` one together, once the shared files and tooling are confirmed to match across the two repositories.
+- Any other remote, any purchase or hardware action, or milestone work (WO-001 onward).
 - Changing the contract's own name or its `urn:omni-world:...` schema ids (ADR-0003).
 
 ## Deliverables
@@ -48,8 +48,8 @@ The renamed package; the copied shared files; the copied tooling fixes; a regene
 3. Copy the shared files from the source commit, then confirm the five hashes against its ADR-0003 table.
 4. Regenerate the repository manifest last, then run the verification below.
 5. Copy the tooling fixes in a separate commit, regenerate the manifest again, and repeat the verification.
-6. Report the hash confirmation and head commit to the owner. Merge when the owner says to.
-7. Owner action: replace the Claude Project copy of `PROGRAM.md` with version 1.1. Agents cannot do this from the repository.
+6. Push this branch and open one pull request to `main`, once WO-010 is on it. Let CI run. Report the hash confirmation and head commit to the owner, who merges.
+7. Owner action, done: the owner's assistant confirmed that the Claude Project copy of `PROGRAM.md` is version 1.1, with the same bytes as both repositories.
 8. At acceptance, write the report below, then regenerate the repository manifest, because a new file invalidates it.
 
 ## Verification
@@ -67,7 +67,7 @@ Expected: the `grep` finds nothing, in this working checkout as well as a clean 
 No exit test closes here. This WO is accepted when the checks are green on the merged commit, the five ADR-0003 hashes are confirmed equal in both repositories, and the report below exists.
 
 ## Stop conditions
-Any change beyond names, the copied fixes and the WO-001 gate; a shared-file mismatch with `banshee` that copying cannot resolve; any need for a remote, purchase or hardware action.
+Any change beyond names, the copied fixes and the WO-001 gate; a shared-file mismatch with `banshee` that copying cannot resolve; any need for another remote, a purchase or a hardware action.
 
 ## Report
 `reports/WO-007-program-rename-vishwaroop.md`, written at acceptance from `docs/REPORT_TEMPLATE.md` and citing `VERIFICATION.md`, section "Post-rename verification", for the measurements. Pass that path to `--report`.

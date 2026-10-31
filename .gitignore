@@ -17,22 +17,9 @@ dist/
 *.pem
 *.key
 *_token*
-secret/
+*secret*
 secrets/
-.secrets/
-secret.*
-secrets.*
-*.secret
-*.secrets
-*_secret
-*_secret.*
-*_secrets
-*_secrets.*
-*-secret
-*-secret.*
-*-secrets
-*-secrets.*
-client_secret*.json
+.secrets*
 !tools/scan_secrets.py
 
 # large / append-only operational data (manifests are tracked, bytes are not)

@@ -44,6 +44,6 @@ docs/        PHASES, ARCHITECTURE, CONTEXT_AND_DECISIONS, EVALUATION_PROTOCOL, D
 src/vishwaroop/    core/, importer.py, interfaces.py   (sim/, data/, models/, planning/, scoring/, eval/, synth/ to come)
 tests/       CPU tier;  contracts/v1/tests/  conformance
 tools/       status_board, check_immutable, check_hashes, scan_secrets, check_links, budget_preflight
-work_orders/ WO-001..009 + STATUS.jsonl (append-only)      prompts/FIRST_SESSION.md
+work_orders/ WO-001..010 + STATUS.jsonl (append-only)      prompts/FIRST_SESSION.md
 data/ runs/ ledgers/ artifacts/ reports/ evals/   append-only record locations
 ```

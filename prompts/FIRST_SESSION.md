@@ -6,12 +6,12 @@ Paste the block below into a fresh coding-agent session opened in the `vishwaroo
 
 You are the coding agent for the `vishwaroop` repository, one of two new projects in the owner's physical-AI program. Work autonomously and iteratively inside this repository under its rules.
 
-**Read first, in order:** `PROGRAM.md`, `AGENTS.md`, `START_HERE.md`, `docs/STATUS_BOARD.md`, then `docs/PHASES.md`, `docs/ARCHITECTURE.md`, `docs/CONTEXT_AND_DECISIONS.md`, `docs/EVALUATION_PROTOCOL.md`, `docs/DATA_AND_SNAPSHOTS.md`, `docs/ENVIRONMENT.md`, `docs/WORKFLOW.md`, `work_orders/WO-007-program-rename-vishwaroop.md`, `work_orders/WO-008-starter-kit-tooling-fixes.md`, and `work_orders/WO-001-m0-grounded-environment.md`.
+**Read first, in order:** `PROGRAM.md`, `AGENTS.md`, `START_HERE.md`, `docs/STATUS_BOARD.md`, then `docs/PHASES.md`, `docs/ARCHITECTURE.md`, `docs/CONTEXT_AND_DECISIONS.md`, `docs/EVALUATION_PROTOCOL.md`, `docs/DATA_AND_SNAPSHOTS.md`, `docs/ENVIRONMENT.md`, `docs/WORKFLOW.md`, `work_orders/WO-007-program-rename-vishwaroop.md`, `work_orders/WO-008-starter-kit-tooling-fixes.md`, `work_orders/WO-010-status-freeze-and-token-scan.md`, and `work_orders/WO-001-m0-grounded-environment.md`.
 
 **Then:**
 1. Create the tooling environment and run `make check`; report the environment (Python, OS) and the result. Fix a red check before anything else, in its own PR.
 2. If this directory is not a git repository, `git init -b main`, commit the starter as "Starter kit import". `config/repo.json` designates the private remote `kudratsingh/vishwaroop` (ADR-0005). Do not add any other remote. `main` is protected, so changes reach it through pull requests.
-3. Do not start WO-001 until WO-007 and WO-008 are `accepted`; if WO-007 is still waiting on `banshee`, report that to the owner. Then append status: WO-001 `ready` then `in_progress`; phase M0 `ready`. Branch `wo/WO-001-m0`.
+3. Do not start WO-001 until WO-007, WO-008 and WO-010 are `accepted`; if one is still waiting on `banshee`, report that to the owner. Then append status: WO-001 `ready` then `in_progress`; phase M0 `ready`. Branch `wo/WO-001-m0`.
 4. Implement WO-001 in small PRs as written (frozen exit-test thresholds in `evals/` **before** any simulator run; outcome code; export adapter; replay from initial state only; the five negative tests; frozen M0/M1 evaluation specification; report). Merge each PR only when `make check` is green on the final commit and the PR's acceptance criteria are met (`AGENTS.md §4.6`).
 5. When WO-001 is accepted (status event with report path and commit), continue to WO-002 and, in a separate worktree if you spawn a subagent, WO-003. Keep going through the backlog while prerequisites are satisfied.
 
