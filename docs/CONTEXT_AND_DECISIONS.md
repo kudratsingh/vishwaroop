@@ -6,6 +6,7 @@ What an agent needs from the planning conversations (Sept–Oct 2026) to make th
 
 - The owner's next ML step (Oct 25, 2026): fine-tuning and RL on a pre-trained open model, **exciting and usable in the real world**, not a benchmark replication (code RLVR was "not very exciting"). *Confirmed.*
 - On Oct 30, 2026 the owner chose two separate projects — Omni Drone and World Model & Planner — because the sim-to-real gap is large and he wants the world model to serve a purpose beyond the drone. *Confirmed.*
+- The repository and Python package are named **`vishwaroop`**; "World Model & Planner" stays the descriptive name in prose. *Confirmed (Oct 31, 2026; ADR-0003).*
 - The world model's first task/environment is the arm project (`vla-rl-so101`): its ManiSkill3 setup is the first environment, its VLA the first baseline and evaluation subject. *Confirmed.*
 - Three uses were agreed: (1) data engine, (2) evaluator, (3) planner; with the correction that one model does not give all three and that the evaluator needs an action-conditioned observation model. *Confirmed (adopted from review).*
 - Why the arm and not a digital-only target: in pure simulation the physics engine is already the perfect world model; evaluator and data engine only matter where reality differs from the simulator and real episodes are expensive. The SO-101 gives that at the lowest cost. *Confirmed.*

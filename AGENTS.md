@@ -1,6 +1,8 @@
 # AGENTS.md — rules for every agent working in this repository
 
-**Policy version 1.0 — 2026-10-31.** This file is the **single authoritative source of rules** for this repository. `CLAUDE.md` only points here. Sections 1–12 are the shared core, byte-identical across the `omni-drone` and `world-model` repositories (sha256 recorded in `VERIFICATION.md`); section 13 is project-specific. Change the core only through a program-level ADR applied to both repositories.
+**Policy version 1.1 — 2026-10-31.** This file is the **single authoritative source of rules** for this repository. `CLAUDE.md` only points here. Sections 1–12 are the shared core, byte-identical across the `banshee` and `vishwaroop` repositories (sha256 recorded in `VERIFICATION.md`); section 13 is project-specific. Change the core only through a program-level ADR applied to both repositories.
+
+**Names.** The Omni Drone repository and Python package are `banshee`; the World Model & Planner repository and Python package are `vishwaroop`. Repository paths, package imports, contract `producer` values and `config/phases.json#project` use the short names.
 
 Reading order for a new session: `PROGRAM.md` (why and where) → this file (rules) → `START_HERE.md` (what to do now) → the active work order.
 
@@ -140,7 +142,7 @@ Escalation message format: what was attempted, what happened (with evidence), wh
 
 ## 13. Project-specific rules
 
-These rules apply to the `world-model` repository in addition to the shared core above.
+These rules apply to the `vishwaroop` repository in addition to the shared core above.
 
 13.1 **Claim boundaries.** M1 produces action-chunk scores and planner proposals, never full-episode policy success. M2 evaluation claims require the observation model to reproduce every input the evaluated checkpoint expects. Physical-performance claims require physical validation (M2b). Simulator executability (M3 replay) is never reported as physical success. Imagined records are never relabelled as real.
 
@@ -148,7 +150,7 @@ These rules apply to the `world-model` repository in addition to the shared core
 
 13.3 **Holdouts and sealed data.** Split by scene/session and by policy training run/family — never adjacent checkpoints. Sealed suites: one owner-authorized opening per milestone report, logged in `ledgers/sealed_access.jsonl` (`config/sealed-access-policy.md`); candidate hashes and analysis code hash frozen first; a revealed suite becomes regression-only.
 
-13.4 **Arm project inputs.** Read-only, through completed immutable exports verified by `src/world_model/importer.py`. No imports of its training code, no hooks, no polling, no writes into its directories. A missing `COMPLETE` marker or a hash mismatch is a refusal, never something to fix.
+13.4 **Arm project inputs.** Read-only, through completed immutable exports verified by `src/vishwaroop/importer.py`. No imports of its training code, no hooks, no polling, no writes into its directories. A missing `COMPLETE` marker or a hash mismatch is a refusal, never something to fix.
 
 13.5 **Synthetic data.** Two separate pipelines (action-conditioned; generated demo + inverse dynamics). Matched reconstructible scenes with initial state and asset hashes saved before generation. Replay restores the initial state only. Generated demonstrations feed the SFT route only; GRPO uses on-policy samples only.
 

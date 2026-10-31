@@ -1,17 +1,17 @@
 # First-session prompt — World Model & Planner coding agent
 
-Paste the block below into a fresh coding-agent session opened in the `world-model` repository directory. It supersedes any earlier handoff prompt (in particular the old "no branches/PRs" and "stop after every work order" rules).
+Paste the block below into a fresh coding-agent session opened in the `vishwaroop` repository directory. It supersedes any earlier handoff prompt (in particular the old "no branches/PRs" and "stop after every work order" rules).
 
 ---
 
-You are the coding agent for the `world-model` repository, one of two new projects in the owner's physical-AI program. Work autonomously and iteratively inside this repository under its rules.
+You are the coding agent for the `vishwaroop` repository, one of two new projects in the owner's physical-AI program. Work autonomously and iteratively inside this repository under its rules.
 
-**Read first, in order:** `PROGRAM.md`, `AGENTS.md`, `START_HERE.md`, `docs/STATUS_BOARD.md`, then `docs/PHASES.md`, `docs/ARCHITECTURE.md`, `docs/CONTEXT_AND_DECISIONS.md`, `docs/EVALUATION_PROTOCOL.md`, `docs/DATA_AND_SNAPSHOTS.md`, `docs/ENVIRONMENT.md`, `docs/WORKFLOW.md`, and `work_orders/WO-001-m0-grounded-environment.md`.
+**Read first, in order:** `PROGRAM.md`, `AGENTS.md`, `START_HERE.md`, `docs/STATUS_BOARD.md`, then `docs/PHASES.md`, `docs/ARCHITECTURE.md`, `docs/CONTEXT_AND_DECISIONS.md`, `docs/EVALUATION_PROTOCOL.md`, `docs/DATA_AND_SNAPSHOTS.md`, `docs/ENVIRONMENT.md`, `docs/WORKFLOW.md`, `work_orders/WO-007-program-rename-vishwaroop.md`, and `work_orders/WO-001-m0-grounded-environment.md`.
 
 **Then:**
 1. Create the tooling environment and run `make check`; report the environment (Python, OS) and the result. Fix a red check before anything else, in its own PR.
 2. If this directory is not a git repository, `git init -b main`, commit the starter as "Starter kit import". Do not add a remote: `config/repo.json` says none is designated. All git work is local until the owner designates one.
-3. Append status: WO-001 `ready` then `in_progress`; phase M0 `ready`. Branch `wo/WO-001-m0`.
+3. Do not start WO-001 until WO-007 is `accepted`; if it is still waiting on `banshee`, report that to the owner. Then append status: WO-001 `ready` then `in_progress`; phase M0 `ready`. Branch `wo/WO-001-m0`.
 4. Implement WO-001 in small PRs as written (frozen exit-test thresholds in `evals/` **before** any simulator run; outcome code; export adapter; replay from initial state only; the five negative tests; frozen M0/M1 evaluation specification; report). Merge each PR only when `make check` is green on the final commit and the PR's acceptance criteria are met (`AGENTS.md §4.6`).
 5. When WO-001 is accepted (status event with report path and commit), continue to WO-002 and, in a separate worktree if you spawn a subagent, WO-003. Keep going through the backlog while prerequisites are satisfied.
 

@@ -1,10 +1,10 @@
 {
   "contract": "omni-world trajectory contract",
   "schema_version": "1.0.0",
-  "release": "1.0.0+kit.2026-10-31",
+  "release": "1.0.0+kit.2026-10-31.names",
   "date": "2026-10-31",
   "steward": "owner (Kudrat Singh); proposing agent drafts, both repositories adopt the same release",
-  "consumers": ["world-model", "omni-drone", "arm export adapter (future, owner-provided)"],
+  "consumers": ["vishwaroop", "banshee", "arm export adapter (future, owner-provided)"],
   "schemas": ["episode.schema.json", "transition.schema.json", "validation_ledger.schema.json"],
   "reference_implementation": ["validate.py", "audit_splits.py", "writer.py"],
   "compatibility": {
@@ -12,5 +12,5 @@
     "breaking_change": "new major release with adapters and a migration for every pinned consumer; both repositories adopt in the same week or record why not",
     "schema_version_const": "episode and transition records carry schema_version 1.0.0; a breaking change bumps it"
   },
-  "notes": "Schemas are unchanged from the 2026-10-30 reference release. This kit release reformats the reference utilities without changing their semantics, adds the append-only validation ledger (schema + validate.py --ledger), and adds writer.py, a write-once reference exporter. Fixtures under examples/ are FABRICATED serialization examples, not experiment evidence."
+  "notes": "The episode schema's producer enum is now arm, banshee, vishwaroop (program ADR-0003, 2026-10-31); schemas are otherwise unchanged from the 2026-10-30 reference release, and schema_version stays 1.0.0 because no record outside the fabricated fixtures existed under the old values. This kit release reformats the reference utilities without changing their semantics, adds the append-only validation ledger (schema + validate.py --ledger), and adds writer.py, a write-once reference exporter. Fixtures under examples/ are FABRICATED serialization examples, not experiment evidence."
 }

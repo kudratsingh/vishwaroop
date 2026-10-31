@@ -28,16 +28,16 @@ One world model does not automatically provide all three. A decoder-free latent 
 
 | Module | Path | Status | Responsibility |
 |---|---|---|---|
-| Core record helpers | `src/world_model/core/` | implemented, tested | append-only ledgers, content-addressed artifacts, run directories, structured logs, strict config |
-| Read-only snapshot importer | `src/world_model/importer.py` | implemented (verification + registration), tested | refuses exports without `COMPLETE` marker or with hash mismatch; copies under read-only policy; records `ledgers/imports.jsonl` |
-| Typed interfaces | `src/world_model/interfaces.py` | implemented as Protocols | `Predictor`, `Planner`, `ChunkScorer`, `SuccessJudge`, `PolicyEvaluator`, `ObservationModel`, `TrajectoryGenerator` with units/frames/abstention contracts in docstrings |
-| Simulator adapter (ManiSkill3) | `src/world_model/sim/` | **not implemented** (WO-001) | environment selection and lock; episode export through `contracts/v1/writer.py`; initial-state-only replay |
-| Dataset registry | `src/world_model/data/` | **not implemented** (WO-002, WO-006) | manifests, splits by session and policy run/family, sealed-suite references, licenses |
-| Predictors | `src/world_model/models/` | **not implemented** (WO-004) | nominal + residual ensemble (state); compact latent predictor; calibration |
-| Planner | `src/world_model/planning/` | **not implemented** (WO-005) | CEM sampling MPC over bounded action sequences with known costs and uncertainty penalty; nominal-model baseline |
-| Action-chunk scorer | `src/world_model/scoring/` | **not implemented** (WO-005) | progress, clearance, constraint violation, uncertainty, abstention |
-| Observation model + evaluator | `src/world_model/eval/` | **not implemented** (M2a) | action-conditioned observation rollout matching the policy's inputs; independent success judge; ranking, false optimism, regret, abstention |
-| Synthetic engine | `src/world_model/synth/` | **not implemented** (M3) | pipeline A (action-conditioned), pipeline B (generated demo + IDM), replay filter, filter ablation |
+| Core record helpers | `src/vishwaroop/core/` | implemented, tested | append-only ledgers, content-addressed artifacts, run directories, structured logs, strict config |
+| Read-only snapshot importer | `src/vishwaroop/importer.py` | implemented (verification + registration), tested | refuses exports without `COMPLETE` marker or with hash mismatch; copies under read-only policy; records `ledgers/imports.jsonl` |
+| Typed interfaces | `src/vishwaroop/interfaces.py` | implemented as Protocols | `Predictor`, `Planner`, `ChunkScorer`, `SuccessJudge`, `PolicyEvaluator`, `ObservationModel`, `TrajectoryGenerator` with units/frames/abstention contracts in docstrings |
+| Simulator adapter (ManiSkill3) | `src/vishwaroop/sim/` | **not implemented** (WO-001) | environment selection and lock; episode export through `contracts/v1/writer.py`; initial-state-only replay |
+| Dataset registry | `src/vishwaroop/data/` | **not implemented** (WO-002, WO-006) | manifests, splits by session and policy run/family, sealed-suite references, licenses |
+| Predictors | `src/vishwaroop/models/` | **not implemented** (WO-004) | nominal + residual ensemble (state); compact latent predictor; calibration |
+| Planner | `src/vishwaroop/planning/` | **not implemented** (WO-005) | CEM sampling MPC over bounded action sequences with known costs and uncertainty penalty; nominal-model baseline |
+| Action-chunk scorer | `src/vishwaroop/scoring/` | **not implemented** (WO-005) | progress, clearance, constraint violation, uncertainty, abstention |
+| Observation model + evaluator | `src/vishwaroop/eval/` | **not implemented** (M2a) | action-conditioned observation rollout matching the policy's inputs; independent success judge; ranking, false optimism, regret, abstention |
+| Synthetic engine | `src/vishwaroop/synth/` | **not implemented** (M3) | pipeline A (action-conditioned), pipeline B (generated demo + IDM), replay filter, filter ablation |
 | Reporting | `reports/`, `docs/REPORT_TEMPLATE.md` | template in place | per-WO and per-phase reports |
 
 ## 4. Prediction architecture (proposed default for M1; revise with evidence)

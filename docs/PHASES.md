@@ -104,7 +104,7 @@ Details: `docs/SYNTHETIC_DATA_M3.md`.
 
 **Deliverable.** Residual-dynamics model for the drone on imported SITL and later real flight logs; calibrated uncertainty and a proposed trust gate (the research question in `PROGRAM.md §8.2`); shadow-mode predictions logged only; exported model manifest at the contract boundary. **No command authority; live use is a future drone-owned work order.**
 
-**Prerequisites.** M1 infrastructure; drone episodes exist (omni-drone D1 or later). Branches from M0/M1; never waits for M2/M3.
+**Prerequisites.** M1 infrastructure; drone episodes exist (banshee D1 or later). Branches from M0/M1; never waits for M2/M3.
 
 | Exit test | Statement | Threshold |
 |---|---|---|

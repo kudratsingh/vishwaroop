@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from world_model import importer
+from vishwaroop import importer
 
 
 def _export(

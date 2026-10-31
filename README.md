@@ -1,6 +1,6 @@
-# World Model & Planner
+# vishwaroop (World Model & Planner)
 
-Standalone learning, planning, evaluation and synthetic-data infrastructure for robot policies. First environment: the arm project's ManiSkill3 setup (`vla-rl-so101`), read-only; first evaluation subject: its VLA; later the drone's flight logs (M4) and a LEAP hand (M8). Part of the owner's physical-AI program — read `PROGRAM.md` first.
+`vishwaroop` is the repository and Python package of World Model & Planner; the name is Sanskrit *viśvarūpa*, the universal form Krishna shows Arjuna — all of creation seen at once, which Arjuna asks him to stop showing; a world model sees everything and is trusted only as far as it has earned. Standalone learning, planning, evaluation and synthetic-data infrastructure for robot policies. First environment: the arm project's ManiSkill3 setup (`vla-rl-so101`), read-only; first evaluation subject: its VLA; later the drone's flight logs (M4) and a LEAP hand (M8). Part of the owner's physical-AI program — read `PROGRAM.md` first.
 
 ## Three products, three bodies of evidence
 1. Compact predictive model, latent planner and **action-chunk scorer** (M1).
@@ -38,12 +38,12 @@ All phases are `not_started`; see `docs/STATUS_BOARD.md`. No paid compute, hardw
 ```
 PROGRAM.md  AGENTS.md  CLAUDE.md  START_HERE.md  CHANGES.md  REQUIREMENTS_CHECKLIST.md  VERIFICATION.md
 config/      phases.json, budget.json, repo.json, locks, stack-lock.pending.json, sealed-access schema/policy
-contracts/v1 the one shared boundary (byte-identical in omni-drone)
+contracts/v1 the one shared boundary (byte-identical in banshee)
 docs/        PHASES, ARCHITECTURE, CONTEXT_AND_DECISIONS, EVALUATION_PROTOCOL, DATA_AND_SNAPSHOTS, SYNTHETIC_DATA_M3,
              ENVIRONMENT, WORKFLOW, DATA_POLICY, BUDGET_AND_LAUNCHER, REPORT_TEMPLATE, ADR_TEMPLATE, SOURCES, STATUS_BOARD, adr/
-src/world_model/   core/, importer.py, interfaces.py   (sim/, data/, models/, planning/, scoring/, eval/, synth/ to come)
+src/vishwaroop/    core/, importer.py, interfaces.py   (sim/, data/, models/, planning/, scoring/, eval/, synth/ to come)
 tests/       CPU tier;  contracts/v1/tests/  conformance
 tools/       status_board, check_immutable, check_hashes, scan_secrets, check_links, budget_preflight
-work_orders/ WO-001..006 + STATUS.jsonl (append-only)      prompts/FIRST_SESSION.md
+work_orders/ WO-001..007 + STATUS.jsonl (append-only)      prompts/FIRST_SESSION.md
 data/ runs/ ledgers/ artifacts/ reports/ evals/   append-only record locations
 ```

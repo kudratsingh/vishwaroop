@@ -1,5 +1,5 @@
 """Shared pytest fixtures. The package under test is discovered from src/ so the same tests run in
-both repositories (world_model / omni_drone) without edits."""
+both repositories (vishwaroop / banshee) without edits."""
 
 from __future__ import annotations
 

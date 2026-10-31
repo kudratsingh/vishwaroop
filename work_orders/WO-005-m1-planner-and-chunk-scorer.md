@@ -4,7 +4,7 @@
 **Size:** L (milestone-level stub; expand when next)
 **Prerequisites:** WO-004 accepted; frozen task suite and baselines from `evals/M0-protocol.md`.
 **Authorization:** §2.3 approval for paid GPU time; simulator time on an approved machine otherwise.
-**Files:** `src/world_model/planning/`, `src/world_model/scoring/`, `src/world_model/sim/branches.py`, `tests/`, `reports/WO-005-m1-planner-and-chunk-scorer.md`.
+**Files:** `src/vishwaroop/planning/`, `src/vishwaroop/scoring/`, `src/vishwaroop/sim/branches.py`, `tests/`, `reports/WO-005-m1-planner-and-chunk-scorer.md`.
 
 ## Objective
 Build the sampling MPC planner over the learned and nominal models, the simulator-branch protocol (restore an initial state, execute ≥ 2 alternative action chunks through physics), and the action-chunk scorer with abstention; compare planners on the frozen suite with matched interaction budgets; validate the scorer against executed branches. Make no full-episode VLA claim.

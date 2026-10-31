@@ -4,7 +4,7 @@
 **Size:** L (milestone-level stub; expand into full detail when it becomes the next WO)
 **Prerequisites:** phase M0 `passed`; `evals/M1-exit-tests.json` frozen (WO-001 step 7); GPU access with an approval line if rented.
 **Authorization:** §2.3 approval required for any paid GPU time (measured pilot first, `docs/BUDGET_AND_LAUNCHER.md`).
-**Files:** `src/world_model/models/`, `tests/`, `evals/M1-*`, `reports/WO-004-m1-predictors-and-calibration.md`, ignored `runs/`, `artifacts/sha256/`.
+**Files:** `src/vishwaroop/models/`, `tests/`, `evals/M1-*`, `reports/WO-004-m1-predictors-and-calibration.md`, ignored `runs/`, `artifacts/sha256/`.
 
 ## Objective
 Train and evaluate the first predictors on the M0 dataset: a nominal-dynamics-plus-learned-residual ensemble (3 members) in state space, then a compact recurrent latent model with a frozen visual encoder; report multi-step error versus horizon against constant/linear and nominal baselines, and calibrate uncertainty against actual error.
