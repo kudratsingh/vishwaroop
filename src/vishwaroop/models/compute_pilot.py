@@ -943,7 +943,7 @@ def _parent(args: argparse.Namespace) -> int:
     ) as run:
         results: dict[str, Any] = {}
         for workload, device in PLAN:
-            if only is not None and workload not in only:
+            if only is not None and not {workload, f"{workload}-{device}"} & only:
                 continue
             print(f"{workload} on {device}", file=sys.stderr, flush=True)
             results[f"{workload}-{device}"] = _run_child(args, workload, device, run.directory)
@@ -966,7 +966,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--manifest", type=Path, required=True)
     for name, default in OPTION_DEFAULTS.items():
         parser.add_argument(f"--{name.replace('_', '-')}", type=int, default=default)
-    parser.add_argument("--only", default="", help="comma-separated workloads, for a trial")
+    parser.add_argument(
+        "--only", default="", help="comma-separated workloads or workload-device pairs"
+    )
     parser.add_argument("--child", choices=sorted(WORKLOADS))
     parser.add_argument("--device", choices=("mps", "cpu"), default="cpu")
     parser.add_argument("--out", type=Path)

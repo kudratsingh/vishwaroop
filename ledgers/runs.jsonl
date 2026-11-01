@@ -16,3 +16,5 @@
 {"note":"6 workloads","record_id":"runs-20261101T073322369410Z-68dd7220","run_dir":"runs/20261101T073257Z_aa206789","run_id":"20261101T073257Z_aa206789","status":"completed","ts":"2026-11-01T07:33:22.369457Z"}
 {"purpose":"WO-012: can the M1 models train on this Mac; timing and memory only","record_id":"runs-20261101T073543146237Z-aea0455e","run_dir":"runs/20261101T073543Z_07fc75f9","run_id":"20261101T073543Z_07fc75f9","status":"started","ts":"2026-11-01T07:35:43.146296Z"}
 {"note":"14 workloads","record_id":"runs-20261101T074115076332Z-2dd71007","run_dir":"runs/20261101T073543Z_07fc75f9","run_id":"20261101T073543Z_07fc75f9","status":"completed","ts":"2026-11-01T07:41:15.076408Z"}
+{"purpose":"WO-012: can the M1 models train on this Mac; timing and memory only","record_id":"runs-20261101T074208363687Z-750a9b09","run_dir":"runs/20261101T074208Z_bf56bd56","run_id":"20261101T074208Z_bf56bd56","status":"started","ts":"2026-11-01T07:42:08.363739Z"}
+{"note":"14 workloads","record_id":"runs-20261101T074732234687Z-cf412182","run_dir":"runs/20261101T074208Z_bf56bd56","run_id":"20261101T074208Z_bf56bd56","status":"completed","ts":"2026-11-01T07:47:32.234742Z"}
