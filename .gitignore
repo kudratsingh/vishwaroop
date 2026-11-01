@@ -20,7 +20,6 @@ dist/
 *secret*
 secrets/
 .secrets*
-!tools/scan_secrets.py
 
 # large / append-only operational data (manifests are tracked, bytes are not)
 data/raw/

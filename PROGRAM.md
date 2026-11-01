@@ -1,3 +1,4 @@
+<!-- ironclad-policy v1.1.0 -->
 # PROGRAM.md — Physical AI Program: trajectory, projects, and plan
 
 **Version 1.1 — 2026-10-31. Owner: Kudrat Singh.**

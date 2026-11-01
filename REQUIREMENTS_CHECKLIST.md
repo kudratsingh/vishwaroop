@@ -1,5 +1,7 @@
 # REQUIREMENTS_CHECKLIST.md — requirement → where it lives → status
 
+**Since WO-011,** old paths below map to new ones in `docs/adr/ADR-0007-adopt-ironclad.md`.
+
 Status words: **confirmed** (owner decision), **proposed default** (suggested, not objected to), **unknown**, **future option**. Milestone references point to `docs/PHASES.md`.
 
 | # | Requirement (owner or review) | Where it lives | Status |

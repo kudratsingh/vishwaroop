@@ -18,10 +18,10 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from ironclad.contracts.v1 import audit_splits
+from ironclad.contracts.v1.validate import ContractError, validate_episode
 
-import audit_splits
 from fake_env import FakeArmEnv, plan_policy, scripted_plan
-from validate import ContractError, validate_episode
 from vishwaroop.outcome.pickplace import PickPlaceJudge, PlaceRubric, assess, samples_from_episode
 from vishwaroop.sim import negative_tests, replay
 from vishwaroop.sim.contract import contract_judge

@@ -1,3 +1,4 @@
+<!-- ironclad-policy v1.1.0 -->
 # ADR-0003 — Project names: `banshee` and `vishwaroop`
 
 **Date:** 2026-10-31 · **Status:** accepted · **Work order:** WO-006 in `banshee`; WO-007 in `vishwaroop` · **Program link:** PROGRAM §5, §11, §14

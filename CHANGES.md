@@ -73,3 +73,6 @@ On the owner's one-attempt approval, ManiSkill3 runs state-only CPU physics on t
 
 ## After import: the first real episodes (2026-11-01)
 WO-001 adds a scripted controller with pure-Python SO-100 kinematics, four named controller families, a recording command, an inspection tool, a stack lock, and a setup script for the owner-provided GPU machine. A sweep found that recording straight after `reset` diverged from replay beyond the frozen tolerance, which stayed unchanged. Recording from the restored initial state removed the divergence on the same stack, and ADR-0006 records why and what that does not show.
+
+## After import: shared files come from `ironclad` (2026-11-01)
+WO-011 pins `ironclad-kit` v1.1.0 and removes the vendored contract, tools, record helpers, shared tests, hash locks and the root `SHA256SUMS.json`. `docs/adr/ADR-0007-adopt-ironclad.md` records it, and maps the old paths that stay in frozen or historical text.

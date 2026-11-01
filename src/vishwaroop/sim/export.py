@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from ..outcome.pickplace import Outcome, PlaceRubric, assess, samples_from_records
-from .contract import writer
+from .contract import writer_module
 from .env import Packet, SimEnv
 
 Policy = Callable[[Packet, int], list[float] | None]
@@ -225,7 +225,7 @@ def record_episode(
     note = closing_note() if closing_note is not None else None
     final_spec = spec if note is None else replace(spec, notes=f"{spec.notes} {note}")
     manifest = _manifest(env, final_spec, outcome, terminated, created_at)
-    builder = writer().EpisodeBuilder(manifest)
+    builder = writer_module().EpisodeBuilder(manifest)
     builder.add_file("rubric.json", _json_bytes(asdict(spec.rubric)))
     builder.add_file("configuration.json", _json_bytes(env.configuration()))
     builder.add_file("stack.json", _json_bytes(env.stack_identity()))

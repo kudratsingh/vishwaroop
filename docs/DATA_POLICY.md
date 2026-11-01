@@ -1,3 +1,4 @@
+<!-- ironclad-policy v1.1.0 -->
 # DATA_POLICY.md — records, retention, provenance, imports, privacy
 
 Rule summary in `AGENTS.md §6`. This file is the operating detail.
@@ -12,7 +13,7 @@ Rule summary in `AGENTS.md §6`. This file is the operating detail.
 
 | Mechanism | What it protects | Where |
 |---|---|---|
-| `tools/check_immutable.py` in CI on every PR | tracked files under `data/`, `runs/`, `ledgers/`, `reports/`, `artifacts/`, accepted `work_orders/WO-*.md` — any `M`/`D`/`R` in `git diff --name-status` fails the PR (allow-list: derived files `docs/STATUS_BOARD.md`, `reports/INDEX.md`) | CPU tier |
+| `ironclad-check-immutable` in CI on every PR | tracked files under `data/`, `runs/`, `ledgers/`, `reports/`, `artifacts/`, accepted `work_orders/WO-*.md` — any `M`/`D`/`R` in `git diff --name-status` fails the PR (allow-list: derived files `docs/STATUS_BOARD.md`, `reports/INDEX.md`) | CPU tier |
 | `core.ledger.append_record` | opens ledgers with `O_APPEND`, writes one JSON line, fsyncs; no truncation path exists | `src/<pkg>/core/ledger.py` |
 | `core.artifacts.ArtifactStore.put` | content-addressed by sha256; refuses to replace a path whose bytes differ; `delete` does not exist | `src/<pkg>/core/artifacts.py` |
 | `core.runs.new_run_dir` | creates `runs/<UTC timestamp>_<id>/` with exclusive create; refuses if it exists; never reuses ids | `src/<pkg>/core/runs.py` |

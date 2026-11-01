@@ -21,4 +21,4 @@ The arm producer finishes a checkpoint and its sim evaluation in a temporary exp
 - A snapshot is not a holdout merely because it is new. Split by run/family; quarantine designated test policies; never calibrate on their real outcomes.
 
 ## 6. Provenance rules
-`real`, `physics_sim`, `imagined` remain distinct forever. Replaying imagined actions creates a **new** physics_sim episode linked to the imagined parent; executing them physically creates a **new** real episode. Evidence is appended to the validation ledger (`contracts/v1/validation_ledger.schema.json`); generated pixels never become physical observations. Raw logs are retained; training-ready exports carry hashes and transformation versions.
+`real`, `physics_sim`, `imagined` remain distinct forever. Replaying imagined actions creates a **new** physics_sim episode linked to the imagined parent; executing them physically creates a **new** real episode. Evidence is appended to the validation ledger (`ironclad.contracts.v1/validation_ledger.schema.json`); generated pixels never become physical observations. Raw logs are retained; training-ready exports carry hashes and transformation versions.
