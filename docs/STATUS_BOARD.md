@@ -2,13 +2,13 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-01 05:30 UTC · ledger records: 70
+Generated: 2026-11-01 05:32 UTC · ledger records: 76
 
 ## Phases
 
 | Phase | Name | State | Exit tests (passed / frozen / total) | Prerequisites | Work orders |
 |---|---|---|---|---|---|
-| M0 | Grounded development environment | **in_progress** | 0 / 6 / 6 | — | WO-001, WO-002, WO-003, WO-007, WO-008, WO-009, WO-010, WO-011 |
+| M0 | Grounded development environment | **in_progress** | 5 / 6 / 6 | — | WO-001, WO-002, WO-003, WO-007, WO-008, WO-009, WO-010, WO-011 |
 | M1 | Compact predictor, latent planner, action-chunk scorer | **not_started** | 0 / 5 / 5 | M0 | WO-004, WO-005, WO-006 |
 | M2a | Closed-loop policy evaluator (simulation) | **not_started** | 0 / 0 / 5 | M1 | — |
 | M2b | Real-arm evaluator validation | **not_started** | 0 / 0 / 4 | M2a | — |
@@ -23,11 +23,11 @@ Generated: 2026-11-01 05:30 UTC · ledger records: 70
 
 | Exit test | Phase | Statement | Threshold | State | Report |
 |---|---|---|---|---|---|
-| ET-M0-1 | M0 | CPU-tier checks (contract tests, unit tests, lint, types, hash locks) pass before and after adapter work. | 100% of CPU-tier checks green | frozen | — |
-| ET-M0-2 | M0 | One real simulator episode is exported through contracts/v1/writer.py and validates, including every referenced artifact hash, with a fully resolved stack lock. | validate.py returns contract_valid; zero null pins in the simulator section | frozen | — |
-| ET-M0-3 | M0 | Replay from the saved INITIAL state only, executing recorded actions through physics, reproduces the episode on the pinned stack across repeats. | frozen: max per-step deviation <= 0.001 (joints in rad; object and target positions in m) on all 3 repeats, identical outcome label (evals/M0-exit-tests.json) | frozen | — |
-| ET-M0-4 | M0 | The task outcome is computed independently from simulator state by code that shares nothing with the policy or any reward model, agrees with inspection on one success and one failure episode, and every negative test is rejected. | 5/5 negative tests fail validation or invalidate the replay claim; 2/2 inspected outcomes agree | frozen | — |
-| ET-M0-5 | M0 | The evaluation specification is frozen and hashed before any neural training: task rubric, split specification, group ids, policy-holdout plan (by training run/family), sealed opening budget, baselines. | all listed files present and hashed; policy-holdout plan names run/family grouping | frozen | — |
+| ET-M0-1 | M0 | CPU-tier checks (contract tests, unit tests, lint, types, hash locks) pass before and after adapter work. | 100% of CPU-tier checks green | passed | reports/WO-001-m0-grounded-environment.md |
+| ET-M0-2 | M0 | One real simulator episode is exported through contracts/v1/writer.py and validates, including every referenced artifact hash, with a fully resolved stack lock. | validate.py returns contract_valid; zero null pins in the simulator section | passed | reports/WO-001-m0-grounded-environment.md |
+| ET-M0-3 | M0 | Replay from the saved INITIAL state only, executing recorded actions through physics, reproduces the episode on the pinned stack across repeats. | frozen: max per-step deviation <= 0.001 (joints in rad; object and target positions in m) on all 3 repeats, identical outcome label (evals/M0-exit-tests.json) | passed | reports/WO-001-m0-grounded-environment.md |
+| ET-M0-4 | M0 | The task outcome is computed independently from simulator state by code that shares nothing with the policy or any reward model, agrees with inspection on one success and one failure episode, and every negative test is rejected. | 5/5 negative tests fail validation or invalidate the replay claim; 2/2 inspected outcomes agree | passed | reports/WO-001-m0-grounded-environment.md |
+| ET-M0-5 | M0 | The evaluation specification is frozen and hashed before any neural training: task rubric, split specification, group ids, policy-holdout plan (by training run/family), sealed opening budget, baselines. | all listed files present and hashed; policy-holdout plan names run/family grouping | passed | reports/WO-001-m0-grounded-environment.md |
 | ET-M0-6 | M0 | A dataset of scripted and perturbed-policy episodes containing both successes and failures is collected, validated, and split-audited. | frozen: >= 200 episodes, >= 30% failures across >= 3 distinct failure modes, audit passes (evals/M0-exit-tests.json) | frozen | — |
 | ET-M1-1 | M1 | Multi-step prediction error versus horizon is reported for the learned predictors against constant/linear and nominal baselines on held-out dev episodes. | frozen: learned predictor RMSE at least 20% below the best baseline at every horizon 1..10 steps (evals/M1-exit-tests.json) | frozen | — |
 | ET-M1-2 | M1 | Action sensitivity is validated against physics: from each restored initial state at least two alternative action chunks are executed in the simulator and the predictor's ranking of their outcomes agrees with the simulator's. | frozen: >= 50 initial states; pairwise ordering accuracy >= 80% (evals/M1-exit-tests.json) | frozen | — |
@@ -63,7 +63,7 @@ Generated: 2026-11-01 05:30 UTC · ledger records: 70
 
 | WO | Title | Phase | State | Last event (UTC) | Report |
 |---|---|---|---|---|---|
-| WO-001 | M0 grounded environment: one reproducible simulator episode and its evidence chain | M0 | **in_progress** | 2026-11-01T00:43:09.801397Z | — |
+| WO-001 | M0 grounded environment: one reproducible simulator episode and its evidence chain | M0 | **accepted** | 2026-11-01T05:32:28.583459Z | reports/WO-001-m0-grounded-environment.md |
 | WO-002 | M0 dataset: scripted and perturbed episodes with successes and failures | M0 | **created** | 2026-10-31T07:51:47.916399Z | — |
 | WO-003 | Supervised resource and spend enforcement (local, no paid execution) | M0 | **superseded** | 2026-11-01T00:40:56.445935Z | — |
 | WO-004 | M1 predictors: nominal + residual ensemble, compact latent model, calibration | M1 | **created** | 2026-10-31T07:51:47.999197Z | — |
