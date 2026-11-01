@@ -18,24 +18,24 @@ git status   # if this is not yet a git repository: git init -b main && git add 
 `make check` must be green. If it is not, fixing it is the first task and gets its own PR.
 
 ## 3. Status today (2026-10-31)
-- Phase M0 is `blocked`; every other phase is `not_started`. See `docs/STATUS_BOARD.md` for work-order states: WO-007 (the program-wide rename, ADR-0003), WO-008, WO-009 and WO-010 are `accepted`. WO-001 is `blocked` on its simulator steps, and its CPU-tier parts are done (`reports/BLOCKER-2026-10-31-m0.md`). Nothing has run on a simulator. Fixtures are fabricated.
+- Phase M0 is `in_progress`; every other phase is `not_started`. See `docs/STATUS_BOARD.md` for work-order states: WO-007 (the program-wide rename, ADR-0003), WO-008, WO-009 and WO-010 are `accepted`, and WO-003 is `superseded` because it moved to `ironclad`. WO-001 is `in_progress`: its CPU-tier parts are done, and the simulator now starts on the Mac (`reports/BLOCKER-2026-10-31-m0.md`, last section). Nothing has run on a simulator. Fixtures are fabricated.
 - `config/repo.json`: the private remote `kudratsingh/vishwaroop` is designated (ADR-0005). No other remote may be added. `main` is protected, so changes reach it through pull requests.
 - `config/budget.json`: $0 approved → no paid compute; the arm and coding-agent budgets are separate projects' and do not transfer.
 - Hardware: the SO-101 is ordered, not confirmed arrived; it is not needed for M0/M1.
 
 ## 4. First work order
-`work_orders/WO-001-m0-grounded-environment.md` is the first work order. Its CPU-tier parts are done; its simulator parts wait on the owner's decision in `reports/BLOCKER-2026-10-31-m0.md`. Then WO-003 (budget enforcement, local) can run in parallel in its own worktree. WO-002 follows WO-001.
+`work_orders/WO-001-m0-grounded-environment.md` is the first work order. Its CPU-tier parts are done, and its simulator parts run on the Mac with MoltenVK (`docs/ENVIRONMENT.md §4`). WO-003 (budget enforcement, local) can run in parallel in its own worktree. WO-002 follows WO-001.
 
 ## 5. Unresolved owner decisions you may hit
 See `docs/CONTEXT_AND_DECISIONS.md §5` and `PROGRAM.md §12`: first ManiSkill3 task if no arm export exists (default: a readily available pick-and-place task, honestly labelled); GPU rental approval (none yet); sealed-data location. Take the recorded default, write the assumption into the report, and continue — stop only at `AGENTS.md §2.3` gates or §12 conditions.
 
 ## 6. Exact next actions
-The next action on WO-001 is the owner's decision in `reports/BLOCKER-2026-10-31-m0.md`. WO-003 is not blocked and can proceed meanwhile. Merge on green checks, with a full review where `AGENTS.md §13.8` requires one.
+The next action is WO-001's simulator steps. Merge on green checks, with a full review where `AGENTS.md §13.8` requires one.
 
 1. `make check` green. Branch from `main`.
-2. `evals/M0-exit-tests.json`, `evals/M0-protocol.md` and `evals/M1-exit-tests.json` are frozen, and their `frozen` events are appended. Phase M0 and WO-001 are `blocked`. Exit tests are frozen before `ready`, as `AGENTS.md §5.3` requires.
+2. `evals/M0-exit-tests.json`, `evals/M0-protocol.md` and `evals/M1-exit-tests.json` are frozen, and their `frozen` events are appended. Phase M0 and WO-001 are `in_progress`. Exit tests are frozen before `ready`, as `AGENTS.md §5.3` requires.
 3. Outcome code, export, replay and negative tests are done, and tested on a fabricated fake. The real adapter in `src/vishwaroop/sim/env.py` has not run.
-4. **Blocked:** the simulator needs a machine where it starts (`reports/BLOCKER-2026-10-31-m0.md`). Then resolve the stack lock, write the scripted baseline, export the first episode, replay, and run the negative tests.
+4. The simulator starts on the Mac with MoltenVK (`docs/ENVIRONMENT.md §4`). Resolve the stack lock, write the scripted baseline, export the first episode, replay, and run the negative tests.
 5. Write `reports/WO-001-m0-grounded-environment.md`; append `accepted`; `make board`; continue to WO-002.
 
 The first-session prompt the owner pastes into a fresh agent is `prompts/FIRST_SESSION.md`.
