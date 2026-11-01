@@ -5,7 +5,10 @@ controller's recorded actions a slightly different way, and is compared with the
 state, on the frozen replay streams. Results are for this stack and this machine.
 
     python -m vishwaroop.sim.sensitivity --first-seed 0 --seeds 100 --branch-seeds 20 \\
-        --tolerance-file evals/M0-exit-tests.json --out runs/<new-file>.json
+        --tolerance-file evals/M0-exit-tests.json
+
+Run it from the repository root. Each measurement is a new run under ``runs/``, in
+``ledgers/runs.jsonl``, with its results in ``sensitivity.json``.
 
 Exit codes: 0 measured, 2 refused, 3 simulator not run. The results are the finding: 0 does not mean
 that the cases stayed within tolerance.
@@ -20,6 +23,7 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
 
+from ..core.runs import finish_run, new_run_dir
 from ..outcome.pickplace import PlaceRubric, StateSample, assess
 from .baseline import VARIANTS, ScriptedPickPlace
 from .env import ManiSkillPickCube, Packet, SimEnv, SimulatorUnavailableError
@@ -44,14 +48,16 @@ def _sample(step: int, packet: Packet) -> StateSample:
     return StateSample(step, (x, y, z), (tx, ty, tz), bool(packet["object_grasped"][0]))
 
 
-def _run_actions(
-    env: SimEnv, start: Packet, actions: Sequence[list[float]], rubric: PlaceRubric
-) -> tuple[list[Packet], str]:
+def _label(packets: Sequence[Packet], rubric: PlaceRubric) -> str:
+    samples = [_sample(step, packet) for step, packet in enumerate(packets)]
+    return assess(samples, rubric).label
+
+
+def _run_actions(env: SimEnv, start: Packet, actions: Sequence[list[float]]) -> list[Packet]:
     packets = [start]
     for action in actions:
         packets.append(env.step(action))
-    samples = [_sample(step, packet) for step, packet in enumerate(packets)]
-    return packets, assess(samples, rubric).label
+    return packets
 
 
 def nudge_cube(state: bytes, metres: float = CUBE_NUDGE_M) -> bytes:
@@ -125,13 +131,14 @@ def measure(
         if policy.planning_error is not None:
             unplanned.append(seed)
             continue
-        base, label = _run_actions(env, packet, actions, rubric)
+        base = _run_actions(env, packet, actions)
+        label = _label(base, rubric)
 
         for name in cases:
             start = _start(name, env, seed, state, nudge)
-            packets, new_label = _run_actions(env, start, actions, rubric)
+            packets = _run_actions(env, start, actions)
             worst = max(_deviation(a, b) for a, b in zip(base, packets, strict=True))
-            cases[name].add(worst, tolerance, new_label != label)
+            cases[name].add(worst, tolerance, _label(packets, rubric) != label)
         env.restore_state(state)
         resaved_differs += int(env.save_state() != state)
         if seed in branch_seeds:
@@ -140,9 +147,11 @@ def measure(
                 for action in actions[:branch]:
                     env.step(action)
                 middle = env.restore_state(env.save_state())
-                packets, new_label = _run_actions(env, middle, actions[branch:], rubric)
+                packets = _run_actions(env, middle, actions[branch:])
                 worst = max(_deviation(a, b) for a, b in zip(base[branch:], packets, strict=True))
-                branches[branch].add(worst, tolerance, new_label != label)
+                # The rubric needs the whole episode: the lift can lie before the branch.
+                whole = [*base[:branch], *packets]
+                branches[branch].add(worst, tolerance, _label(whole, rubric) != label)
     return {
         "seeds": list(seeds),
         "tolerance": tolerance,
@@ -157,23 +166,34 @@ def measure(
 
 
 def _run(args: argparse.Namespace) -> dict[str, Any]:
-    if args.out.exists() or not args.out.parent.is_dir():
-        raise ValueError(f"{args.out} exists or has no directory; reports are write-once")
     require_frozen_file(args.tolerance_file)
     tolerance, rubric = load_frozen(args.tolerance_file)
     seeds = range(args.first_seed, args.first_seed + args.seeds)
     if seeds.stop > 8000 or seeds.start < 0:
         raise ValueError("use training seeds only: blocks 8 and 9 are the dev holdout")
-    report = measure(
-        ManiSkillPickCube(),
-        seeds,
-        seeds[: args.branch_seeds],
-        tolerance.max_state_deviation,
-        rubric,
+    if not (Path("ledgers").is_dir() and Path("runs").is_dir()):
+        raise ValueError("run this from the repository root")
+    env = ManiSkillPickCube()
+    repo = Path()
+    run_dir = new_run_dir(
+        repo,
+        purpose="m0 sensitivity to small changes at the start of an episode",
+        config={"first_seed": args.first_seed, "seeds": args.seeds, "branch": args.branch_seeds},
+        seeds={str(seed): seed for seed in seeds},
+        env_lock={"stack": env.stack_identity()},
     )
-    with args.out.open("x", encoding="utf-8") as stream:
-        json.dump(report, stream, indent=2, sort_keys=True, allow_nan=False)
-        stream.write("\n")
+    try:
+        report = measure(
+            env, seeds, seeds[: args.branch_seeds], tolerance.max_state_deviation, rubric
+        )
+        report["run"] = run_dir.name
+        with (run_dir / "sensitivity.json").open("x", encoding="utf-8") as stream:
+            json.dump(report, stream, indent=2, sort_keys=True, allow_nan=False)
+            stream.write("\n")
+    except Exception as exc:
+        finish_run(repo, run_dir, status="failed", note=f"{type(exc).__name__}: {exc}")
+        raise
+    finish_run(repo, run_dir, status="completed", note=f"{len(seeds)} seeds")
     return report
 
 
@@ -183,7 +203,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seeds", type=int, default=100)
     parser.add_argument("--branch-seeds", type=int, default=20)
     parser.add_argument("--tolerance-file", type=Path, required=True)
-    parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
         report = _run(args)

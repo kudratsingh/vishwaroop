@@ -510,21 +510,59 @@ def test_the_nudge_moves_only_the_cube_x() -> None:
     assert moved["seed"] == 1
 
 
+def test_a_branch_is_judged_on_the_whole_episode(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The fixture's plan has lifted the object by step 12. Judged alone, the part of the episode
+    # after that would read as never lifted, and every branch would look like a changed label.
+    monkeypatch.setattr(sensitivity, "ScriptedPickPlace", _FixturePolicy)
+    monkeypatch.setattr(sensitivity, "_STREAMS", ("object_position", "target_position"))
+    monkeypatch.setattr(sensitivity, "BRANCH_STEPS", (14, 24))
+    result = sensitivity.measure(FakeArmEnv(), [3], [3], 0.001, RUBRIC, nudge=lambda state: state)
+    assert result["branches"]["14"]["label_flips"] == 0
+    assert result["branches"]["24"]["label_flips"] == 0
+
+
+def _sensitivity_args(*extra: str) -> list[str]:
+    return [*extra, "--tolerance-file", str(FROZEN)]
+
+
 @pytest.mark.parametrize(("first", "count"), [(7999, 2), (8000, 1), (-1, 1)])
-def test_sensitivity_stays_out_of_the_dev_holdout(tmp_path: Path, first: int, count: int) -> None:
-    code = sensitivity.main(
-        [
-            "--first-seed", str(first), "--seeds", str(count),
-            "--tolerance-file", str(FROZEN), "--out", str(tmp_path / "report.json"),
-        ]
-    )  # fmt: skip
+def test_sensitivity_stays_out_of_the_dev_holdout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, first: int, count: int
+) -> None:
+    repo = _repo(tmp_path, monkeypatch)
+    code = sensitivity.main(_sensitivity_args("--first-seed", str(first), "--seeds", str(count)))
     assert code == 2
-    assert not (tmp_path / "report.json").exists()
+    assert list((repo / "runs").iterdir()) == []
 
 
-def test_sensitivity_will_not_overwrite(tmp_path: Path) -> None:
-    out = tmp_path / "report.json"
-    out.write_text("{}", encoding="utf-8")
-    code = sensitivity.main(["--tolerance-file", str(FROZEN), "--out", str(out)])
-    assert code == 2
-    assert out.read_text(encoding="utf-8") == "{}"
+def test_a_sensitivity_measurement_is_a_ledgered_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo = _repo(tmp_path, monkeypatch)
+    monkeypatch.setattr(sensitivity, "ManiSkillPickCube", FakeArmEnv)
+    monkeypatch.setattr(sensitivity, "ScriptedPickPlace", _FixturePolicy)
+    monkeypatch.setattr(sensitivity, "_STREAMS", ("object_position", "target_position"))
+    monkeypatch.setattr(sensitivity, "BRANCH_STEPS", ())
+    # The fixture's state has no ManiSkill cube to nudge, so this case starts unchanged.
+    monkeypatch.setattr(sensitivity.measure, "__defaults__", (lambda state: state,))
+    assert sensitivity.main(_sensitivity_args("--first-seed", "3", "--seeds", "1")) == 0
+    ledger = _ledger(repo)
+    assert [line["status"] for line in ledger] == ["started", "completed"]
+    written = json.loads(
+        (repo / "runs" / ledger[0]["run_id"] / "sensitivity.json").read_text(encoding="utf-8")
+    )
+    assert written["run"] == ledger[0]["run_id"]
+    assert written["seeds"] == [3]
+
+
+def test_sensitivity_says_not_run_without_the_simulator(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo = _repo(tmp_path, monkeypatch)
+
+    def unavailable() -> None:
+        raise sensitivity.SimulatorUnavailableError("no stack")
+
+    monkeypatch.setattr(sensitivity, "ManiSkillPickCube", unavailable)
+    assert sensitivity.main(_sensitivity_args("--seeds", "1")) == 3
+    assert list((repo / "runs").iterdir()) == []
