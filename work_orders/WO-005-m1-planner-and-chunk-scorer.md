@@ -2,8 +2,8 @@
 **Phase:** M1
 **Exit tests advanced:** ET-M1-2, ET-M1-4, ET-M1-5
 **Size:** L (milestone-level stub; expand when next)
-**Prerequisites:** WO-004 accepted; frozen task suite and baselines from `evals/M0-protocol.md`.
-**Authorization:** §2.3 approval for paid GPU time; simulator time on an approved machine otherwise.
+**Prerequisites:** WO-004 accepted; frozen task suite and baselines from `evals/M0-protocol.md`; WO-012's compute split accepted.
+**Authorization:** AGENTS §2.1 only: planner runs and simulator branches run on the owner's M3 Pro on CPU physics. Any paid GPU time would need §2.3 approval and a new estimate from a measured need.
 **Files:** `src/vishwaroop/planning/`, `src/vishwaroop/scoring/`, `src/vishwaroop/sim/branches.py`, `tests/`, `reports/WO-005-m1-planner-and-chunk-scorer.md`.
 
 ## Objective
@@ -19,7 +19,7 @@ Closed-loop VLA evaluation (M2a), synthetic data (M3), real arm, drone logs.
 Written when expanded. Minimum: branch dataset manifest; ranking agreement ≥ frozen threshold or a reported negative; planner comparison table; scorer AUROC and abstention coverage; `make check`.
 
 ## Stop conditions
-Thresholds not frozen; planner exploiting predictor errors without the uncertainty penalty being reported; any attempt to present chunk scores as policy success.
+Thresholds not frozen; "constraint violation" (ET-M1-5) not defined in a frozen file before any scorer result, since no frozen file defines it today; planner exploiting predictor errors without the uncertainty penalty being reported; any attempt to present chunk scores as policy success.
 
 ## Report
 `reports/WO-005-m1-planner-and-chunk-scorer.md`

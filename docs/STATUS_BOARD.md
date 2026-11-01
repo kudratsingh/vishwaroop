@@ -2,14 +2,14 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-01 05:57 UTC · ledger records: 81
+Generated: 2026-11-01 07:54 UTC · ledger records: 85
 
 ## Phases
 
 | Phase | Name | State | Exit tests (passed / frozen / total) | Prerequisites | Work orders |
 |---|---|---|---|---|---|
 | M0 | Grounded development environment | **passed** | 6 / 6 / 6 | — | WO-001, WO-002, WO-003, WO-007, WO-008, WO-009, WO-010, WO-011 |
-| M1 | Compact predictor, latent planner, action-chunk scorer | **not_started** | 0 / 5 / 5 | M0 | WO-004, WO-005, WO-006 |
+| M1 | Compact predictor, latent planner, action-chunk scorer | **not_started** | 0 / 5 / 5 | M0 | WO-004, WO-005, WO-006, WO-012, WO-013 |
 | M2a | Closed-loop policy evaluator (simulation) | **not_started** | 0 / 0 / 5 | M1 | — |
 | M2b | Real-arm evaluator validation | **not_started** | 0 / 0 / 4 | M2a | — |
 | M3 | Synthetic-data engine (SFT route) | **not_started** | 0 / 0 / 5 | M0 | — |
@@ -66,7 +66,7 @@ Generated: 2026-11-01 05:57 UTC · ledger records: 81
 | WO-001 | M0 grounded environment: one reproducible simulator episode and its evidence chain | M0 | **accepted** | 2026-11-01T05:32:28.583459Z | reports/WO-001-m0-grounded-environment.md |
 | WO-002 | M0 dataset: scripted and perturbed episodes with successes and failures | M0 | **accepted** | 2026-11-01T05:57:18.655278Z | reports/WO-002-m0-dataset-successes-and-failures.md |
 | WO-003 | Supervised resource and spend enforcement (local, no paid execution) | M0 | **superseded** | 2026-11-01T00:40:56.445935Z | — |
-| WO-004 | M1 predictors: nominal + residual ensemble, compact latent model, calibration | M1 | **created** | 2026-10-31T07:51:47.999197Z | — |
+| WO-004 | M1 predictors on the Mac: nominal + residual ensemble, state-based latent model, calibration | M1 | **created** | 2026-10-31T07:51:47.999197Z | — |
 | WO-005 | M1 planner (CEM MPC) and action-chunk scorer with simulator-branch validation | M1 | **created** | 2026-10-31T07:51:48.038418Z | — |
 | WO-006 | Read-only arm snapshot import and policy-holdout registry | M1 | **created** | 2026-10-31T07:51:48.074460Z | — |
 | WO-007 | Program-wide rename of this repository and package to vishwaroop | M0 | **accepted** | 2026-10-31T22:15:23.725834Z | reports/WO-007-program-rename-vishwaroop.md |
@@ -74,4 +74,6 @@ Generated: 2026-11-01 05:57 UTC · ledger records: 81
 | WO-009 | Designate the private GitHub remote and create the repository | M0 | **accepted** | 2026-10-31T10:19:25.741665Z | reports/WO-009-designate-github-remote.md |
 | WO-010 | Protect accepted work orders, widen the secret scan, restore the broad ignore rule | M0 | **accepted** | 2026-10-31T22:15:23.806356Z | reports/WO-010-status-freeze-and-token-scan.md |
 | WO-011 | Adopt ironclad v1.1.0 and remove the vendored shared files | M0 | **accepted** | 2026-11-01T04:59:08.566289Z | reports/WO-011-adopt-ironclad.md |
+| WO-012 | Split M1 between the Mac and a GPU, from a measured pilot | M1 | **in_progress** | 2026-11-01T07:34:31.219530Z | — |
+| WO-013 | M1 visual latent model, on the Mac first | M1 | **created** | 2026-11-01T07:48:28.393883Z | — |
 

@@ -50,7 +50,7 @@ One world model does not automatically provide all three. A decoder-free latent 
 ```
 `x̂_t` estimated state, `u_t` the action, `c_t` known context (controller mode, configuration version), `h_t` recent history. Integrate predicted rates to future states. Ensemble disagreement is the first uncertainty signal and is validated against actual error (ET-M1-3), never trusted on its own.
 
-**Latent tier (second).** A recurrent state-space model with an observation-update mode (new evidence corrects belief) and an imagination mode (no future image available), PlaNet/Dreamer style; a frozen compact visual encoder to start; no image decoder for planning (TD-MPC2 style). Image generation is optional and only for representation learning, debugging or human review.
+**Latent tier (second).** On state observations for the M1 exit tests; the visual version is WO-013. A recurrent state-space model with an observation-update mode (new evidence corrects belief) and an imagination mode (no future image available), PlaNet/Dreamer style; a frozen compact visual encoder to start; no image decoder for planning (TD-MPC2 style). Image generation is optional and only for representation learning, debugging or human review.
 
 **Training unit.** Sequences `(o_t, u_t, o_{t+1}, …)` with a history segment to initialize belief, actions provided during the rollout, future observations withheld — the same information boundary the planner faces. Losses: motion, multi-step rollout, latent consistency; geometry and feature losses when visual inputs exist. Normalize physical quantities; balance terms so an image loss cannot drown a small motion error.
 
@@ -71,7 +71,7 @@ Sampling-based MPC (CEM): sample 128–256 bounded action sequences over a 1–2
 
 | Workload | Budget line | Where it runs today |
 |---|---|---|
-| Training (state tier, compact latent) | peak memory, throughput, total cost per experiment | one rented 4090/A40-class GPU; later the owner's workstation |
+| Training (state tier, state-based compact latent, M1 planner and scorer) | peak memory, throughput, total cost per experiment | the owner's M3 Pro, measured in `reports/WO-012-m1-compute-split.md`; a GPU only for a measured need |
 | Offline generation / evaluation | cost per accepted trajectory; cost per evaluated checkpoint | same |
 | Deployment (shadow) | end-to-end latency, deadline misses, behaviour when unavailable | logged only until a drone-owned WO authorizes more |
 
