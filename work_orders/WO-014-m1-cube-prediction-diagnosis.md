@@ -30,6 +30,12 @@ Written before any trained result of this study. The first look at the data (no 
 4. **Phases, per rollout window, from the true trajectory.** `resting`, `moved_before_grasp`, `moved_after_grasp`, `grasp_onset`, `held`, `release`. A move is a step of at least 0.1 mm. These labels are analysis only and are never model inputs.
 5. **How much the flag matters.** Each carrying variant is also rolled out with the true flag as its gate. This is an upper bound for diagnosis, not a legitimate predictor or baseline.
 
+### Added after the first run, on 2026-11-01
+The first run gave `carry-contact-beta` a far larger gain than the question predicted, and the frozen table cannot say why, so these were added after seeing it. They are train-only, labelled as additions, and change neither the decision rule nor the frozen variants.
+- **Attribution.** `hold-beta` and `carry-beta` at 30 epochs, seeds 0, 1 and 2, because beta-NLL was never tested without carrying and contact.
+- **Whole families held out.** The chosen variant at 30 epochs, seeds 0 and 1, holding out each of `m0-scripted-noisy-actions`, `m0-scripted-wrong-place`, `m0-scripted-missed-grasp` and `m0-scripted-early-release`. The seed holdout shares families with the fit data, while ET-M1-1's dev set holds out whole families, so the seed holdout may flatter a model.
+- **Uncertainty, a first look.** Rank correlation of predicted standard deviation against absolute error, and 90% interval coverage, by stream, because a changed loss can damage what ET-M1-3 measures. ET-M1-3's streams are not frozen, and this is not ET-M1-3 evidence.
+
 ### Decision rule
 - **Q1, does the nominal carry?** Answered by the code and the step table.
 - **Q2, does error differ by phase?** Answered by the per-phase table, in millimetres.

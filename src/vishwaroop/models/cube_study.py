@@ -13,7 +13,9 @@ import json
 import math
 import sys
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -48,7 +50,7 @@ from .compute_pilot import (
     _torch,
 )
 from .cube_phases import WINDOW_PHASES, episode_window_phases, step_table
-from .pilot_data import ACTION_SIZE, STATE_SIZE, load_train, split_holdout
+from .pilot_data import ACTION_SIZE, STATE_SIZE, load_train, split_family, split_holdout
 
 CUBE_FIRST, CUBE_LAST = STREAM_SLICES["object_position"]
 FLAG_FIRST, FLAG_LAST = STREAM_SLICES["object_grasped"]
@@ -73,7 +75,12 @@ VARIANTS = {
     "carry": Variant(carry=True, contact=False, beta=0.0),
     "carry-contact": Variant(carry=True, contact=True, beta=0.0),
     "carry-contact-beta": Variant(carry=True, contact=True, beta=0.5),
+    "hold-beta": Variant(carry=False, contact=False, beta=0.5),
+    "carry-beta": Variant(carry=True, contact=False, beta=0.5),
 }
+FROZEN_VARIANTS = ("hold", "hold-contact", "carry", "carry-contact", "carry-contact-beta")
+Z_90 = 1.6449
+CALIBRATED_STREAMS = ("joint_position", "object_position")
 
 
 class _Kinematics:
@@ -282,6 +289,38 @@ def _metrics(
     }
 
 
+def _spearman(a: Any, b: Any) -> float:
+    torch = _torch()
+
+    def ranks(values: Any) -> Any:
+        order = values.argsort()
+        result = torch.empty_like(values)
+        result[order] = torch.arange(len(values), dtype=values.dtype)
+        return result
+
+    x, y = ranks(a), ranks(b)
+    x, y = x - x.mean(), y - y.mean()
+    return float((x * y).sum().item() / (x.norm() * y.norm()).item())
+
+
+def _uncertainty(means: Any, log_vars: Any, truth: Any, delta_std: Any) -> dict[str, Any]:
+    """A first look at what ET-M1-3 will ask, on this holdout. Its streams are not frozen yet."""
+    torch = _torch()
+    mean = means.mean(0)
+    variance = (torch.exp(log_vars) * delta_std.pow(2)).mean(0) + means.var(0, unbiased=False)
+    std = variance.sqrt().cpu().double()
+    error = (mean - truth).abs().cpu().double()
+    result = {}
+    for name in CALIBRATED_STREAMS:
+        a, b = STREAM_SLICES[name]
+        s, e = std[..., a:b].flatten(), error[..., a:b].flatten()
+        result[name] = {
+            "spearman_std_vs_abs_error": _spearman(s, e),
+            "coverage_of_90_percent_interval": float((e <= Z_90 * s).double().mean().item()),
+        }
+    return result
+
+
 def _baselines(
     data: _Data, stats: dict[str, Any], masks: dict[str, Any]
 ) -> dict[str, dict[str, Any]]:
@@ -334,15 +373,24 @@ def _evaluate(
     actions = data.holdout_a.unsqueeze(0).expand(MEMBERS, -1, -1, -1)
     truth = data.holdout_s[:, HISTORY + 1 : HISTORY + 1 + HORIZON]
     with torch.no_grad():
-        means, _ = _rollout(stats, variant, layers, states, actions, true_gate)
-    return _metrics(torch.stack(means, 2).mean(0), truth, data.state_std, masks)
+        means, log_vars = _rollout(stats, variant, layers, states, actions, true_gate)
+    stacked = torch.stack(means, 2)
+    return {
+        **_metrics(stacked.mean(0), truth, data.state_std, masks),
+        "uncertainty_first_look": _uncertainty(
+            stacked, torch.stack(log_vars, 2), truth, data.delta_std
+        ),
+    }
 
 
 def _study(args: argparse.Namespace, machine: dict[str, Any]) -> dict[str, Any]:
     torch = _torch()
     episodes = load_train(args.manifest, Path())
-    _, holdout = split_holdout(episodes)
-    data = _Data(args.manifest, args.device)
+    split: Callable[[Any], tuple[list[Any], list[Any]]] = split_holdout
+    if args.holdout_family:
+        split = partial(split_family, family=args.holdout_family)
+    _, holdout = split(episodes)
+    data = _Data(args.manifest, args.device, split)
     stats = {**_stats_of(data), "kinematics": _Kinematics(args.device)}
     phases = [
         phase for item in holdout for phase in episode_window_phases(item.states, HISTORY, HORIZON)
@@ -372,6 +420,7 @@ def _study(args: argparse.Namespace, machine: dict[str, Any]) -> dict[str, Any]:
     return {
         "machine": machine,
         "epochs": args.epochs,
+        "holdout_family": args.holdout_family or None,
         "kinematics_gap_m": largest_gap_m(args.device),
         "fit_episodes": data.fit_episodes,
         "holdout_episodes": data.holdout_episodes,
@@ -388,7 +437,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--epochs", type=int, default=EPOCHS)
     parser.add_argument("--seeds", default=",".join(str(seed) for seed in SEEDS))
-    parser.add_argument("--variants", default=",".join(VARIANTS))
+    parser.add_argument("--variants", default=",".join(FROZEN_VARIANTS))
+    parser.add_argument(
+        "--holdout-family", default="", help="hold out this whole train family, not the seed split"
+    )
     parser.add_argument("--device", choices=("mps", "cpu"), default="mps")
     args = parser.parse_args(argv)
     try:
@@ -404,6 +456,7 @@ def main(argv: list[str] | None = None) -> int:
                 "epochs": args.epochs,
                 "variants": args.variants,
                 "device": args.device,
+                "holdout_family": args.holdout_family,
             },
             seeds={"torch": 0},
             env_lock={"machine": machine},
@@ -417,7 +470,10 @@ def main(argv: list[str] | None = None) -> int:
             with (run.directory / "cube_study.json").open("x", encoding="utf-8") as stream:
                 json.dump(report, stream, indent=2, sort_keys=True, allow_nan=False)
                 stream.write("\n")
-            run.note = f"{args.variants} on seeds {args.seeds}, {args.epochs} epochs"
+            run.note = (
+                f"{args.variants} on seeds {args.seeds}, {args.epochs} epochs,"
+                f" holdout {args.holdout_family or 'by seed'}"
+            )
             print(run.directory)
     except (ValueError, OSError) as exc:
         print(f"refused: {exc}", file=sys.stderr)
