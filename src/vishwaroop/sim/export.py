@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import math
 from collections.abc import Callable
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -189,15 +189,22 @@ def _json_bytes(value: Any) -> bytes:
     return json.dumps(value, indent=2, sort_keys=True, allow_nan=False).encode("utf-8") + b"\n"
 
 
-def record_episode(env: SimEnv, policy: Policy, spec: EpisodeSpec, target_dir: Path) -> Path:
+def record_episode(
+    env: SimEnv,
+    policy: Policy,
+    spec: EpisodeSpec,
+    target_dir: Path,
+    closing_note: Callable[[], str | None] | None = None,
+) -> Path:
     """Run one episode and write it once. Raises the contract's error if it does not validate.
 
     The initial state is saved right after ``reset``, before any action, and the episode then runs
     from that saved state, by the same path a replay takes. Starting straight from ``reset`` instead
-    was measured to diverge from replay on 22 of 100 real episodes (WO-001 report). The policy sees
-    only the streams declared as inputs. The outcome comes from the independent rubric. An existing
-    ``target_dir`` is refused by the writer. The manifest says ``scripted``, because M0's only
-    policies are scripted (evals/M0-protocol.md section 6).
+    diverges from replay, because restoring is not exact and contact amplifies the difference
+    (ADR-0006). The policy sees only the streams declared as inputs. ``closing_note`` runs after the
+    last step, and what it returns is added to the manifest's notes. The outcome comes from the
+    independent rubric. An existing ``target_dir`` is refused by the writer. The manifest says
+    ``scripted``, because M0's only policies are scripted (evals/M0-protocol.md section 6).
     """
     inputs = {stream.name for stream in env.stream_specs if stream.role == "input"}
     env.reset(spec.seed)
@@ -215,7 +222,10 @@ def record_episode(env: SimEnv, policy: Policy, spec: EpisodeSpec, target_dir: P
         packet = next_packet
     outcome = assess(samples_from_records(records), spec.rubric)
     created_at = spec.created_at or datetime.now(UTC).isoformat(timespec="seconds")
-    builder = writer().EpisodeBuilder(_manifest(env, spec, outcome, terminated, created_at))
+    note = closing_note() if closing_note is not None else None
+    final_spec = spec if note is None else replace(spec, notes=f"{spec.notes} {note}")
+    manifest = _manifest(env, final_spec, outcome, terminated, created_at)
+    builder = writer().EpisodeBuilder(manifest)
     builder.add_file("rubric.json", _json_bytes(asdict(spec.rubric)))
     builder.add_file("configuration.json", _json_bytes(env.configuration()))
     builder.add_file("stack.json", _json_bytes(env.stack_identity()))

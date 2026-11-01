@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-import ast
+import json
 import math
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 
-from vishwaroop.sim import baseline
 from vishwaroop.sim.baseline import (
     VARIANTS,
     PlanningError,
@@ -18,6 +20,7 @@ from vishwaroop.sim.baseline import (
 )
 from vishwaroop.sim.so100_kinematics import tool_point
 
+ROOT = Path(__file__).resolve().parents[1]
 REST = [0.034, -0.009, 0.0007, 1.579, 1.555, 0.0]
 JOINT_LIMITS = [(-2.0, 2.0), (-1.5708, 1.5708), (-1.5708, 1.5708), (-1.8, 1.8), (-3.14, 3.14)]
 
@@ -123,20 +126,35 @@ def test_the_policy_ends_after_its_plan() -> None:
     assert policy(packet, length) is None
 
 
-def test_the_controller_shares_no_code_with_the_outcome() -> None:
-    tree = ast.parse(Path(baseline.__file__).read_text(encoding="utf-8"))
-    imported = [
-        node.module or "" for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)
-    ] + [
-        alias.name
-        for node in ast.walk(tree)
-        if isinstance(node, ast.Import)
-        for alias in node.names
-    ]
-    assert not [name for name in imported if "outcome" in name or "replay" in name]
+def test_the_controller_loads_no_outcome_or_replay_code() -> None:
+    code = (
+        "import json, sys; import vishwaroop.sim.baseline; "
+        "print(json.dumps(sorted(m for m in sys.modules if m.startswith('vishwaroop'))))"
+    )
+    done = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+        check=True,
+        env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+    )
+    loaded = json.loads(done.stdout)
+    assert "vishwaroop.sim.baseline" in loaded
+    assert [name for name in loaded if "outcome" in name or "replay" in name] == []
 
 
-def test_the_controller_reads_only_declared_input_streams() -> None:
-    packet = _packet()
-    assert "object_grasped" not in packet
-    assert plan_pick_and_place(packet, PlanSettings())
+def test_a_reference_stream_cannot_change_the_plan() -> None:
+    plain = plan_pick_and_place(_packet(), PlanSettings())
+    told = {**_packet(), "object_grasped": [1.0]}
+    assert plan_pick_and_place(told, PlanSettings()) == plain
+
+
+def test_the_failure_families_are_far_enough_off_to_fail_by_design() -> None:
+    target_radius_m = 0.015625
+    cube_half_width_m = 0.0125
+    assert VARIANTS["nominal"].grasp_offset_xy_m == (0.0, 0.0)
+    assert VARIANTS["nominal"].place_offset_xy_m == (0.0, 0.0)
+    assert VARIANTS["nominal"].release is True
+    assert math.hypot(*VARIANTS["missed-grasp"].grasp_offset_xy_m) > 2 * cube_half_width_m
+    assert math.hypot(*VARIANTS["wrong-place"].place_offset_xy_m) > target_radius_m
+    assert VARIANTS["no-release"].release is False

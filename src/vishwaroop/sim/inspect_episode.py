@@ -1,12 +1,14 @@
 """Look at an exported episode, by a route that does not use the outcome code (ET-M0-4).
 
-``raw_facts`` reads the transitions directly. ``--render`` replays the recorded actions from the
-saved initial state with the camera on and writes a contact sheet for a person or agent to look at;
-it reports how far the rendered run strayed from the recording, so the pictures can be trusted.
+The episode must first pass contract validation, which checks its hashes and paths. ``raw_facts``
+then reads the transitions directly. ``--render`` replays the recorded actions from the saved
+initial state with the camera on and writes a contact sheet for a person or agent to look at. If the
+rendered run strays from the recording by more than the frozen replay tolerance, the pictures do not
+show this episode, and the command says so and exits 1.
 
     python -m vishwaroop.sim.inspect_episode --episode DIR --out NEW_DIR --render
 
-Exit codes: 0 inspected, 2 refused, 3 simulator not run.
+Exit codes: 0 inspected, 1 the pictures cannot be trusted, 2 refused, 3 simulator not run.
 """
 
 from __future__ import annotations
@@ -20,17 +22,21 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
+from .contract import validator
 from .env import ManiSkillPickCube, SimulatorUnavailableError
 
 _FRAMES = 12
 _COMPARED = ("joint_position", "object_position", "target_position")
 _DWELL_STEPS = 10
+_RENDER_MAX_DEVIATION = 0.001  # evals/M0-exit-tests.json, replay.max_state_deviation
 
 
 def _value(packets: Sequence[Mapping[str, Any]], stream: str) -> list[float]:
     for packet in packets:
         if packet["stream"] == stream:
-            value: list[float] = packet["value"]
+            value: list[float] | None = packet["value"]
+            if value is None:
+                raise ValueError(f"stream {stream} is marked invalid in the record")
             return value
     raise ValueError(f"stream {stream} is not in the record")
 
@@ -86,7 +92,9 @@ def _render(episode: Path, manifest: dict[str, Any], records: list[Any], out: Pa
         packet = env.step(record["action"]["requested"])
         for stream in _COMPARED:
             recorded = _value(record["next_observations"], stream)
-            worst = max(worst, *(abs(a - b) for a, b in zip(packet[stream], recorded, strict=True)))
+            for now, then in zip(packet[stream], recorded, strict=True):
+                gap = abs(now - then)
+                worst = max(worst, gap) if math.isfinite(gap) else math.inf
         if index + 1 in wanted:
             images.append((index + 1, env.render_rgb()))
     columns = 4
@@ -102,17 +110,20 @@ def _render(episode: Path, manifest: dict[str, Any], records: list[Any], out: Pa
 
 
 def _run(args: argparse.Namespace) -> dict[str, Any]:
+    validator().validate_episode(args.episode / "episode.json")
     manifest = json.loads((args.episode / "episode.json").read_text(encoding="utf-8"))
     path = args.episode / manifest["data"]["transitions_artifact"]["path"]
     records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
-    args.out.mkdir(parents=True, exist_ok=False)
     report: dict[str, Any] = {
         "episode_id": manifest["episode_id"],
         "recorded_outcome": manifest["outcome"]["reason"],
         "raw_facts": raw_facts(records),
     }
+    args.out.mkdir(parents=True, exist_ok=False)
     if args.render:
-        report["rendered_run_max_deviation"] = _render(args.episode, manifest, records, args.out)
+        worst = _render(args.episode, manifest, records, args.out)
+        report["rendered_run_max_deviation"] = worst if math.isfinite(worst) else "inf"
+        report["rendered_run_trusted"] = worst <= _RENDER_MAX_DEVIATION
     with (args.out / "inspection.json").open("x", encoding="utf-8") as stream:
         json.dump(report, stream, indent=2, sort_keys=True, allow_nan=False)
         stream.write("\n")
@@ -134,7 +145,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"refused: {exc}", file=sys.stderr)
         return 2
     print(json.dumps(report, indent=2, sort_keys=True))
-    return 0
+    return 1 if report.get("rendered_run_trusted") is False else 0
 
 
 if __name__ == "__main__":

@@ -2,30 +2,106 @@
   "status": "resolved_for_m0_on_macos_cpu_physics",
   "resolved_by": "WO-001",
   "resolved_on": "2026-11-01",
-  "rule": "A changed pin is a new lock file version (docs/ENVIRONMENT.md section 5). Every entry says tested or proposed, with its date.",
+  "rule": "A changed pin is a new lock file version (docs/ENVIRONMENT.md section 5). Every pin in the simulator and fallback sections says tested, proposed or not_applicable, with its date. Entries under not_needed_for_m0 are unresolved on purpose and are not pins of this stack.",
   "simulator": {
-    "os": {"value": "macOS 26.5.2 (25F84), Darwin 25.5.0, arm64", "state": "tested", "date": "2026-11-01"},
-    "os_image_digest": {"value": "not applicable: the owner's Mac, no image", "state": "tested", "date": "2026-11-01"},
-    "hardware": {"value": "Apple M3 Pro", "state": "tested", "date": "2026-11-01"},
-    "python": {"value": "3.11.15", "state": "tested", "date": "2026-11-01"},
-    "mani_skill_version_or_commit": {"value": "3.0.1", "state": "tested", "date": "2026-11-01"},
-    "sapien_version": {"value": "3.0.3", "state": "tested", "date": "2026-11-01"},
-    "pytorch_version": {"value": "2.15.0", "state": "tested", "date": "2026-11-01"},
-    "gymnasium_version": {"value": "1.4.0", "state": "tested", "date": "2026-11-01"},
-    "numpy_version": {"value": "2.4.6", "state": "tested", "date": "2026-11-01"},
-    "jsonschema_version": {"value": "4.26.0", "state": "tested", "date": "2026-11-01"},
-    "physics_backend": {"value": "physx_cpu", "state": "tested", "date": "2026-11-01"},
-    "render_backend": {"value": "none for recording and replay; cpu for inspection frames only", "state": "tested", "date": "2026-11-01"},
-    "vulkan_loader_icd_verified": {"value": "Khronos MoltenVK v1.4.2, MoltenVK-macos.tar, sha256 f95765a6229cb7b915990a2890ce12ebe36a730b021545d3d52ae69ce4c4024e, enabled per process through VK_ICD_FILENAMES", "state": "tested", "date": "2026-11-01"},
-    "cuda": {"value": "not applicable: CPU physics on a Mac", "state": "tested", "date": "2026-11-01"},
-    "nvidia_driver": {"value": "not applicable: CPU physics on a Mac", "state": "tested", "date": "2026-11-01"},
-    "full_environment": {"value": "config/robotics-requirements.macos.txt", "state": "tested", "date": "2026-11-01"}
+    "os": {
+      "value": "macOS 26.5.2 (25F84), Darwin 25.5.0, arm64",
+      "state": "tested",
+      "date": "2026-11-01"
+    },
+    "os_image_digest": {
+      "value": "not applicable: the owner's Mac, no image",
+      "state": "not_applicable",
+      "date": "2026-11-01"
+    },
+    "hardware": {
+      "value": "Apple M3 Pro",
+      "state": "tested",
+      "date": "2026-11-01"
+    },
+    "python": {
+      "value": "3.11.15",
+      "state": "tested",
+      "date": "2026-11-01"
+    },
+    "mani_skill_version_or_commit": {
+      "value": "3.0.1",
+      "state": "tested",
+      "date": "2026-11-01"
+    },
+    "sapien_version": {
+      "value": "3.0.3",
+      "state": "tested",
+      "date": "2026-11-01"
+    },
+    "pytorch_version": {
+      "value": "2.15.0",
+      "state": "tested",
+      "date": "2026-11-01"
+    },
+    "gymnasium_version": {
+      "value": "1.4.0",
+      "state": "tested",
+      "date": "2026-11-01"
+    },
+    "numpy_version": {
+      "value": "2.4.6",
+      "state": "tested",
+      "date": "2026-11-01"
+    },
+    "jsonschema_version": {
+      "value": "4.26.0",
+      "state": "tested",
+      "date": "2026-11-01"
+    },
+    "physics_backend": {
+      "value": "physx_cpu",
+      "state": "tested",
+      "date": "2026-11-01"
+    },
+    "render_backend": {
+      "value": "requested none for recording and replay, but mani_skill 3.0.1 overrides that to sapien_cpu on macOS, as its warning says; cpu requested for inspection frames",
+      "state": "tested",
+      "date": "2026-11-01"
+    },
+    "vulkan_loader_icd_verified": {
+      "value": "Khronos MoltenVK v1.4.2, MoltenVK-macos.tar, sha256 f95765a6229cb7b915990a2890ce12ebe36a730b021545d3d52ae69ce4c4024e, enabled per process through VK_ICD_FILENAMES",
+      "state": "tested",
+      "date": "2026-11-01"
+    },
+    "cuda": {
+      "value": "not applicable: CPU physics on a Mac",
+      "state": "not_applicable",
+      "date": "2026-11-01"
+    },
+    "nvidia_driver": {
+      "value": "not applicable: CPU physics on a Mac",
+      "state": "not_applicable",
+      "date": "2026-11-01"
+    },
+    "full_environment": {
+      "value": "config/robotics-requirements.macos.txt",
+      "state": "tested",
+      "date": "2026-11-01"
+    }
   },
   "fallback_linux_gpu_host": {
     "note": "For the owner-run machine. Nothing here has been installed or run. scripts/setup_gpu_host.sh records the driver and CUDA it finds.",
-    "platform": {"value": "Linux x86_64", "state": "proposed", "date": "2026-11-01"},
-    "python": {"value": "3.11", "state": "proposed", "date": "2026-11-01"},
-    "full_environment": {"value": "config/robotics-requirements.linux.txt, every package hash-pinned; mani_skill 3.0.1, sapien 3.0.3, torch 2.15.0 with its CUDA 13 wheels", "state": "proposed", "date": "2026-11-01"}
+    "platform": {
+      "value": "Linux x86_64",
+      "state": "proposed",
+      "date": "2026-11-01"
+    },
+    "python": {
+      "value": "3.11",
+      "state": "proposed",
+      "date": "2026-11-01"
+    },
+    "full_environment": {
+      "value": "config/robotics-requirements.linux.txt, every package hash-pinned; mani_skill 3.0.1, sapien 3.0.3, torch 2.15.0 with its CUDA 13 wheels",
+      "state": "proposed",
+      "date": "2026-11-01"
+    }
   },
   "not_needed_for_m0": {
     "note": "Resolved by the work order that first needs each. M0 uses no VLA and no physical arm.",

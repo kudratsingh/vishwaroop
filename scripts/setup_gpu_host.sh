@@ -2,13 +2,14 @@
 # Prepare an owner-provided Linux GPU machine, so the first paid hour is not spent installing.
 #
 #   scripts/setup_gpu_host.sh --check-only     # read-only: what this machine has and lacks
-#   scripts/setup_gpu_host.sh                  # checks, pinned install, smoke episode
+#   scripts/setup_gpu_host.sh                  # checks, pinned install, GPU check, smoke episode
 #
-# It works inside this checkout only: a new venv (default venv/, which git ignores) and a new run directory
-# under runs/. It never starts, stops or resizes a machine, installs system packages, uses sudo,
-# resets a GPU, or spends anything. The owner starts and stops the machine. It never touches data/.
+# It creates a new venv (default venv/, which git ignores) and new run directories under runs/, and
+# appends to ledgers/runs.jsonl. uv may also download Python 3.11 and cache packages under $HOME.
+# It never starts, stops or resizes a machine, installs system packages, uses sudo, resets a GPU, or
+# spends anything. The owner starts and stops the machine. It never touches data/.
 #
-# Exit codes: 0 ok, 2 this machine lacks something, 3 install failed, 4 smoke failed.
+# Exit codes: 0 ok, 2 this machine lacks something, 3 install failed, 4 GPU check or smoke failed.
 set -euo pipefail
 
 # ldconfig is often outside an ordinary user's PATH.
@@ -21,26 +22,49 @@ MIN_DISK_GB=20
 MAX_GPU_MEMORY_USED_MIB=500
 INSTALL_LIMIT_S=1800
 SMOKE_LIMIT_S=600
-SMOKE_SEED=12
+# On this seed, a small change at the start moved the run a long way (ADR-0006), so it shows up a
+# stack that does not reproduce.
+SMOKE_SEED=115
 
 VENV="$REPO/venv"
+RUN_ROOT="$REPO/runs"
 RUN_ID="gpu-smoke-$(date -u +%Y%m%dT%H%M%SZ)"
 CHECK_ONLY=0
+
+usage_error() { echo "$1" >&2; exit 2; }
+absolute() { case "$1" in /*) echo "$1" ;; *) echo "$PWD/$1" ;; esac; }
+
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --check-only) CHECK_ONLY=1 ;;
-    --venv) shift; VENV="${1:?--venv needs a path}" ;;
-    --run-id)
+    --venv)
+      [ "$#" -ge 2 ] || usage_error "--venv needs a path"
       shift
-      RUN_ID="${1:?--run-id needs a name}"
+      VENV="$(absolute "$1")"
+      ;;
+    --run-root)
+      [ "$#" -ge 2 ] || usage_error "--run-root needs a path"
+      shift
+      RUN_ROOT="$(absolute "$1")"
+      ;;
+    --run-id)
+      [ "$#" -ge 2 ] || usage_error "--run-id needs a name"
+      shift
+      RUN_ID="$1"
       case "$RUN_ID" in
-        *[!A-Za-z0-9._-]*|.*) echo "--run-id may hold letters, digits, dot, dash, underscore" >&2; exit 2 ;;
+        ''|*[!A-Za-z0-9._-]*|.*) usage_error "--run-id may hold letters, digits, dot, dash, underscore" ;;
       esac
       ;;
-    *) echo "unknown argument: $1" >&2; exit 2 ;;
+    *) usage_error "unknown argument: $1" ;;
   esac
   shift
 done
+
+case "$VENV/" in
+  "$REPO"/data/*|"$REPO"/runs/*|"$REPO"/ledgers/*|"$REPO"/reports/*|"$REPO"/artifacts/*)
+    usage_error "--venv may not be inside an append-only directory: $VENV" ;;
+esac
+RUN_DIR="$RUN_ROOT/$RUN_ID"
 
 FAILED=0
 ok() { echo "ok      $1"; }
@@ -55,25 +79,24 @@ else
   lacks "platform: need Linux x86_64 for the pinned lock, found $SYSTEM $MACHINE"
 fi
 
-GPU_LINE=""
+GPU_OUTPUT=""
 if command -v nvidia-smi >/dev/null 2>&1; then
   GPU_OUTPUT="$(nvidia-smi --query-gpu=name,driver_version,memory.total,memory.used \
     --format=csv,noheader,nounits 2>/dev/null || true)"
-  GPU_LINE="${GPU_OUTPUT%%$'\n'*}"
 fi
-if [ -n "$GPU_LINE" ]; then
-  USED="$(echo "$GPU_LINE" | cut -d, -f4 | tr -d ' ')"
-  ok "gpu and driver: $GPU_LINE (name, driver, MiB total, MiB used)"
-  case "$USED" in
-    ''|*[!0-9]*) lacks "gpu memory: nvidia-smi gave '$USED', not a number" ;;
-    *)
-      if [ "$USED" -gt "$MAX_GPU_MEMORY_USED_MIB" ]; then
-        lacks "idle gpu: ${USED} MiB in use, above ${MAX_GPU_MEMORY_USED_MIB}; another job may be here (never reset it)"
-      else
-        ok "idle gpu: ${USED} MiB in use"
-      fi
-      ;;
-  esac
+if [ -n "$GPU_OUTPUT" ]; then
+  while IFS= read -r GPU_LINE; do
+    USED="$(echo "$GPU_LINE" | cut -d, -f4 | tr -d ' ')"
+    ok "gpu and driver: $GPU_LINE (name, driver, MiB total, MiB used)"
+    case "$USED" in
+      ''|*[!0-9]*) lacks "gpu memory: nvidia-smi gave '$USED', not a number" ;;
+      *)
+        if [ "$USED" -gt "$MAX_GPU_MEMORY_USED_MIB" ]; then
+          lacks "idle gpu: ${USED} MiB in use, above ${MAX_GPU_MEMORY_USED_MIB}; another job may be here (never reset it)"
+        fi
+        ;;
+    esac
+  done <<< "$GPU_OUTPUT"
 else
   lacks "nvidia driver: nvidia-smi is missing or reports no GPU"
 fi
@@ -100,7 +123,13 @@ if [ -z "$ICD_FILE" ]; then
   done
 fi
 if [ -n "$ICD_FILE" ]; then
-  ok "vulkan nvidia icd: $ICD_FILE"
+  if [ ! -f "$ICD_FILE" ]; then
+    lacks "vulkan nvidia icd: $ICD_FILE does not exist"
+  elif ! grep -qi nvidia "$ICD_FILE"; then
+    lacks "vulkan nvidia icd: $ICD_FILE does not name NVIDIA's driver"
+  else
+    ok "vulkan nvidia icd: $ICD_FILE"
+  fi
 elif [[ "$LIBRARIES" == *libGLX_nvidia.so.0* ]]; then
   NEED_WRITTEN_ICD=1
   ok "vulkan nvidia icd: none on disk, but libGLX_nvidia.so.0 exists; one will be written inside the venv"
@@ -119,16 +148,33 @@ UV=""
 if command -v uv >/dev/null 2>&1; then
   UV="uv"
   ok "installer: uv"
-elif command -v python3.11 >/dev/null 2>&1; then
+elif command -v python3.11 >/dev/null 2>&1 && python3.11 -c 'import ensurepip, venv' >/dev/null 2>&1; then
   ok "installer: python3.11 with venv and pip"
 else
-  lacks "installer: need uv, or python3.11 with venv"
+  lacks "installer: need uv, or python3.11 with venv and ensurepip"
+fi
+
+if command -v timeout >/dev/null 2>&1; then
+  ok "timeout: present"
+else
+  lacks "timeout: GNU coreutils timeout is needed to bound each step"
 fi
 
 if [ -f "$LOCK" ] && [ -f "$FROZEN" ]; then
   ok "lock and frozen protocol present"
 else
   lacks "this checkout lacks config/robotics-requirements.linux.txt or evals/M0-exit-tests.json"
+fi
+
+if [ -e "$VENV" ]; then
+  lacks "new venv: $VENV exists; pass a new --venv path, this script replaces nothing"
+else
+  ok "new venv: $VENV"
+fi
+if [ -e "$RUN_DIR" ]; then
+  lacks "new run directory: $RUN_DIR exists; runs are write-once"
+else
+  ok "new run directory: $RUN_DIR"
 fi
 
 if [ "$FAILED" -ne 0 ]; then
@@ -141,28 +187,32 @@ if [ "$CHECK_ONLY" -eq 1 ]; then
 fi
 
 STARTED="$(date +%s)"
-RUN_DIR="$REPO/runs/$RUN_ID"
-if [ -e "$RUN_DIR" ]; then
-  echo "refused: $RUN_DIR exists; runs are write-once" >&2
-  exit 2
-fi
-if [ -e "$VENV" ]; then
-  echo "refused: $VENV exists; pass a new --venv path, this script replaces nothing" >&2
-  exit 2
-fi
+finished() {
+  echo "== finished after $(($(date +%s) - STARTED))s; evidence in $RUN_DIR"
+  echo "   This machine keeps running until the owner stops it. This script does not stop it."
+}
+trap finished EXIT
 mkdir -p "$RUN_DIR"
 
 echo "== install (pinned, hash-checked, at most ${INSTALL_LIMIT_S}s)"
 if [ -n "$UV" ]; then
-  uv venv --python 3.11 "$VENV"
-  timeout "$INSTALL_LIMIT_S" uv pip install --python "$VENV/bin/python" --require-hashes \
-    --no-deps -r "$LOCK" || { echo "install failed" >&2; exit 3; }
-  uv pip freeze --python "$VENV/bin/python" > "$RUN_DIR/freeze.txt"
+  if ! { uv venv --python 3.11 "$VENV" \
+      && timeout "$INSTALL_LIMIT_S" uv pip install --python "$VENV/bin/python" --require-hashes \
+        --no-deps -r "$LOCK" \
+      && uv pip freeze --python "$VENV/bin/python" > "$RUN_DIR/freeze.txt"; } 2>&1 \
+      | tee "$RUN_DIR/install.log"; then
+    echo "install failed; see $RUN_DIR/install.log" >&2
+    exit 3
+  fi
 else
-  python3.11 -m venv "$VENV"
-  timeout "$INSTALL_LIMIT_S" "$VENV/bin/python" -m pip install --require-hashes --no-deps \
-    -r "$LOCK" || { echo "install failed" >&2; exit 3; }
-  "$VENV/bin/python" -m pip freeze > "$RUN_DIR/freeze.txt"
+  if ! { python3.11 -m venv "$VENV" \
+      && timeout "$INSTALL_LIMIT_S" "$VENV/bin/python" -m pip install --require-hashes --no-deps \
+        -r "$LOCK" \
+      && "$VENV/bin/python" -m pip freeze > "$RUN_DIR/freeze.txt"; } 2>&1 \
+      | tee "$RUN_DIR/install.log"; then
+    echo "install failed; see $RUN_DIR/install.log" >&2
+    exit 3
+  fi
 fi
 
 if [ "$NEED_WRITTEN_ICD" -eq 1 ]; then
@@ -179,27 +229,63 @@ PY="$VENV/bin/python"
 echo "== host record"
 nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader > "$RUN_DIR/gpu.txt"
 uname -a > "$RUN_DIR/uname.txt"
-timeout 120 "$PY" - <<'PYTHON' | tee "$RUN_DIR/versions.txt" || { echo "the pinned stack will not import" >&2; exit 3; }
+if ! timeout 120 "$PY" - 2>&1 <<'PYTHON' | tee "$RUN_DIR/versions.txt"; then
 import gymnasium, jsonschema, mani_skill, numpy, sapien, sys, torch
 print("python", sys.version.split()[0])
 for module in (mani_skill, sapien, torch, gymnasium, numpy, jsonschema):
     print(module.__name__, module.__version__)
-print("torch.cuda.is_available", torch.cuda.is_available())
 print("torch.version.cuda", torch.version.cuda)
 PYTHON
+  echo "the pinned stack will not import; see $RUN_DIR/versions.txt" >&2
+  exit 3
+fi
 
-echo "== smoke episode (at most ${SMOKE_LIMIT_S}s)"
+echo "== gpu check: torch on CUDA, then GPU physics and rendering (at most ${SMOKE_LIMIT_S}s)"
+if ! timeout "$SMOKE_LIMIT_S" "$PY" - 2>&1 <<'PYTHON' | tee "$RUN_DIR/gpu-check.log"; then
+import gymnasium, mani_skill.envs, torch
+if not torch.cuda.is_available():
+    raise SystemExit("torch cannot use the GPU; the driver may be too old for these CUDA wheels")
+print("torch on", torch.cuda.get_device_name(0), "sum", torch.ones(4, device="cuda").sum().item())
+env = gymnasium.make(
+    "PickCubeSO100-v1",
+    num_envs=2,
+    obs_mode="state",
+    control_mode="pd_joint_pos",
+    sim_backend="physx_cuda",
+    render_backend="gpu",
+    render_mode="rgb_array",
+)
+env.reset(seed=0)
+env.step(env.action_space.sample())
+frame = env.render()
+if frame.shape[0] != 2 or float(frame.float().std()) == 0.0:
+    raise SystemExit(f"GPU rendering gave an empty frame of shape {tuple(frame.shape)}")
+print("gpu physics and rendering ok; frame", tuple(frame.shape))
+env.close()
+PYTHON
+  echo "gpu check failed; see $RUN_DIR/gpu-check.log" >&2
+  exit 4
+fi
+
+echo "== smoke episode on CPU physics, as M0 is frozen (each step at most ${SMOKE_LIMIT_S}s)"
 cd "$REPO"
 EPISODE="$RUN_DIR/episodes/m0-scripted-nominal-seed-$(printf '%06d' "$SMOKE_SEED")"
 mkdir -p "$RUN_DIR/episodes"
-timeout "$SMOKE_LIMIT_S" "$PY" -m vishwaroop.sim.record --seed "$SMOKE_SEED" --variant nominal \
-  --run-id "$RUN_ID" --tolerance-file "$FROZEN" --out "$RUN_DIR/episodes" \
-  || { echo "smoke: recording failed" >&2; exit 4; }
-timeout "$SMOKE_LIMIT_S" "$PY" contracts/v1/validate.py "$EPISODE/episode.json" \
-  > "$RUN_DIR/validate.json" || { echo "smoke: the contract rejected the episode" >&2; exit 4; }
-timeout "$SMOKE_LIMIT_S" "$PY" -m vishwaroop.sim.replay --episode "$EPISODE" \
-  --tolerance-file "$FROZEN" --repeats 3 --out "$RUN_DIR/replay.json" > /dev/null \
-  || { echo "smoke: replay did not hold (see $RUN_DIR/replay.json)" >&2; exit 4; }
-
-echo "== done in $(($(date +%s) - STARTED))s; evidence in $RUN_DIR"
-echo "   Measured on this machine only. Send $RUN_DIR back, and leave stopping the machine to the owner."
+if ! timeout "$SMOKE_LIMIT_S" "$PY" -m vishwaroop.sim.record --episode "$SMOKE_SEED:nominal" \
+    --tolerance-file "$FROZEN" --out "$RUN_DIR/episodes" 2>&1 | tee "$RUN_DIR/record.log"; then
+  echo "smoke: recording failed; see $RUN_DIR/record.log" >&2
+  exit 4
+fi
+if ! timeout "$SMOKE_LIMIT_S" "$PY" contracts/v1/validate.py "$EPISODE/episode.json" \
+    > "$RUN_DIR/validate.json" 2>&1; then
+  echo "smoke: the contract rejected the episode; see $RUN_DIR/validate.json" >&2
+  exit 4
+fi
+if ! timeout "$SMOKE_LIMIT_S" "$PY" -m vishwaroop.sim.replay --episode "$EPISODE" \
+    --tolerance-file "$FROZEN" --repeats 3 --out "$RUN_DIR/replay.json" \
+    > "$RUN_DIR/replay.stdout" 2>&1; then
+  echo "smoke: replay did not hold; see $RUN_DIR/replay.stdout" >&2
+  tail -n 3 "$RUN_DIR/replay.stdout" >&2
+  exit 4
+fi
+echo "== smoke passed. Measured on this machine only. Send $RUN_DIR back."

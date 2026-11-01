@@ -15,8 +15,19 @@ def test_the_simulator_section_has_no_null_pin() -> None:
     assert LOCK["simulator"]
     for name, entry in LOCK["simulator"].items():
         assert entry["value"], name
-        assert entry["state"] == "tested", name
+        assert entry["state"] in {"tested", "not_applicable"}, name
         assert DATE.match(entry["date"]), name
+
+
+def test_not_applicable_is_kept_for_what_a_mac_has_none_of() -> None:
+    skipped = {k for k, v in LOCK["simulator"].items() if v["state"] == "not_applicable"}
+    assert skipped == {"os_image_digest", "cuda", "nvidia_driver"}
+
+
+def test_only_the_lock_rule_allows_the_unresolved_section() -> None:
+    assert "not_needed_for_m0" in LOCK["rule"]
+    unresolved = {k: v for k, v in LOCK["not_needed_for_m0"].items() if k != "note"}
+    assert unresolved and all(value is None for value in unresolved.values())
 
 
 def test_the_fallback_machine_is_only_proposed() -> None:
@@ -39,11 +50,15 @@ def test_the_named_environment_files_exist() -> None:
 
 
 def test_the_tested_versions_match_the_tested_environment_file() -> None:
-    text = (ROOT / LOCK["simulator"]["full_environment"]["value"]).read_text(encoding="utf-8")
+    path = ROOT / LOCK["simulator"]["full_environment"]["value"]
+    lines = set(path.read_text(encoding="utf-8").splitlines())
     simulator = LOCK["simulator"]
-    assert f"mani-skill=={simulator['mani_skill_version_or_commit']['value']}" in text
-    assert f"sapien=={simulator['sapien_version']['value']}" in text
-    assert f"torch=={simulator['pytorch_version']['value']}" in text
-    assert f"gymnasium=={simulator['gymnasium_version']['value']}" in text
-    assert f"numpy=={simulator['numpy_version']['value']}" in text
-    assert f"jsonschema=={simulator['jsonschema_version']['value']}" in text
+    for package, entry in (
+        ("mani-skill", "mani_skill_version_or_commit"),
+        ("sapien", "sapien_version"),
+        ("torch", "pytorch_version"),
+        ("gymnasium", "gymnasium_version"),
+        ("numpy", "numpy_version"),
+        ("jsonschema", "jsonschema_version"),
+    ):
+        assert f"{package}=={simulator[entry]['value']}" in lines, package

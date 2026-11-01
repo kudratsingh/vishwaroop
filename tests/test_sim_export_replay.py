@@ -1137,7 +1137,15 @@ def test_the_real_adapter_is_built_from_the_recording(
         def __init__(self, env_id: str, max_episode_steps: int) -> None:
             calls.append((env_id, max_episode_steps))
 
+    validated: list[Path] = []
+
+    class StubValidator:
+        @staticmethod
+        def validate_episode(path: Path) -> None:
+            validated.append(path)
+
     monkeypatch.setattr(replay, "ManiSkillPickCube", StubAdapter)
+    monkeypatch.setattr(replay, "validator", lambda: StubValidator)
     episode = tmp_path / "ep"
     episode.mkdir()
     (episode / "configuration.json").write_text(
@@ -1149,9 +1157,34 @@ def test_the_real_adapter_is_built_from_the_recording(
     }
     assert isinstance(replay.env_for_manifest(episode, manifest), StubAdapter)
     assert calls == [("Recorded-v1", 150)]
+    assert validated == [episode / "episode.json"]
     manifest["simulator"]["engine"] = "another"
     with pytest.raises(SimulatorUnavailableError, match="no adapter"):
         replay.env_for_manifest(episode, manifest)
+
+
+def test_a_real_episode_is_validated_before_its_files_choose_a_simulator(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[Any] = []
+
+    class StubAdapter:
+        engine = "fake_fixture_no_simulator"
+
+        def __init__(self, **kwargs: Any) -> None:
+            calls.append(kwargs)
+
+    monkeypatch.setattr(replay, "ManiSkillPickCube", StubAdapter)
+    episode = record_episode(
+        FakeArmEnv(), plan_policy(scripted_plan(3)), _spec("edited"), tmp_path / "edited"
+    )
+    manifest = json.loads((episode / "episode.json").read_text(encoding="utf-8"))
+    (episode / "configuration.json").write_text(
+        json.dumps({"env_id": "this:Nope-v0", "max_episode_steps": 1}), encoding="utf-8"
+    )
+    with pytest.raises(ContractError):
+        replay.env_for_manifest(episode, manifest)
+    assert calls == []
 
 
 def test_negative_command_exits_one_when_one_case_of_five_is_accepted(

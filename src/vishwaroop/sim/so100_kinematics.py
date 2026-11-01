@@ -139,6 +139,18 @@ def _solve(matrix: list[list[float]], vector: list[float]) -> list[float] | None
     return solution
 
 
+def _converged(
+    joints: list[float], target: Vector, tolerance_m: float, tilt_tolerance: float
+) -> bool:
+    """Is the tool at the target, with the jaws pointing down and not up?"""
+    direction = approach_direction(joints)
+    return (
+        math.dist(tool_point(joints), target) <= tolerance_m
+        and math.hypot(direction[0], direction[1]) <= tilt_tolerance
+        and direction[2] < 0.0
+    )
+
+
 def _residual(joints: list[float], target: Vector, down_weight: float) -> list[float]:
     point = tool_point(joints)
     direction = approach_direction(joints)
@@ -158,23 +170,22 @@ def solve_tool_down(
     limits: Sequence[tuple[float, float]],
     down_weight: float = 0.05,
     tolerance_m: float = 0.0005,
+    tilt_tolerance: float = 0.02,
     max_iterations: int = 200,
 ) -> list[float] | None:
     """Find joints that put the tool point at ``target`` with the jaws pointing straight down.
 
     Only the first four joints move; roll and gripper stay at ``seed``. Damped least squares on a
-    numeric Jacobian, kept within ``limits``. Returns ``None`` if the position error stays above
-    ``tolerance_m``.
+    numeric Jacobian, kept within ``limits``. Returns ``None`` unless the position error is within
+    ``tolerance_m`` and the sine of the tilt from vertical is within ``tilt_tolerance``.
     """
     joints = list(seed)
     step = 1e-5
     damping = 1e-4
     for _ in range(max_iterations):
-        residual = _residual(joints, target, down_weight)
-        if math.dist(residual[:3], (0.0, 0.0, 0.0)) <= tolerance_m and (
-            math.hypot(residual[3], residual[4]) <= down_weight * 0.02
-        ):
+        if _converged(joints, target, tolerance_m, tilt_tolerance):
             return joints
+        residual = _residual(joints, target, down_weight)
         columns: list[list[float]] = []
         for index in range(ARM_JOINTS):
             moved = list(joints)
@@ -199,5 +210,4 @@ def solve_tool_down(
         for index in range(ARM_JOINTS):
             low, high = limits[index]
             joints[index] = min(high, max(low, joints[index] + update[index]))
-    final = _residual(joints, target, down_weight)
-    return joints if math.dist(final[:3], (0.0, 0.0, 0.0)) <= tolerance_m else None
+    return joints if _converged(joints, target, tolerance_m, tilt_tolerance) else None

@@ -5,8 +5,10 @@ A skip here means **not run**, never passed (AGENTS.md section 4.5).
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -16,6 +18,15 @@ from vishwaroop.sim.record import record_scripted
 from vishwaroop.sim.replay import load_frozen, replay_episode
 
 FROZEN = Path(__file__).resolve().parents[1] / "evals" / "M0-exit-tests.json"
+
+
+def _numbers(value: Any) -> list[float]:
+    if isinstance(value, dict):
+        return [number for key in sorted(value) for number in _numbers(value[key])]
+    if isinstance(value, list):
+        return [number for item in value for number in _numbers(item)]
+    return [float(value)]
+
 
 pytestmark = pytest.mark.sim
 
@@ -34,10 +45,17 @@ def test_adapter_implements_the_interface(env: ManiSkillPickCube) -> None:
     assert env.action_spec.labels
 
 
-def test_restoring_the_saved_state_returns_the_same_packet(env: ManiSkillPickCube) -> None:
+def test_restoring_returns_the_same_packet_but_not_the_exact_state(
+    env: ManiSkillPickCube,
+) -> None:
+    # Packets leave out the robot's root pose, which is where restoring is inexact (ADR-0006).
     first = env.reset(7)
     state = env.save_state()
     assert env.restore_state(state) == first
+    numbers = _numbers(json.loads(state)["state"])
+    again = _numbers(json.loads(env.save_state())["state"])
+    assert len(numbers) == len(again)
+    assert max(abs(a - b) for a, b in zip(numbers, again, strict=True)) < 1e-6
 
 
 @pytest.mark.parametrize(

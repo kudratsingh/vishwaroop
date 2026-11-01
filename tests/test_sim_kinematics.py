@@ -10,7 +10,9 @@ import math
 
 import pytest
 
+from vishwaroop.sim import so100_kinematics
 from vishwaroop.sim.so100_kinematics import (
+    _converged,
     approach_direction,
     fingertips,
     jaw_direction,
@@ -79,10 +81,32 @@ def test_jaws_close_across_the_table_at_the_grasp_pose() -> None:
     assert abs(jaw_direction(joints)[2]) < 0.1
 
 
-def test_jaw_direction_refuses_coincident_tips(monkeypatch: pytest.MonkeyPatch) -> None:
-    import vishwaroop.sim.so100_kinematics as kinematics
+@pytest.mark.parametrize(
+    ("direction", "accepted"),
+    [
+        ((0.0, 0.0, -1.0), True),
+        ((0.03, 0.0, -0.9995), False),  # tilted beyond the tolerance
+        ((0.0, 0.0, 1.0), False),  # straight up: no tilt, wrong way
+    ],
+)
+def test_a_solution_must_point_down_as_well_as_reach(
+    monkeypatch: pytest.MonkeyPatch, direction: tuple[float, float, float], accepted: bool
+) -> None:
+    monkeypatch.setattr(so100_kinematics, "approach_direction", lambda _: direction)
+    assert _converged(SEED, tool_point(SEED), 0.0005, 0.02) is accepted
 
+
+def test_the_solver_will_not_return_a_tilted_pose_after_running_out_of_iterations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Position alone used to be enough at the end of the loop.
+    monkeypatch.setattr(so100_kinematics, "approach_direction", lambda _: (0.5, 0.0, -0.8))
+    target = tool_point(SEED)
+    assert solve_tool_down(target, SEED, limits=LIMITS, max_iterations=2) is None
+
+
+def test_jaw_direction_refuses_coincident_tips(monkeypatch: pytest.MonkeyPatch) -> None:
     point = (0.0, 0.0, 0.0)
-    monkeypatch.setattr(kinematics, "fingertips", lambda _: (point, point))
+    monkeypatch.setattr(so100_kinematics, "fingertips", lambda _: (point, point))
     with pytest.raises(ValueError, match="coincide"):
         jaw_direction(SEED)

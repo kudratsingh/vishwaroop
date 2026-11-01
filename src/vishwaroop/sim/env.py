@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 
 JOINT_STREAM = "joint_position"
+KNOWN_ENV_IDS = frozenset({"PickCubeSO100-v1"})
 Packet = dict[str, list[float]]
 
 
@@ -96,10 +97,12 @@ def _to_jsonable(value: Any) -> Any:
 
 
 class ManiSkillPickCube:
-    """``PickCubeSO100-v1`` on CPU physics (ADR-0004). Simulated SO-100; no transfer claim. Not run.
+    """``PickCubeSO100-v1`` on CPU physics (ADR-0004). Simulated SO-100; no transfer claim.
 
     Joint positions are in rad, positions in metres in the world frame. Initial state is saved as
-    JSON, never pickled.
+    JSON, never pickled. Restoring is close but not exact (ADR-0006). The environment id can come
+    from an episode's files, so only known ids are accepted: Gymnasium imports the module named in
+    an id like ``module:Name``.
     """
 
     engine = "maniskill3"
@@ -112,6 +115,8 @@ class ManiSkillPickCube:
         *,
         render: bool = False,
     ) -> None:
+        if env_id not in KNOWN_ENV_IDS:
+            raise ValueError(f"unknown environment id {env_id}; known: {sorted(KNOWN_ENV_IDS)}")
         try:
             import gymnasium
             import mani_skill
