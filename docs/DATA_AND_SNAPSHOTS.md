@@ -22,3 +22,6 @@ The arm producer finishes a checkpoint and its sim evaluation in a temporary exp
 
 ## 6. Provenance rules
 `real`, `physics_sim`, `imagined` remain distinct forever. Replaying imagined actions creates a **new** physics_sim episode linked to the imagined parent; executing them physically creates a **new** real episode. Evidence is appended to the validation ledger (`ironclad.contracts.v1/validation_ledger.schema.json`); generated pixels never become physical observations. Raw logs are retained; training-ready exports carry hashes and transformation versions.
+
+## 7. Copies of the episode bytes (recorded 2026-11-01)
+The M0 episode bytes under `data/derived/` (113 MB on 2026-11-01) are git-ignored and have **one copy**, on the owner's Mac. Only their hashes are tracked, in `artifacts/manifests/`, so a lost episode can be detected and re-recorded on the same stack, but not restored. **The owner is arranging a backup.** No agent action is needed, and this record changes when the backup exists.

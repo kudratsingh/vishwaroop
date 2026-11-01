@@ -55,6 +55,12 @@ LATENT_STRIDE = 8
 PREDICTOR_WEIGHTS = "predictor-mps.pt"
 JOINTS = 6
 CHILD_TIMEOUT_S = 1800
+STREAM_SLICES = {
+    "joint_position": (0, 6),
+    "object_position": (6, 9),
+    "target_position": (9, 12),
+    "object_grasped": (12, 13),
+}
 
 
 def _torch() -> Any:
@@ -247,7 +253,9 @@ def _rollout(
     return means, log_vars
 
 
-def _holdout_rmse(data: _Data, stats: dict[str, Any], layers: list[Any]) -> dict[str, list[float]]:
+def _holdout_rmse(
+    data: _Data, stats: dict[str, Any], layers: list[Any]
+) -> dict[str, dict[str, list[float]]]:
     """Error by horizon on the pilot's holdout, in state-normalized units. A sanity check only."""
     torch = _torch()
     states = data.holdout_s
@@ -257,9 +265,13 @@ def _holdout_rmse(data: _Data, stats: dict[str, Any], layers: list[Any]) -> dict
     truth = states[:, HISTORY + 1 : HISTORY + 1 + HORIZON]
     scale = data.state_std
 
-    def rmse(prediction: Any) -> list[float]:
+    def rmse(prediction: Any) -> dict[str, list[float]]:
         error = (prediction - truth) / scale
-        return [math.sqrt(error[:, h].pow(2).mean().item()) for h in range(HORIZON)]
+        parts = {"all": (0, STATE_SIZE), **STREAM_SLICES}
+        return {
+            name: [math.sqrt(error[:, h, first:last].pow(2).mean().item()) for h in range(HORIZON)]
+            for name, (first, last) in parts.items()
+        }
 
     constant = start.unsqueeze(1).expand_as(truth)
     linear = torch.stack([start + (start - previous) * (h + 1) for h in range(HORIZON)], dim=1)
