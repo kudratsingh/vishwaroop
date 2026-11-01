@@ -36,6 +36,6 @@ The next action is WO-001's simulator steps. Merge on green checks, with a full 
 2. `evals/M0-exit-tests.json`, `evals/M0-protocol.md` and `evals/M1-exit-tests.json` are frozen, and their `frozen` events are appended. Phase M0 and WO-001 are `in_progress`. Exit tests are frozen before `ready`, as `AGENTS.md §5.3` requires.
 3. Outcome code, export, replay and negative tests are done, and tested on a fabricated fake.
 4. The simulator runs on the Mac with MoltenVK (`docs/ENVIRONMENT.md §4`). The real episodes, replay and negative tests are done: `reports/WO-001-m0-grounded-environment.md`.
-5. WO-002's dataset is done: `reports/WO-002-m0-dataset-successes-and-failures.md`. Next is WO-004, on the owner-run Linux GPU machine. Run `make check` from a clean clone if this checkout's scan fails on the stored log named in that report's section 9.
+5. WO-002's dataset is done: `reports/WO-002-m0-dataset-successes-and-failures.md`. Next is WO-004, on the Mac: `reports/WO-012-m1-compute-split.md` found that no M1 exit test needs a GPU. Run `make check` from a clean clone if this checkout's scan fails on the stored log named in that report's section 9.
 
 The first-session prompt the owner pastes into a fresh agent is `prompts/FIRST_SESSION.md`.

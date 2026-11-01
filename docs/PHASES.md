@@ -14,7 +14,7 @@ M0 ──► M1 ──► M2a ──► M2b ──► M5 ──► M6
                                  M8 (hand; after M2b)
 ```
 
-M0 and M1 run entirely in simulation with data an agent can generate today. M2a needs arm checkpoints (immutable exports). M2b needs the real arm and the physical protocol. M3 needs matched sim scenes plus generator and downstream-policy access. M4 needs drone logs. Each waits only for its own input.
+M0 and M1 run entirely in simulation with data an agent can generate today, and on the owner's Mac (`reports/WO-012-m1-compute-split.md`). M2a needs arm checkpoints (immutable exports). M2b needs the real arm and the physical protocol. M3 needs matched sim scenes plus generator and downstream-policy access. M4 needs drone logs. Each waits only for its own input.
 
 Phase states: `not_started → ready → in_progress → (blocked ↔) → passed | failed`.
 
@@ -41,7 +41,7 @@ Phase states: `not_started → ready → in_progress → (blocked ↔) → passe
 
 **Deliverable.** A state-based residual/ensemble predictor (PETS-style small ensemble, nominal dynamics plus learned correction) and a compact latent predictor with calibrated uncertainty; a sampling MPC planner (CEM) against nominal-model MPC and a scripted baseline; an action-chunk scorer validated against executed simulator branches. **No full-episode VLA success claim.**
 
-**Prerequisites.** M0 passed. Arm policy snapshots are needed only for VLA-chunk comparisons. **Work orders.** WO-004 (predictors and calibration), WO-005 (planner and scorer), WO-006 (read-only arm snapshot importer and policy-holdout registry; can run in parallel).
+**Prerequisites.** M0 passed. Arm policy snapshots are needed only for VLA-chunk comparisons. **Work orders.** WO-012 (where M1 runs, from a measured pilot), WO-004 (predictors and calibration), WO-005 (planner and scorer), WO-006 (read-only arm snapshot importer and policy-holdout registry; can run in parallel), WO-013 (visual latent model, no exit test depends on it).
 
 | Exit test | Statement | Evidence | Threshold |
 |---|---|---|---|
