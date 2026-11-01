@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-01 07:54 UTC · ledger records: 85
+Generated: 2026-11-01 07:57 UTC · ledger records: 86
 
 ## Phases
 
@@ -74,6 +74,6 @@ Generated: 2026-11-01 07:54 UTC · ledger records: 85
 | WO-009 | Designate the private GitHub remote and create the repository | M0 | **accepted** | 2026-10-31T10:19:25.741665Z | reports/WO-009-designate-github-remote.md |
 | WO-010 | Protect accepted work orders, widen the secret scan, restore the broad ignore rule | M0 | **accepted** | 2026-10-31T22:15:23.806356Z | reports/WO-010-status-freeze-and-token-scan.md |
 | WO-011 | Adopt ironclad v1.1.0 and remove the vendored shared files | M0 | **accepted** | 2026-11-01T04:59:08.566289Z | reports/WO-011-adopt-ironclad.md |
-| WO-012 | Split M1 between the Mac and a GPU, from a measured pilot | M1 | **in_progress** | 2026-11-01T07:34:31.219530Z | — |
+| WO-012 | Split M1 between the Mac and a GPU, from a measured pilot | M1 | **accepted** | 2026-11-01T07:57:36.907206Z | reports/WO-012-m1-compute-split.md |
 | WO-013 | M1 visual latent model, on the Mac first | M1 | **created** | 2026-11-01T07:48:28.393883Z | — |
 
