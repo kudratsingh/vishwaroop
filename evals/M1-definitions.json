@@ -1,0 +1,26 @@
+{
+  "phase": "M1",
+  "protocol_version": "m0-protocol-2",
+  "adds_to": "evals/M1-exit-tests.json",
+  "frozen_on": "2026-11-01",
+  "frozen_before": "any dev metric of any M1 predictor; WO-012's train-only pilot had been seen, so this takes the stricter reading",
+  "changes_a_threshold": false,
+  "definitions": [
+    {
+      "id": "ET-M1-1",
+      "decided_by": "owner, 2026-11-01: ET-M1-1 keeps the stricter reading",
+      "streams_each_required_to_pass": ["joint_position", "object_position"],
+      "stream_rmse": "root mean square over all dev windows and all coordinates of the stream, at one horizon, in the stream's own units",
+      "rule": "For each required stream separately, at every horizon 1 to 10, learned RMSE is at least 20% below the lowest baseline RMSE for that stream and horizon.",
+      "streams_reported_only": ["object_grasped"],
+      "streams_excluded": {
+        "target_position": "it never moves within an episode"
+      },
+      "baselines": [
+        "constant: the last state held",
+        "linear: extrapolation from the last two states",
+        "nominal: the nominal model inside the learned predictor, with no residual"
+      ]
+    }
+  ]
+}

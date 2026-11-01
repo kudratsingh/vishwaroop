@@ -12,6 +12,10 @@ Build the sampling MPC planner over the learned and nominal models, the simulato
 ## Scope
 `branches.py` (controlled counterfactual evidence in sim); CEM planner with bounded actions, known costs, uncertainty penalty, admissibility checks; nominal-model MPC baseline; scorer heads (progress, clearance, constraint violation, uncertainty) with an abstention rule; evaluation tables with Wilson intervals; latency and compute per decision; report.
 
+When this work order is expanded, its plan includes an estimate of M2a's observation model: which parts need a GPU, for how many hours, and the measurement that would confirm it. M2a's observation model is the first work that may need one. The estimate rents nothing (owner instruction, 2026-11-01).
+
+ET-M1-4's planner runs are over 30 minutes, so they must resume by episode (`AGENTS.md §13.9`).
+
 ## Out of scope
 Closed-loop VLA evaluation (M2a), synthetic data (M3), real arm, drone logs.
 

@@ -52,7 +52,7 @@ What an agent needs from the planning conversations (Sept–Oct 2026) to make th
 | 1 | First ManiSkill3 task if the arm project's SO-101 adapter is not exportable yet | a readily available pick-and-place task, honestly labelled; no transfer claim |
 | 2 | Base VLA family for M2 compatibility work | the arm project's choice; import as checkpoints only |
 | 3 | Where sealed real-arm evaluation data lives | owner-controlled location outside agent access (unknown) |
-| 4 | GPU for M1 training | none for the M1 exit tests: they run on the owner's M3 Pro, measured in `reports/WO-012-m1-compute-split.md`; cap $0 unless a measured need and an owner approval change that |
+| 4 | GPU for M1 training | none for the M1 exit tests: they run on the owner's M3 Pro, measured in `reports/WO-012-m1-compute-split.md`; cap $0 unless a measured need and an owner approval change that. Owner accepted the split on 2026-11-01. M2a's observation model is the first work that may need a GPU: estimated in WO-005's plan, nothing rented |
 | 5 | Teleop pilot scope for M3/M2b data | 10 successful demos + 10 safe autonomous/intervention episodes, one task, named object set (proposed default) |
 | 6 | Remote repository designation | decided: `kudratsingh/vishwaroop`, private (ADR-0005) |
 
