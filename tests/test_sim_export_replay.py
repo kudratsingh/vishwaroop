@@ -5,7 +5,6 @@ These test the logic only. No simulator runs here, so no result here is evidence
 
 from __future__ import annotations
 
-import ast
 import hashlib
 import json
 import math
@@ -1381,8 +1380,32 @@ def test_missing_simulator_is_a_clear_error() -> None:
         pytest.skip("the simulator is installed here")
 
 
-@pytest.mark.parametrize("package", ["outcome", "sim"])
-def test_simulator_code_parses_on_python_3_11(package: str) -> None:
-    """The robotics environment is proposed on Python 3.11, and CI only runs 3.12 and 3.13."""
-    for path in (ROOT / "src" / "vishwaroop" / package).glob("*.py"):
-        ast.parse(path.read_text(encoding="utf-8"), feature_version=(3, 11))
+def test_negative_command_writes_its_report_once(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    episode = _frozen_episode(tmp_path)
+    _use_fake(monkeypatch, FrozenTaskFake())
+    out = tmp_path / "negative.json"
+    args = ["--episode", str(episode), "--tolerance-file", str(FROZEN), "--out", str(out)]
+    assert negative_main(args) == 0
+    written = json.loads(out.read_text(encoding="utf-8"))
+    assert [case["rejected"] for case in written] == [True] * 5
+    assert negative_main(args) == 2
+    assert json.loads(out.read_text(encoding="utf-8")) == written
+
+
+def test_replay_is_refused_on_another_platform(tmp_path: Path) -> None:
+    class OnMac(FakeArmEnv):
+        def stack_identity(self) -> dict[str, Any]:
+            return {"platform": "Darwin arm64", "python": "3.12.13"}
+
+    class OnLinux(OnMac):
+        def stack_identity(self) -> dict[str, Any]:
+            return {**super().stack_identity(), "platform": "Linux x86_64"}
+
+    episode = record_episode(
+        OnMac(), plan_policy(scripted_plan(3)), _spec("platform"), tmp_path / "platform"
+    )
+    assert replay_episode(episode, OnMac(), TOLERANCE, RUBRIC).claim_valid
+    with pytest.raises(ReplayInvalidError, match="stacks"):
+        replay_episode(episode, OnLinux(), TOLERANCE, RUBRIC)

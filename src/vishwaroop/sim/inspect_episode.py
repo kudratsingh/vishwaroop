@@ -1,6 +1,8 @@
 """Look at an exported episode, by a route that does not use the outcome code (ET-M0-4).
 
-The episode must first pass contract validation, which checks its hashes and paths. ``raw_facts``
+The episode must first pass contract validation, which checks its hashes and paths. That catches
+mistakes, not forgery: a file edited and re-hashed passes, and only ``--render`` or a replay shows
+it, by comparing against physics. ``raw_facts``
 then reads the transitions directly. ``--render`` replays the recorded actions from the saved
 initial state with the camera on and writes a contact sheet for a person or agent to look at. If the
 rendered run strays from the recording by more than the frozen replay tolerance, the pictures do not
@@ -14,6 +16,7 @@ Exit codes: 0 inspected, 1 the pictures cannot be trusted, 2 refused, 3 simulato
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import itertools
 import json
 import math
@@ -26,7 +29,7 @@ from .contract import validator
 from .env import ManiSkillPickCube, SimulatorUnavailableError
 
 _FRAMES = 12
-_COMPARED = ("joint_position", "object_position", "target_position")
+_COMPARED = ("joint_position", "object_position", "target_position", "object_grasped")
 _DWELL_STEPS = 10
 _RENDER_MAX_DEVIATION = 0.001  # evals/M0-exit-tests.json, replay.max_state_deviation
 
@@ -72,18 +75,11 @@ def frame_steps(record_count: int, frames: int = _FRAMES) -> list[int]:
     return sorted({round(i * record_count / (frames - 1)) for i in range(frames)})
 
 
-def _render(episode: Path, manifest: dict[str, Any], records: list[Any], out: Path) -> float:
-    from PIL import Image, ImageDraw
-
-    configuration = json.loads((episode / "configuration.json").read_text(encoding="utf-8"))
-    env = ManiSkillPickCube(
-        env_id=configuration["env_id"],
-        max_episode_steps=configuration["max_episode_steps"],
-        render=True,
-    )
-    state = (episode / manifest["simulator"]["initial_state_artifact"]["path"]).read_bytes()
+def replay_frames(
+    env: Any, state: bytes, records: Sequence[Mapping[str, Any]], wanted: set[int]
+) -> tuple[float, list[tuple[int, Any]]]:
+    """Replay with the camera on. Returns the worst gap from the recording, and the frames."""
     env.restore_state(state)
-    wanted = set(frame_steps(len(records)))
     images: list[tuple[int, Any]] = []
     if 0 in wanted:
         images.append((0, env.render_rgb()))
@@ -97,6 +93,20 @@ def _render(episode: Path, manifest: dict[str, Any], records: list[Any], out: Pa
                 worst = max(worst, gap) if math.isfinite(gap) else math.inf
         if index + 1 in wanted:
             images.append((index + 1, env.render_rgb()))
+    return worst, images
+
+
+def _render(episode: Path, manifest: dict[str, Any], records: list[Any], out: Path) -> float:
+    from PIL import Image, ImageDraw
+
+    configuration = json.loads((episode / "configuration.json").read_text(encoding="utf-8"))
+    env = ManiSkillPickCube(
+        env_id=configuration["env_id"],
+        max_episode_steps=configuration["max_episode_steps"],
+        render=True,
+    )
+    state = (episode / manifest["simulator"]["initial_state_artifact"]["path"]).read_bytes()
+    worst, images = replay_frames(env, state, records, set(frame_steps(len(records))))
     columns = 4
     height, width = images[0][1].shape[:2]
     rows = math.ceil(len(images) / columns)
@@ -109,6 +119,11 @@ def _render(episode: Path, manifest: dict[str, Any], records: list[Any], out: Pa
     return worst
 
 
+def _require_pillow() -> None:
+    if importlib.util.find_spec("PIL") is None:
+        raise SimulatorUnavailableError("rendering needs Pillow, from the robotics environment")
+
+
 def _run(args: argparse.Namespace) -> dict[str, Any]:
     validator().validate_episode(args.episode / "episode.json")
     manifest = json.loads((args.episode / "episode.json").read_text(encoding="utf-8"))
@@ -119,6 +134,8 @@ def _run(args: argparse.Namespace) -> dict[str, Any]:
         "recorded_outcome": manifest["outcome"]["reason"],
         "raw_facts": raw_facts(records),
     }
+    if args.render:
+        _require_pillow()
     args.out.mkdir(parents=True, exist_ok=False)
     if args.render:
         worst = _render(args.episode, manifest, records, args.out)

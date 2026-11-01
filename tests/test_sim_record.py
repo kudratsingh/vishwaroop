@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import math
 import os
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -13,7 +15,7 @@ import pytest
 
 from fake_env import FakeArmEnv, plan_policy, scripted_plan
 from vishwaroop.outcome.pickplace import PlaceRubric
-from vishwaroop.sim import inspect_episode, record, sensitivity
+from vishwaroop.sim import inspect_episode, record, runlog, sensitivity, sweep
 from vishwaroop.sim.env import ManiSkillPickCube, Packet
 from vishwaroop.sim.export import EpisodeSpec, record_episode
 from vishwaroop.sim.inspect_episode import frame_steps, raw_facts
@@ -196,15 +198,50 @@ class _UnplannedPolicy(_Policy):
     planning_error = "no joint solution for tool point"
 
 
-def _repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, policy: type = _Policy) -> Path:
+def _git(repo: Path, *args: str) -> str:
+    done = subprocess.run(
+        ["git", "-c", "user.name=t", "-c", "user.email=t@example.invalid", *args],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return done.stdout.strip()
+
+
+def _bare_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, policy: type = _Policy) -> Path:
     (tmp_path / "ledgers").mkdir()
     (tmp_path / "runs").mkdir()
     (tmp_path / "config").mkdir()
-    (tmp_path / "config" / "stack-lock.resolved.json").write_text("{}", encoding="utf-8")
+    (tmp_path / "config" / "stack-lock.resolved.v2.json").write_text("{}", encoding="utf-8")
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(runlog, "CODE_ROOT", tmp_path)
     monkeypatch.setattr(record, "ManiSkillPickCube", _FakeStack)
     monkeypatch.setattr(record, "ScriptedPickPlace", policy)
     return tmp_path
+
+
+def _repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, policy: type = _Policy) -> Path:
+    repo = _bare_repo(tmp_path, monkeypatch, policy)
+    # As in the real repository, where run directories are ignored and the ledger is tracked.
+    (repo / ".gitignore").write_text("runs/*/\nledgers/runs.jsonl\nepisodes/\n", encoding="utf-8")
+    _git(repo, "init", "-q")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "fixture")
+    return repo
+
+
+def test_the_platform_goes_into_the_notes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    class OnMac(FakeArmEnv):
+        def stack_identity(self) -> dict[str, Any]:
+            return {"platform": "Darwin arm64"}
+
+    monkeypatch.setattr(record, "ScriptedPickPlace", _Policy)
+    path = record.record_scripted(OnMac(), 12, "nominal", "r", FROZEN, tmp_path, "Code commit c.")
+    notes = json.loads((path / "episode.json").read_text(encoding="utf-8"))["notes"]
+    assert "Recorded on Darwin arm64 with CPU physics" in notes
+    assert "only on the same stack" in notes
+    assert notes.endswith("Code commit c.")
 
 
 def _record_args(out: Path, *episodes: str) -> list[str]:
@@ -228,6 +265,7 @@ def test_a_recording_is_one_ledgered_run_and_names_its_code(
     assert ledger[0]["run_id"] == ledger[1]["run_id"]
     run_id = ledger[0]["run_id"]
     assert not Path(ledger[0]["run_dir"]).is_absolute()
+    commit = _git(repo, "rev-parse", "HEAD")
     assert (repo / "runs" / run_id / "git.json").is_file()
     assert json.loads((repo / "runs" / run_id / "seeds.json").read_text()) == {
         "12:nominal": 12,
@@ -236,8 +274,7 @@ def test_a_recording_is_one_ledgered_run_and_names_its_code(
     for name in ("m0-scripted-nominal-seed-000012", "m0-scripted-wrong-place-seed-000013"):
         manifest = json.loads((out / name / "episode.json").read_text(encoding="utf-8"))
         assert manifest["split"]["session_group_id"] == run_id
-        assert "Code commit" in manifest["notes"]
-        assert "dirty" in manifest["notes"]
+        assert f"Code commit {commit}, dirty False." in manifest["notes"]
         assert "planning_failed" not in manifest["notes"]
 
 
@@ -274,11 +311,90 @@ def test_a_dev_seed_is_refused_before_any_run_starts(
     assert list((repo / "runs").iterdir()) == []
 
 
-def test_record_refuses_outside_the_repository_root(
+def test_a_changed_tree_is_recorded_as_dirty(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.chdir(tmp_path)
-    assert record.main(_record_args(tmp_path / "out", "12:nominal")) == 2
+    repo = _repo(tmp_path, monkeypatch)
+    (repo / "changed.txt").write_text("not committed", encoding="utf-8")
+    assert record.main(_record_args(repo / "episodes", "12:nominal")) == 0
+    manifest = json.loads(
+        (repo / "episodes" / "m0-scripted-nominal-seed-000012" / "episode.json").read_text("utf-8")
+    )
+    assert f"Code commit {_git(repo, 'rev-parse', 'HEAD')}, dirty True." in manifest["notes"]
+
+
+def test_record_refuses_outside_the_checkout_whose_code_runs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "code").mkdir()
+    repo = _repo(tmp_path / "code", monkeypatch)
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    monkeypatch.chdir(elsewhere)
+    assert record.main(_record_args(elsewhere / "out", "12:nominal")) == 2
+    assert not (repo / "ledgers" / "runs.jsonl").exists()
+
+
+def test_a_run_without_git_is_refused_and_ledgered_as_failed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo = _bare_repo(tmp_path, monkeypatch)
+    monkeypatch.setenv("GIT_DIR", str(tmp_path / "no-such-git-dir"))
+    assert record.main(_record_args(repo / "out", "12:nominal")) == 2
+    assert not (repo / "out").exists()
+    assert [line["status"] for line in _ledger(repo)] == ["started", "failed"]
+
+
+def test_an_interrupted_run_is_closed_as_interrupted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo = _repo(tmp_path, monkeypatch)
+    with pytest.raises(KeyboardInterrupt), runlog.ledgered_run("t", {}, {}, {}):
+        raise KeyboardInterrupt("SIGINT")
+    assert [line["status"] for line in _ledger(repo)] == ["started", "interrupted"]
+
+
+def test_a_failed_run_is_closed_as_failed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    repo = _repo(tmp_path, monkeypatch)
+    with pytest.raises(OSError), runlog.ledgered_run("t", {}, {}, {}):
+        raise OSError("disk full")
+    assert [line["status"] for line in _ledger(repo)] == ["started", "failed"]
+    assert "disk full" in _ledger(repo)[-1]["note"]
+
+
+def test_the_signal_handler_is_put_back(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _repo(tmp_path, monkeypatch)
+    before = signal.getsignal(signal.SIGTERM)
+    with runlog.ledgered_run("t", {}, {}, {}):
+        assert signal.getsignal(signal.SIGTERM) != before
+    assert signal.getsignal(signal.SIGTERM) == before
+
+
+@pytest.mark.parametrize("signal_number", [signal.SIGTERM, signal.SIGINT])
+def test_a_real_signal_closes_the_run_as_interrupted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, signal_number: signal.Signals
+) -> None:
+    repo = _repo(tmp_path, monkeypatch)
+    code = (
+        "import time; from pathlib import Path; from vishwaroop.sim import runlog\n"
+        "runlog.CODE_ROOT = Path.cwd()\n"
+        "with runlog.ledgered_run('t', {}, {}, {}):\n"
+        "    print('ready', flush=True)\n"
+        "    time.sleep(60)\n"
+    )
+    process = subprocess.Popen(
+        [sys.executable, "-c", code],
+        cwd=repo,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+        env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+    )
+    assert process.stdout is not None
+    assert process.stdout.readline().strip() == "ready"
+    process.send_signal(signal_number)
+    assert process.wait(timeout=30) != 0
+    assert [line["status"] for line in _ledger(repo)] == ["started", "interrupted"]
 
 
 def test_record_refuses_a_file_that_is_not_the_frozen_one(tmp_path: Path) -> None:
@@ -445,6 +561,7 @@ def test_pictures_of_a_different_run_are_not_trusted(
 ) -> None:
     episode, _ = _episode(tmp_path)
     monkeypatch.setattr(inspect_episode, "_render", lambda *_: worst)
+    monkeypatch.setattr(inspect_episode, "_require_pillow", lambda: None)
     out = tmp_path / "inspected"
     assert inspect_episode.main(["--episode", str(episode), "--out", str(out), "--render"]) == code
     report = json.loads((out / "inspection.json").read_text(encoding="utf-8"))
@@ -566,3 +683,198 @@ def test_sensitivity_says_not_run_without_the_simulator(
     monkeypatch.setattr(sensitivity, "ManiSkillPickCube", unavailable)
     assert sensitivity.main(_sensitivity_args("--seeds", "1")) == 3
     assert list((repo / "runs").iterdir()) == []
+
+
+class _PathEnv(FakeArmEnv):
+    """FABRICATED: the tool lands 0.01 m off unless a run started from the saved state."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.off = 0.0
+        self.been_restored = False
+        self.calls: list[str] = []
+
+    def reset(self, seed: int) -> Packet:
+        self.calls.append("reset")
+        self.off = 0.01
+        self.been_restored = False
+        return super().reset(seed)
+
+    def save_state(self) -> bytes:
+        self.calls.append("save")
+        return super().save_state() + (b"#again" if self.been_restored else b"")
+
+    def restore_state(self, state: bytes) -> Packet:
+        self.calls.append("restore")
+        self.off = 0.01 if b"#" in state else 0.0
+        self.been_restored = True
+        return super().restore_state(state.split(b"#")[0])
+
+    def step(self, action: list[float]) -> Packet:
+        self.calls.append("step")
+        return super().step([action[0] + self.off, *action[1:]])
+
+
+def _measure_paths(
+    monkeypatch: pytest.MonkeyPatch, env: _PathEnv, branch: tuple[int, ...] = ()
+) -> dict[str, Any]:
+    monkeypatch.setattr(sensitivity, "ScriptedPickPlace", _FixturePolicy)
+    monkeypatch.setattr(sensitivity, "BRANCH_STEPS", branch)
+    return sensitivity.measure(
+        env, [3], [3] if branch else [], 0.001, RUBRIC, nudge=lambda state: state + b"#nudged"
+    )
+
+
+def test_each_case_starts_its_own_way(monkeypatch: pytest.MonkeyPatch) -> None:
+    result = _measure_paths(monkeypatch, _PathEnv())
+    for case in ("plain_reset", "restored_again", "cube_nudged"):
+        assert result["cases"][case]["over_tolerance"] == 1, case
+        assert result["cases"][case]["max_deviation"] > 0.001, case
+    assert result["saved_state_differs_after_restore"] == 1
+
+
+def test_the_plain_case_resets_and_the_others_restore() -> None:
+    env = _PathEnv()
+    env.reset(3)
+    state = env.save_state()
+    env.calls.clear()
+    sensitivity._start("plain_reset", env, 3, state, lambda s: s)
+    assert env.calls == ["reset"]
+    env.calls.clear()
+    sensitivity._start("restored_again", env, 3, state, lambda s: s)
+    assert env.calls == ["restore", "save", "restore"]
+    env.calls.clear()
+    sensitivity._start("cube_nudged", env, 3, state, lambda s: s)
+    assert env.calls == ["restore"]
+    with pytest.raises(ValueError, match="unknown case"):
+        sensitivity._start("other", env, 3, state, lambda s: s)
+
+
+def test_a_branch_really_restores_mid_episode(monkeypatch: pytest.MonkeyPatch) -> None:
+    env = _PathEnv()
+    result = _measure_paths(monkeypatch, env, branch=(5,))
+    assert result["branches"]["5"]["over_tolerance"] == 1
+    assert "".join(c[0] for c in env.calls).endswith(
+        "r" + "s" * 5 + "s" + "r" + "s" * (len(scripted_plan(3)) - 5)
+    )
+
+
+def test_a_changed_label_is_counted(monkeypatch: pytest.MonkeyPatch) -> None:
+    labels = iter(["success", "success", "outside_target", "success"])
+    monkeypatch.setattr(sensitivity, "_label", lambda *_: next(labels))
+    result = _measure_paths(monkeypatch, _PathEnv())
+    assert result["cases"]["plain_reset"]["label_flips"] == 0
+    assert result["cases"]["restored_again"]["label_flips"] == 1
+    assert result["cases"]["cube_nudged"]["label_flips"] == 0
+
+
+class _CameraEnv(FakeArmEnv):
+    def __init__(self, gap: float = 0.0, flip_grasp: bool = False) -> None:
+        super().__init__()
+        self.gap = gap
+        self.flip_grasp = flip_grasp
+
+    def render_rgb(self) -> str:
+        return "frame"
+
+    def step(self, action: list[float]) -> Packet:
+        packet = super().step(action)
+        packet["object_position"] = [
+            packet["object_position"][0] + self.gap,
+            *packet["object_position"][1:],
+        ]
+        if self.flip_grasp:
+            packet["object_grasped"] = [1.0 - packet["object_grasped"][0]]
+        return packet
+
+
+def _state(episode: Path) -> bytes:
+    return (episode / "initial-state.json").read_bytes()
+
+
+def test_the_rendered_run_is_compared_with_the_recording(tmp_path: Path) -> None:
+    episode, records = _episode(tmp_path)
+    worst, images = inspect_episode.replay_frames(_CameraEnv(), _state(episode), records, {0, 2})
+    assert worst == 0.0
+    assert images == [(0, "frame"), (2, "frame")]
+    worst, _ = inspect_episode.replay_frames(_CameraEnv(0.25), _state(episode), records, set())
+    assert worst == pytest.approx(0.25)
+    worst, _ = inspect_episode.replay_frames(
+        _CameraEnv(float("nan")), _state(episode), records, set()
+    )
+    assert math.isinf(worst)
+
+
+def test_a_different_grasp_also_breaks_the_comparison(tmp_path: Path) -> None:
+    episode, records = _episode(tmp_path)
+    env = _CameraEnv(flip_grasp=True)
+    worst, _ = inspect_episode.replay_frames(env, _state(episode), records, set())
+    assert worst == 1.0
+
+
+def test_rendering_without_pillow_says_not_run_and_leaves_no_directory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    episode, _ = _episode(tmp_path)
+    monkeypatch.setattr(inspect_episode.importlib.util, "find_spec", lambda _: None)
+    out = tmp_path / "inspected"
+    assert inspect_episode.main(["--episode", str(episode), "--out", str(out), "--render"]) == 3
+    assert not out.exists()
+
+
+class _Report:
+    def __init__(self, deviation: float, valid: bool, reason: str = "") -> None:
+        self.repeats = [type("Repeat", (), {"max_deviation": deviation})()]
+        self.claim_valid = valid
+        self.reason = reason
+
+
+def test_a_sweep_counts_rubric_labels_plans_and_replays(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(record, "ScriptedPickPlace", _Policy)
+    reports = iter([_Report(0.0, True)] * 7 + [_Report(0.5, False, "repeat 0 deviated")])
+    result = sweep.measure(
+        FakeArmEnv(), [12, 13], FROZEN, "run", "Code commit c.", lambda *_: next(reports)
+    )
+    assert result["episodes"] == 8
+    assert result["labels"]["nominal"] == {"success": 2}
+    assert result["episodes_with_zero_deviation"] == 7
+    assert result["max_deviation"] == 0.5
+    assert result["replay_invalid"] == [
+        {"variant": "wrong-place", "seed": 13, "reason": "repeat 0 deviated"}
+    ]
+    assert result["seeds_unplanned"] == {}
+
+
+def test_a_sweep_names_seeds_it_could_not_plan(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(record, "ScriptedPickPlace", _UnplannedPolicy)
+    result = sweep.measure(FakeArmEnv(), [12], FROZEN, "run", "", lambda *_: _Report(0.0, True))
+    assert result["seeds_unplanned"]["nominal"] == [12]
+
+
+@pytest.mark.parametrize(("first", "count"), [(7999, 2), (8000, 1), (-1, 1), (1, 0)])
+def test_a_sweep_stays_out_of_the_dev_holdout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, first: int, count: int
+) -> None:
+    repo = _repo(tmp_path, monkeypatch)
+    args = ["--first-seed", str(first), "--seeds", str(count), "--tolerance-file", str(FROZEN)]
+    assert sweep.main(args) == 2
+    assert list((repo / "runs").iterdir()) == []
+
+
+def test_a_sweep_with_a_failed_replay_exits_one_and_is_ledgered(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo = _repo(tmp_path, monkeypatch)
+    monkeypatch.setattr(sweep, "ManiSkillPickCube", FakeArmEnv)
+    monkeypatch.setattr(sweep, "replay_episode", lambda *_: _Report(0.5, False, "no"))
+    monkeypatch.setattr(sweep.measure, "__defaults__", (lambda *_: _Report(0.5, False, "no"),))
+    args = ["--first-seed", "12", "--seeds", "1", "--tolerance-file", str(FROZEN)]
+    assert sweep.main(args) == 1
+    ledger = _ledger(repo)
+    assert [line["status"] for line in ledger] == ["started", "completed"]
+    written = json.loads((repo / "runs" / ledger[0]["run_id"] / "sweep.json").read_text("utf-8"))
+    assert written["run"] == ledger[0]["run_id"]

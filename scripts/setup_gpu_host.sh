@@ -5,7 +5,8 @@
 #   scripts/setup_gpu_host.sh                  # checks, pinned install, GPU check, smoke episode
 #
 # It creates a new venv (default venv/, which git ignores) and new run directories under runs/, and
-# appends to ledgers/runs.jsonl. uv may also download Python 3.11 and cache packages under $HOME.
+# appends to ledgers/runs.jsonl. uv may also download Python 3.12 and cache packages under $HOME.
+# It needs read access to the private kudratsingh/ironclad, and fails its checks without it.
 # It never starts, stops or resizes a machine, installs system packages, uses sudo, resets a GPU, or
 # spends anything. The owner starts and stops the machine. It never touches data/.
 #
@@ -32,7 +33,10 @@ RUN_ID="gpu-smoke-$(date -u +%Y%m%dT%H%M%SZ)"
 CHECK_ONLY=0
 
 usage_error() { echo "$1" >&2; exit 2; }
-absolute() { case "$1" in /*) echo "$1" ;; *) echo "$PWD/$1" ;; esac; }
+absolute() {
+  case "/$1/" in */../*|*/./*) usage_error "use a plain path, without . or .. segments: $1" ;; esac
+  case "$1" in /*) echo "$1" ;; *) echo "$PWD/$1" ;; esac
+}
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -40,12 +44,12 @@ while [ "$#" -gt 0 ]; do
     --venv)
       [ "$#" -ge 2 ] || usage_error "--venv needs a path"
       shift
-      VENV="$(absolute "$1")"
+      VENV="$(absolute "$1")" || exit 2
       ;;
     --run-root)
       [ "$#" -ge 2 ] || usage_error "--run-root needs a path"
       shift
-      RUN_ROOT="$(absolute "$1")"
+      RUN_ROOT="$(absolute "$1")" || exit 2
       ;;
     --run-id)
       [ "$#" -ge 2 ] || usage_error "--run-id needs a name"
@@ -63,6 +67,10 @@ done
 case "$VENV/" in
   "$REPO"/data/*|"$REPO"/runs/*|"$REPO"/ledgers/*|"$REPO"/reports/*|"$REPO"/artifacts/*)
     usage_error "--venv may not be inside an append-only directory: $VENV" ;;
+esac
+case "$RUN_ROOT/" in
+  "$REPO"/data/*|"$REPO"/ledgers/*|"$REPO"/reports/*|"$REPO"/artifacts/*)
+    usage_error "--run-root may not be inside an append-only directory other than runs/: $RUN_ROOT" ;;
 esac
 RUN_DIR="$RUN_ROOT/$RUN_ID"
 
@@ -148,10 +156,10 @@ UV=""
 if command -v uv >/dev/null 2>&1; then
   UV="uv"
   ok "installer: uv"
-elif command -v python3.11 >/dev/null 2>&1 && python3.11 -c 'import ensurepip, venv' >/dev/null 2>&1; then
-  ok "installer: python3.11 with venv and pip"
+elif command -v python3.12 >/dev/null 2>&1 && python3.12 -c 'import ensurepip, venv' >/dev/null 2>&1; then
+  ok "installer: python3.12 with venv and pip"
 else
-  lacks "installer: need uv, or python3.11 with venv and ensurepip"
+  lacks "installer: need uv, or python3.12 with venv and ensurepip"
 fi
 
 if command -v timeout >/dev/null 2>&1; then
@@ -164,6 +172,17 @@ if [ -f "$LOCK" ] && [ -f "$FROZEN" ]; then
   ok "lock and frozen protocol present"
 else
   lacks "this checkout lacks config/robotics-requirements.linux.txt or evals/M0-exit-tests.json"
+fi
+
+IRONCLAD_PIN="$(grep -E '^ironclad-kit @ ' "$REPO/requirements-dev.txt" || true)"
+IRONCLAD_TAG="${IRONCLAD_PIN##*@}"
+if [ -z "$IRONCLAD_PIN" ]; then
+  lacks "ironclad pin: none in requirements-dev.txt"
+elif GIT_TERMINAL_PROMPT=0 git ls-remote --exit-code https://github.com/kudratsingh/ironclad \
+    "refs/tags/$IRONCLAD_TAG" >/dev/null 2>&1; then
+  ok "read access to ironclad: $IRONCLAD_TAG"
+else
+  lacks "read access to ironclad: cannot read tag $IRONCLAD_TAG of the private kudratsingh/ironclad; the owner must grant this machine read access"
 fi
 
 if [ -e "$VENV" ]; then
@@ -187,27 +206,32 @@ if [ "$CHECK_ONLY" -eq 1 ]; then
 fi
 
 STARTED="$(date +%s)"
+if ! mkdir -p "$RUN_DIR"; then
+  echo "cannot create the run directory $RUN_DIR" >&2
+  exit 2
+fi
 finished() {
   echo "== finished after $(($(date +%s) - STARTED))s; evidence in $RUN_DIR"
   echo "   This machine keeps running until the owner stops it. This script does not stop it."
 }
 trap finished EXIT
-mkdir -p "$RUN_DIR"
 
 echo "== install (pinned, hash-checked, at most ${INSTALL_LIMIT_S}s)"
 if [ -n "$UV" ]; then
-  if ! { uv venv --python 3.11 "$VENV" \
+  if ! { uv venv --python 3.12 "$VENV" \
       && timeout "$INSTALL_LIMIT_S" uv pip install --python "$VENV/bin/python" --require-hashes \
         --no-deps -r "$LOCK" \
+      && timeout "$INSTALL_LIMIT_S" uv pip install --python "$VENV/bin/python" --no-deps "$IRONCLAD_PIN" \
       && uv pip freeze --python "$VENV/bin/python" > "$RUN_DIR/freeze.txt"; } 2>&1 \
       | tee "$RUN_DIR/install.log"; then
     echo "install failed; see $RUN_DIR/install.log" >&2
     exit 3
   fi
 else
-  if ! { python3.11 -m venv "$VENV" \
+  if ! { python3.12 -m venv "$VENV" \
       && timeout "$INSTALL_LIMIT_S" "$VENV/bin/python" -m pip install --require-hashes --no-deps \
         -r "$LOCK" \
+      && timeout "$INSTALL_LIMIT_S" "$VENV/bin/python" -m pip install --no-deps "$IRONCLAD_PIN" \
       && "$VENV/bin/python" -m pip freeze > "$RUN_DIR/freeze.txt"; } 2>&1 \
       | tee "$RUN_DIR/install.log"; then
     echo "install failed; see $RUN_DIR/install.log" >&2
@@ -227,12 +251,15 @@ export PYTHONPATH="$REPO/src${PYTHONPATH:+:$PYTHONPATH}"
 PY="$VENV/bin/python"
 
 echo "== host record"
-nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader > "$RUN_DIR/gpu.txt"
+if ! nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader > "$RUN_DIR/gpu.txt"; then
+  echo "nvidia-smi failed after passing its check; see $RUN_DIR/gpu.txt" >&2
+  exit 4
+fi
 uname -a > "$RUN_DIR/uname.txt"
 if ! timeout 120 "$PY" - 2>&1 <<'PYTHON' | tee "$RUN_DIR/versions.txt"; then
-import gymnasium, jsonschema, mani_skill, numpy, sapien, sys, torch
+import gymnasium, ironclad, jsonschema, mani_skill, numpy, sapien, sys, torch
 print("python", sys.version.split()[0])
-for module in (mani_skill, sapien, torch, gymnasium, numpy, jsonschema):
+for module in (mani_skill, sapien, torch, gymnasium, numpy, jsonschema, ironclad):
     print(module.__name__, module.__version__)
 print("torch.version.cuda", torch.version.cuda)
 PYTHON
@@ -276,7 +303,7 @@ if ! timeout "$SMOKE_LIMIT_S" "$PY" -m vishwaroop.sim.record --episode "$SMOKE_S
   echo "smoke: recording failed; see $RUN_DIR/record.log" >&2
   exit 4
 fi
-if ! timeout "$SMOKE_LIMIT_S" "$PY" contracts/v1/validate.py "$EPISODE/episode.json" \
+if ! timeout "$SMOKE_LIMIT_S" "$PY" -m ironclad.contracts.v1.validate "$EPISODE/episode.json" \
     > "$RUN_DIR/validate.json" 2>&1; then
   echo "smoke: the contract rejected the episode; see $RUN_DIR/validate.json" >&2
   exit 4
@@ -285,7 +312,7 @@ if ! timeout "$SMOKE_LIMIT_S" "$PY" -m vishwaroop.sim.replay --episode "$EPISODE
     --tolerance-file "$FROZEN" --repeats 3 --out "$RUN_DIR/replay.json" \
     > "$RUN_DIR/replay.stdout" 2>&1; then
   echo "smoke: replay did not hold; see $RUN_DIR/replay.stdout" >&2
-  tail -n 3 "$RUN_DIR/replay.stdout" >&2
+  grep -E '"reason"|^REFUSED|^NOT RUN' "$RUN_DIR/replay.stdout" >&2 || true
   exit 4
 fi
 echo "== smoke passed. Measured on this machine only. Send $RUN_DIR back."

@@ -10,8 +10,8 @@ state, on the frozen replay streams. Results are for this stack and this machine
 Run it from the repository root. Each measurement is a new run under ``runs/``, in
 ``ledgers/runs.jsonl``, with its results in ``sensitivity.json``.
 
-Exit codes: 0 measured, 2 refused, 3 simulator not run. The results are the finding: 0 does not mean
-that the cases stayed within tolerance.
+Exit codes: 0 measured, 2 refused, 3 simulator not run, 130 interrupted. The results are the
+finding: 0 does not mean that the cases stayed within tolerance.
 """
 
 from __future__ import annotations
@@ -23,11 +23,11 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
 
-from ..core.runs import finish_run, new_run_dir
 from ..outcome.pickplace import PlaceRubric, StateSample, assess
 from .baseline import VARIANTS, ScriptedPickPlace
 from .env import ManiSkillPickCube, Packet, SimEnv, SimulatorUnavailableError
 from .replay import ReplayInvalidError, load_frozen, require_frozen_file
+from .runlog import ledgered_run, require_code_root
 
 _STREAMS = ("joint_position", "object_position", "target_position")
 CUBE_NUDGE_M = 1e-7
@@ -171,29 +171,23 @@ def _run(args: argparse.Namespace) -> dict[str, Any]:
     seeds = range(args.first_seed, args.first_seed + args.seeds)
     if seeds.stop > 8000 or seeds.start < 0:
         raise ValueError("use training seeds only: blocks 8 and 9 are the dev holdout")
-    if not (Path("ledgers").is_dir() and Path("runs").is_dir()):
-        raise ValueError("run this from the repository root")
+    require_code_root()
     env = ManiSkillPickCube()
-    repo = Path()
-    run_dir = new_run_dir(
-        repo,
+    with ledgered_run(
         purpose="m0 sensitivity to small changes at the start of an episode",
         config={"first_seed": args.first_seed, "seeds": args.seeds, "branch": args.branch_seeds},
         seeds={str(seed): seed for seed in seeds},
         env_lock={"stack": env.stack_identity()},
-    )
-    try:
+    ) as run:
         report = measure(
             env, seeds, seeds[: args.branch_seeds], tolerance.max_state_deviation, rubric
         )
-        report["run"] = run_dir.name
-        with (run_dir / "sensitivity.json").open("x", encoding="utf-8") as stream:
+        report["run"] = run.directory.name
+        report["code"] = run.code_note
+        with (run.directory / "sensitivity.json").open("x", encoding="utf-8") as stream:
             json.dump(report, stream, indent=2, sort_keys=True, allow_nan=False)
             stream.write("\n")
-    except Exception as exc:
-        finish_run(repo, run_dir, status="failed", note=f"{type(exc).__name__}: {exc}")
-        raise
-    finish_run(repo, run_dir, status="completed", note=f"{len(seeds)} seeds")
+        run.note = f"{len(seeds)} seeds"
     return report
 
 
@@ -212,6 +206,9 @@ def main(argv: list[str] | None = None) -> int:
     except (ReplayInvalidError, ValueError, KeyError, TypeError, OSError) as exc:
         print(f"refused: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 2
+    except KeyboardInterrupt:
+        print("interrupted", file=sys.stderr)
+        return 130
     print(json.dumps(report, indent=2, sort_keys=True))
     return 0
 

@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-LOCK = json.loads((ROOT / "config" / "stack-lock.resolved.json").read_text(encoding="utf-8"))
+LOCK = json.loads((ROOT / "config" / "stack-lock.resolved.v2.json").read_text(encoding="utf-8"))
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
@@ -62,3 +62,21 @@ def test_the_tested_versions_match_the_tested_environment_file() -> None:
         ("jsonschema", "jsonschema_version"),
     ):
         assert f"{package}=={simulator[entry]['value']}" in lines, package
+
+
+def test_the_tested_ironclad_is_the_one_in_the_environment_file() -> None:
+    path = ROOT / LOCK["simulator"]["full_environment"]["value"]
+    version, commit = LOCK["simulator"]["ironclad_kit"]["value"].split(", commit ")
+    assert version == "1.1.0"
+    line = f"ironclad-kit @ git+https://github.com/kudratsingh/ironclad@{commit}"
+    assert line in path.read_text(encoding="utf-8").splitlines()
+
+
+def test_the_tested_python_is_the_version_ironclad_can_use() -> None:
+    major, minor, _ = LOCK["simulator"]["python"]["value"].split(".")
+    assert (int(major), int(minor)) >= (3, 12)
+
+
+def test_the_first_lock_stays_for_the_first_recording() -> None:
+    first = json.loads((ROOT / "config" / "stack-lock.resolved.json").read_text(encoding="utf-8"))
+    assert first["simulator"]["python"]["value"] == "3.11.15"

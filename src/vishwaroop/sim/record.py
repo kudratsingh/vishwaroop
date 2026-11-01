@@ -8,7 +8,7 @@ Run it from the repository root. The run gets a new directory under ``runs/`` an
 group. Splits, group ids and the rubric come from ``evals/M0-protocol.md`` and the frozen exit
 tests. Nothing is overwritten: the contract writer refuses an existing directory.
 
-Exit codes: 0 recorded, 2 a precondition failed, 3 the simulator cannot run here.
+Exit codes: 0 recorded, 2 a precondition failed, 3 the simulator cannot run here, 130 interrupted.
 """
 
 from __future__ import annotations
@@ -20,18 +20,18 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from ..core.runs import finish_run, new_run_dir
 from .baseline import VARIANTS, ScriptedPickPlace
 from .env import ManiSkillPickCube, SimEnv, SimulatorUnavailableError
 from .export import EpisodeSpec, record_episode
 from .replay import ReplayInvalidError, load_frozen, require_frozen_file
+from .runlog import ledgered_run, require_code_root
 
 SEEDS_PER_BLOCK = 1000
 TRAIN_BLOCKS = range(8)
 DEV_BLOCKS = range(8, 10)
 EMBODIMENT = "maniskill3_so100"
 INSTRUCTION = "Pick up the cube and place it on the table at the goal's xy position."
-STACK_LOCK = Path("config") / "stack-lock.resolved.json"
+STACK_LOCK = Path("config") / "stack-lock.resolved.v2.json"
 
 # A policy family lies wholly in one partition (evals/M0-protocol.md section 3). Every family so
 # far is a training family, so a dev seed is refused. Dev needs families of its own.
@@ -108,7 +108,12 @@ def record_scripted(
     """
     frozen = json.loads(tolerance_file.read_text(encoding="utf-8"))
     _, rubric = load_frozen(tolerance_file)
-    spec = episode_spec(seed, variant, run_id, frozen, rubric, code_note)
+    platform = env.stack_identity().get("platform", "unknown")
+    provenance = (
+        f"Recorded on {platform} with CPU physics; replay is claimed only on the same stack. "
+        f"{code_note}"
+    )
+    spec = episode_spec(seed, variant, run_id, frozen, rubric, provenance.rstrip())
     policy = ScriptedPickPlace(VARIANTS[variant])
 
     def closing_note() -> str | None:
@@ -126,11 +131,6 @@ def parse_episode(text: str) -> tuple[int, str]:
     return int(seed), variant
 
 
-def _code_note(run_dir: Path) -> str:
-    git = json.loads((run_dir / "git.json").read_text(encoding="utf-8"))
-    return f"Code commit {git['commit']}, dirty {git['dirty']}."
-
-
 def _run(args: argparse.Namespace) -> list[dict[str, str]]:
     require_frozen_file(args.tolerance_file)
     wanted = [parse_episode(text) for text in args.episode]
@@ -138,43 +138,32 @@ def _run(args: argparse.Namespace) -> list[dict[str, str]]:
     _, rubric = load_frozen(args.tolerance_file)
     for seed, variant in wanted:
         episode_spec(seed, variant, "check", frozen, rubric)
-    if not (Path("ledgers").is_dir() and Path("runs").is_dir()):
-        raise ValueError("run this from the repository root")
+    require_code_root()
     task = frozen["task"]
     env = ManiSkillPickCube(env_id=task["env_id"], max_episode_steps=task["max_episode_steps"])
-    repo = Path()
-    lock_sha256 = hashlib.sha256(STACK_LOCK.read_bytes()).hexdigest()
-    run_dir = new_run_dir(
-        repo,
+    results: list[dict[str, str]] = []
+    with ledgered_run(
         purpose="m0 scripted episodes",
         config={"episodes": args.episode, "tolerance_file": str(args.tolerance_file)},
         seeds={f"{seed}:{variant}": seed for seed, variant in wanted},
-        env_lock={"stack": env.stack_identity(), "stack_lock_sha256": lock_sha256},
-    )
-    results: list[dict[str, str]] = []
-    try:
+        env_lock={
+            "stack": env.stack_identity(),
+            "stack_lock_sha256": hashlib.sha256(STACK_LOCK.read_bytes()).hexdigest(),
+        },
+    ) as run:
         for seed, variant in wanted:
             path = record_scripted(
-                env,
-                seed,
-                variant,
-                run_dir.name,
-                args.tolerance_file,
-                args.out,
-                _code_note(run_dir),
+                env, seed, variant, run.directory.name, args.tolerance_file, args.out, run.code_note
             )
             manifest = json.loads((path / "episode.json").read_text(encoding="utf-8"))
             results.append(
                 {
                     "episode": str(path),
-                    "run": str(run_dir),
+                    "run": str(run.directory),
                     "outcome": manifest["outcome"]["reason"],
                 }
             )
-    except Exception as exc:
-        finish_run(repo, run_dir, status="failed", note=f"{type(exc).__name__}: {exc}")
-        raise
-    finish_run(repo, run_dir, status="completed", note=f"{len(results)} episodes")
+        run.note = f"{len(results)} episodes"
     return results
 
 
@@ -192,6 +181,9 @@ def main(argv: list[str] | None = None) -> int:
     except (ReplayInvalidError, ValueError, KeyError, TypeError, OSError) as exc:
         print(f"refused: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 2
+    except KeyboardInterrupt:
+        print("interrupted", file=sys.stderr)
+        return 130
     print(json.dumps(results, indent=2))
     return 0
 
