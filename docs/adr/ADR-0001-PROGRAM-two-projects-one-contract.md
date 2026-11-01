@@ -1,4 +1,4 @@
-<!-- ironclad-policy v1.1.0 -->
+<!-- ironclad-policy v1.2.0 -->
 # ADR-0001 — Two independent projects, one versioned trajectory contract, no shared runtime
 
 **Date:** 2026-10-31 · **Status:** accepted · **Work order:** starter kit · **Program link:** PROGRAM §5–6

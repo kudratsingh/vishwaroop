@@ -4,15 +4,15 @@
 {"actor":"starter-kit-packager","event":"created","note":"starter kit","record_id":"status-20261031T075147999197Z-3225f8","ts":"2026-10-31T07:51:47.999197Z","wo":"WO-004"}
 {"actor":"starter-kit-packager","event":"created","note":"starter kit","record_id":"status-20261031T075148038418Z-da3e8b","ts":"2026-10-31T07:51:48.038418Z","wo":"WO-005"}
 {"actor":"starter-kit-packager","event":"created","note":"starter kit","record_id":"status-20261031T075148074460Z-c1862b","ts":"2026-10-31T07:51:48.074460Z","wo":"WO-006"}
-{"actor":"claude-code-vishwaroop","event":"created","note":"owner request 2026-10-31; ADR-0005","record_id":"status-20261031T101632218690Z-e24906","ts":"2026-10-31T10:16:32.218690Z","wo":"WO-009"}
-{"actor":"claude-code-vishwaroop","event":"ready","note":"approval recorded in ledgers/approvals.jsonl","record_id":"status-20261031T101632250954Z-4f5929","ts":"2026-10-31T10:16:32.250954Z","wo":"WO-009"}
-{"actor":"claude-code-vishwaroop","event":"in_progress","note":"branch wo/WO-009-designate-remote","record_id":"status-20261031T101632283671Z-847ded","ts":"2026-10-31T10:16:32.283671Z","wo":"WO-009"}
 {"actor":"claude-code-vishwaroop","event":"created","note":"owner name decision 2026-10-31; ADR-0003","record_id":"status-20261031T090329398578Z-53522e","ts":"2026-10-31T09:03:29.398578Z","wo":"WO-007"}
 {"actor":"claude-code-vishwaroop","event":"ready","note":"approval recorded in ledgers/approvals.jsonl","record_id":"status-20261031T090329431265Z-5858d6","ts":"2026-10-31T09:03:29.431265Z","wo":"WO-007"}
 {"actor":"claude-code-vishwaroop","event":"in_progress","note":"branch wo/WO-007-program-rename","record_id":"status-20261031T090329463365Z-cc5b51","ts":"2026-10-31T09:03:29.463365Z","wo":"WO-007"}
 {"actor":"claude-code-vishwaroop","event":"created","note":"owner instruction 2026-10-31; tooling fixes copied from banshee da128e3","record_id":"status-20261031T100758623762Z-3329bf","ts":"2026-10-31T10:07:58.623762Z","wo":"WO-008"}
 {"actor":"claude-code-vishwaroop","event":"ready","note":"approval recorded in ledgers/approvals.jsonl","record_id":"status-20261031T100758667441Z-9ae454","ts":"2026-10-31T10:07:58.667441Z","wo":"WO-008"}
 {"actor":"claude-code-vishwaroop","event":"in_progress","note":"on branch wo/WO-007-program-rename, commits b42d391 and d6e1460","record_id":"status-20261031T100758710684Z-988463","ts":"2026-10-31T10:07:58.710684Z","wo":"WO-008"}
+{"actor":"claude-code-vishwaroop","event":"created","note":"owner request 2026-10-31; ADR-0005","record_id":"status-20261031T101632218690Z-e24906","ts":"2026-10-31T10:16:32.218690Z","wo":"WO-009"}
+{"actor":"claude-code-vishwaroop","event":"ready","note":"approval recorded in ledgers/approvals.jsonl","record_id":"status-20261031T101632250954Z-4f5929","ts":"2026-10-31T10:16:32.250954Z","wo":"WO-009"}
+{"actor":"claude-code-vishwaroop","event":"in_progress","note":"branch wo/WO-009-designate-remote","record_id":"status-20261031T101632283671Z-847ded","ts":"2026-10-31T10:16:32.283671Z","wo":"WO-009"}
 {"actor":"claude-code-vishwaroop","commit":"654bc0d","event":"accepted","note":"repository private; CI run 41192093373 green on 654bc0d; protection applied","record_id":"status-20261031T101925741665Z-3f7a07","report":"reports/WO-009-designate-github-remote.md","ts":"2026-10-31T10:19:25.741665Z","wo":"WO-009"}
 {"actor":"claude-code-vishwaroop","event":"created","note":"owner instruction 2026-10-31; tooling from banshee 5dc8ef2","record_id":"status-20261031T102314289841Z-d1c27e","ts":"2026-10-31T10:23:14.289841Z","wo":"WO-010"}
 {"actor":"claude-code-vishwaroop","event":"ready","note":"approval recorded in ledgers/approvals.jsonl","record_id":"status-20261031T102314322422Z-3e04c2","ts":"2026-10-31T10:23:14.322422Z","wo":"WO-010"}
@@ -87,3 +87,7 @@
 {"actor":"claude-code-vishwaroop","event":"created","note":"owner instruction 2026-11-01: bounded diagnosis of the cube failure before training for ET-M1-1","record_id":"status-20261101T223913885824Z-d86d03","ts":"2026-11-01T22:39:13.885824Z","wo":"WO-014"}
 {"actor":"claude-code-vishwaroop","event":"ready","note":"WO-012 accepted; no thresholds claimed","record_id":"status-20261101T223913934469Z-d96f2f","ts":"2026-11-01T22:39:13.934469Z","wo":"WO-014"}
 {"actor":"claude-code-vishwaroop","event":"in_progress","note":"branch wo/WO-014-cube-prediction-diagnosis","record_id":"status-20261101T223913973572Z-580659","ts":"2026-11-01T22:39:13.973572Z","wo":"WO-014"}
+{"actor":"claude-code-vishwaroop","event":"created","note":"owner instruction 2026-11-01: move the CPU-tier pin to ironclad v1.2.0","record_id":"status-20261101T230037242395Z-6d1e4e","ts":"2026-11-01T23:00:37.242395Z","wo":"WO-015"}
+{"actor":"claude-code-vishwaroop","event":"ready","note":"v1.2.0 released; CI only","record_id":"status-20261101T230037286663Z-8f2e5a","ts":"2026-11-01T23:00:37.286663Z","wo":"WO-015"}
+{"actor":"claude-code-vishwaroop","event":"in_progress","note":"branch wo/WO-015-ironclad-v1.2.0","record_id":"status-20261101T230037331530Z-a4fffc","ts":"2026-11-01T23:00:37.331530Z","wo":"WO-015"}
+{"actor":"claude-code-vishwaroop","commit":"1dc16daa153ce56496bc34bc6dfa214b10e66edb","event":"accepted","note":"CI only, closes no exit test; CI run 41360563833","record_id":"status-20261101T230905286326Z-034f4f","report":"reports/WO-015-ironclad-v1.2.0.md","ts":"2026-11-01T23:09:05.286326Z","wo":"WO-015"}

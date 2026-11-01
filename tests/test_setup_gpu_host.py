@@ -15,6 +15,11 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "setup_gpu_host.sh"
 LOCK = ROOT / "config" / "robotics-requirements.linux.txt"
+IRONCLAD_PIN = next(
+    line
+    for line in (ROOT / "requirements-dev.txt").read_text(encoding="utf-8").splitlines()
+    if line.startswith("ironclad-kit @ ")
+)
 
 GOOD_NVIDIA = 'echo "NVIDIA Test GPU, 570.1, 24000, 3"'
 GOOD_LDCONFIG = 'echo "libvulkan.so.1 (libc6,x86-64) => /lib/libvulkan.so.1"'
@@ -291,7 +296,7 @@ def test_no_read_access_to_ironclad_is_reported_by_the_check(tmp_path: Path) -> 
     result = Host(tmp_path).run("--check-only", fail="noaccess")
     assert result.returncode == 2
     assert "read access to ironclad" in result.stdout
-    assert "v1.1.0" in result.stdout
+    assert IRONCLAD_PIN.rpartition("@")[2] in result.stdout
 
 
 def test_a_machine_without_timeout_is_reported(tmp_path: Path) -> None:
@@ -405,7 +410,7 @@ def test_ironclad_is_installed_from_the_repository_pin(tmp_path: Path) -> None:
     host = Host(tmp_path)
     assert host.run("--run-id", "t").returncode == 0
     log = (tmp_path / "args.log").read_text(encoding="utf-8")
-    assert "ironclad-kit @ git+https://github.com/kudratsingh/ironclad@v1.1.0" in log
+    assert IRONCLAD_PIN in log
     assert "venv --python 3.12" in log
 
 
