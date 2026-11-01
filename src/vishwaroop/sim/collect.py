@@ -9,7 +9,7 @@ labels come only from the independent rubric. It checks free disk before startin
 episodes, and stops at the plan's time limit; what it wrote stays.
 
 Exit codes: 0 collected, 1 a sampled replay did not hold, 2 refused, 3 simulator not run,
-130 interrupted.
+4 stopped at the plan's time limit, 130 interrupted.
 """
 
 from __future__ import annotations
@@ -167,6 +167,9 @@ def main(argv: list[str] | None = None) -> int:
     except SimulatorUnavailableError as exc:
         print(f"not run: {exc}", file=sys.stderr)
         return 3
+    except TimeoutError as exc:
+        print(f"stopped: {exc}", file=sys.stderr)
+        return 4
     except (ReplayInvalidError, ValueError, KeyError, TypeError, OSError) as exc:
         print(f"refused: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 2

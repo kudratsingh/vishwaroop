@@ -27,10 +27,12 @@ from typing import Any
 from ironclad.contracts.v1.audit_splits import audit
 from ironclad.contracts.v1.validate import ContractError, validate_episode
 
+from ..sim.baseline import UNREACHABLE_HOLD_STEPS
 from ..sim.record import FAMILY_PARTITION, SEEDS_PER_BLOCK, partition_for_seed
 
 FAMILY_PREFIX = "m0-scripted-"
 SUCCESS = "success"
+SUITE = "m0-collection"
 PLANNING_FAILED = "planning_failed"
 MIN_EPISODES = 200
 MIN_FAILURE_SHARE = 0.30
@@ -100,8 +102,21 @@ def check_episode(episode_dir: Path) -> Entry:
         raise RegistryError(f"{name}: family {family} belongs to {home}, not {split['partition']}")
     if name != f"{family}-seed-{seed:06d}":
         raise RegistryError(f"{name}: its id does not name its family and seed {seed}")
-    assessment = episode_dir / manifest["outcome"]["final_assessment_artifact"]["path"]
+    expected_purpose = "training" if split["partition"] == "train" else "evaluation"
+    if manifest["purpose"] != expected_purpose:
+        raise RegistryError(f"{name}: purpose {manifest['purpose']} is not {expected_purpose}")
+    if split["suite_id"] != SUITE or split["inherited_from_parent"] is not False:
+        raise RegistryError(f"{name}: its suite or inheritance is not this collection's")
+    outcome = manifest["outcome"]
+    assessment = episode_dir / outcome["final_assessment_artifact"]["path"]
     label = json.loads(assessment.read_text(encoding="utf-8"))["label"]
+    if outcome["success"] != (label == SUCCESS) or not outcome["reason"].startswith(f"{label}:"):
+        raise RegistryError(f"{name}: its declared outcome disagrees with its assessment, {label}")
+    planning_failed = PLANNING_FAILED in manifest["notes"]
+    if planning_failed != (manifest["data"]["record_count"] == UNREACHABLE_HOLD_STEPS):
+        raise RegistryError(f"{name}: its notes and its length disagree about a planning failure")
+    if planning_failed and label != "never_lifted":
+        raise RegistryError(f"{name}: a planning failure cannot be labelled {label}")
     return Entry(
         episode_id=name,
         seed=seed,
@@ -110,7 +125,7 @@ def check_episode(episode_dir: Path) -> Entry:
         scene_group_id=split["scene_group_id"],
         session_group_id=split["session_group_id"],
         label=label,
-        planning_failed=PLANNING_FAILED in manifest["notes"],
+        planning_failed=planning_failed,
         episode_sha256=_sha256(manifest_path),
         transitions_sha256=_sha256(episode_dir / manifest["data"]["transitions_artifact"]["path"]),
         path=str(episode_dir),
@@ -159,12 +174,42 @@ def summarize(entries: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def build(root: Path) -> dict[str, Any]:
+def planned_episode_ids(plan: dict[str, Any]) -> set[str]:
+    """Every episode id a dataset plan calls for."""
+    return {
+        f"{FAMILY_PREFIX}{family['variant']}-seed-{seed:06d}"
+        for family in plan["families"]
+        for seed in range(family["first_seed"], family["first_seed"] + family["count"])
+    }
+
+
+def _check_against_records(
+    entries: list[dict[str, Any]], plan: dict[str, Any], runs_ledger: Path
+) -> None:
+    """The set must be what was planned, each from a run the ledger shows as completed."""
+    found = {entry["episode_id"] for entry in entries}
+    wanted = planned_episode_ids(plan)
+    if found != wanted:
+        raise RegistryError(
+            f"the set differs from the plan: {len(wanted - found)} missing, "
+            f"{len(found - wanted)} unplanned, for example {sorted(found ^ wanted)[:3]}"
+        )
+    lines = runs_ledger.read_text(encoding="utf-8").splitlines()
+    completed = {
+        record["run_id"] for record in map(json.loads, lines) if record.get("status") == "completed"
+    }
+    unknown = sorted({entry["session_group_id"] for entry in entries} - completed)
+    if unknown:
+        raise RegistryError(f"sessions with no completed run in {runs_ledger}: {unknown}")
+
+
+def build(root: Path, plan: dict[str, Any], runs_ledger: Path) -> dict[str, Any]:
     """Check every episode under ``root``, run the split audit, and assemble the manifest."""
     directories = episode_dirs(root)
     if not directories:
         raise RegistryError(f"no episodes under {root}")
     entries = [vars(check_episode(directory)) for directory in directories]
+    _check_against_records(entries, plan, runs_ledger)
     result = audit([directory / "episode.json" for directory in directories])
     return {
         "name": root.name,
@@ -185,7 +230,8 @@ def build(root: Path) -> dict[str, Any]:
 def _build(args: argparse.Namespace) -> int:
     if args.out.exists() or not args.out.parent.is_dir():
         raise RegistryError(f"{args.out} exists or has no directory; manifests are write-once")
-    manifest = build(args.root)
+    plan = json.loads(args.plan.read_text(encoding="utf-8"))
+    manifest = build(args.root, plan, args.runs_ledger)
     with args.out.open("x", encoding="utf-8") as stream:
         json.dump(manifest, stream, indent=2, sort_keys=True, allow_nan=False)
         stream.write("\n")
@@ -208,6 +254,8 @@ def main(argv: list[str] | None = None) -> int:
     make = commands.add_parser("build")
     make.add_argument("--root", type=Path, required=True)
     make.add_argument("--out", type=Path, required=True)
+    make.add_argument("--plan", type=Path, default=Path("evals/M0-dataset-plan.json"))
+    make.add_argument("--runs-ledger", type=Path, default=Path("ledgers/runs.jsonl"))
     make.set_defaults(run=_build)
     show = commands.add_parser("summarize")
     show.add_argument("manifest", type=Path)

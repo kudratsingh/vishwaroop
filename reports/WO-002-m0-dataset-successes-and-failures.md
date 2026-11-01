@@ -62,7 +62,7 @@ All **measured**.
 | Failures without planning failures | 134 of 293, 45.7% (Wilson 95% interval 40.1% to 51.5%) |
 | Failure modes | 3 |
 | `audit_splits` | `declared_group_and_lineage_checks_passed` |
-| Sampled replays, 3 per family, 3 repeats each | 30 of 30 valid, all at 0.0 |
+| Sampled replays, the first 3 seeds of each family, 3 repeats each | 30 of 30 valid, all at 0.0 |
 
 | Family | `success` | `never_lifted` | `still_grasped` | `outside_target` |
 |---|---|---|---|---|
@@ -77,10 +77,10 @@ All **measured**.
 | `dev-place-offset` | 4 | 0 | 0 | 16 |
 | `dev-noisy-actions` | 19 | 0 | 0 | 1 |
 
-**The review's open finding is closed.** On a scratch copy of a real episode, I changed the split to `dev`. The contract validator still passed it, and the registry refused it: `seed 2000 belongs to train, but its split says dev`. `registry build` refuses a whole set holding one such episode. Tests cover scene group, run group and family edits too. Like the other checks, it catches mistakes, not forgery: someone who edits the seed and re-hashes the state can defeat it.
+**The review's open finding is closed.** On a scratch copy of a real episode, I changed the split to `dev`. The contract validator still passed it, and the registry refused it: `seed 2000 belongs to train, but its split says dev`. `registry build` refuses a whole set holding one such episode. WO-002's own review then found that `purpose`, `suite_id`, `inherited_from_parent`, the declared outcome and the unhashed `planning_failed` note could still be edited unnoticed, so the registry now checks those too, and compares the set with the plan and each session with the run ledger. Rebuilt with those checks, the 320 real episodes pass and give the same manifest apart from its date. Like the other checks, this catches mistakes, not forgery: someone who edits the seed and re-hashes the state can defeat it.
 
 ## 5. Failure analysis
-- **Planning failures are 27 of the 66 `never_lifted` episodes, 12 of them in `nominal`.** They hold still because the far edge of the task area is out of reach, and the manifest marks each one. They count as failures, since the controller did fail, and the frozen share holds with or without them. Anyone training on this data can tell them apart: they are 15 steps long and carry no contact.
+- **Planning failures are 27 of the 66 `never_lifted` episodes, 12 of them in `nominal`.** They hold still because a waypoint is out of reach, and the manifest marks each one. Reach depends on the waypoints, so families are not matched: on seed 2009, `wrong-place` plans and runs while six other train families cannot. `nominal`'s 12 of 80 here is higher than the 6 of 100 on seeds 0–99. They count as failures, since the controller did fail, and the frozen share holds with or without them. Anyone training on this data can tell them apart: they are 15 steps long and carry no contact.
 - **`nominal` reached 67 of 68 planned episodes** (Wilson 95% interval 92.1% to 99.7%). The other seed ended `outside_target`.
 - **Failure families do not always fail.** `early-release` succeeded 27 times: dropped from about 5 cm, the cube mostly lands in the target. It is a poor failure family, and useful as contact data. Counts come from the rubric, not from family names.
 - **`dev-grasp-offset` shows a real threshold:** an offset of 0.012 m misses on some seeds and holds on others (8 successes, 11 misses with a plan made, 1 `outside_target`). Why a given seed holds was not investigated.
@@ -88,7 +88,7 @@ All **measured**.
 - **Out-of-range object poses were not collected.** WO-002's scope lists them, but `evals/M0-protocol.md §3` freezes M0's shift axes to placement by seed.
 
 ## 6. Cost and latency
-$0: the owner's Mac. Collection took about 2.5 minutes for 320 episodes and 30 sampled replays, 112 MB on disk (**measured**, from file sizes and ledger times). `collect` refuses to start or continue with under 5 GB free, and stops at 1800 s per run, so it cannot fill the disk.
+$0: the owner's Mac. Collection took about 2.5 minutes for 320 episodes and 30 sampled replays, 112 MB on disk (**measured**, from file sizes and ledger times). `collect` checks for 5 GB free before each episode, and stops at 1800 s per run.
 
 ## 7. Sealed access
 None. M0's sealed budget is 0, and no `sealed` partition exists.
@@ -98,10 +98,10 @@ None. M0's sealed budget is 0, and no `sealed` partition exists.
 |---|---|---|---|---|
 | ET-M0-6 | ≥ 200 episodes; ≥ 30% failures; ≥ 3 distinct failure modes; `audit_splits.py` passes | 320; 50.3%; 3; passed | `artifacts/manifests/m0-dataset-v1.json`; `runs/20261101T053940Z_87e0fa2c/audit-splits.json` | yes |
 
-The frozen text names `audit_splits.py`, which is `ironclad-audit-splits` since ADR-0007. ET-M0-1 to 5 passed in WO-001, so this completes M0's exit tests.
+The frozen text names `audit_splits.py`, which is `ironclad-audit-splits` since ADR-0007. ET-M0-1 to 5 passed in WO-001, so this completes M0's exit tests. On acceptance, the tag `v0.1.0` marks M0's pass (`AGENTS.md §4.7`). It proves that these exit tests passed on this stack, for the simulated SO-100, and nothing about a physical arm.
 
 ## 9. Limits
-- **Replay was sampled, not exhaustive:** 30 of 320 episodes here. WO-001's sweep is the wider evidence on this stack.
+- **Replay was sampled, not exhaustive:** 30 of 320 episodes here, and those are each family's first three seeds, so no planning failure is among them. WO-001's sweep is the wider evidence on this stack.
 - **Replay is claimed only on this stack.** By the owner's decision, Linux replay and negative tests are re-run before Linux-recorded data is used in M1, and replay platforms are not mixed.
 - **These episodes exist in one place:** git-ignored on the owner's Mac, with hashes in the tracked manifest and no second copy.
 - **One known local test failure.** `artifacts/sha256/be/beaab0b3d5a7dd857d0e6d15f41d5b1dab02f37a65c6189e0f97bb88a2fd5cde`, an earlier negative-test log, holds a scratch path from the Vulkan loader's stdout, and no secret. `ironclad-scan-secrets` and its test therefore fail in the owner's checkout only, and pass in a clean clone and in CI, where this work was verified. By the owner's decision it stays as a record until `ironclad`'s fix ships.

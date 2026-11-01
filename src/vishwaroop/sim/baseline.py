@@ -147,7 +147,7 @@ VARIANTS: dict[str, PlanSettings] = {
 }
 
 # Long enough for the rubric's 11 samples, when nothing can be planned.
-_UNREACHABLE_HOLD_STEPS = 15
+UNREACHABLE_HOLD_STEPS = 15
 
 
 class ScriptedPickPlace:
@@ -170,7 +170,7 @@ class ScriptedPickPlace:
                 self._plan = self._perturbed(plan_pick_and_place(packet, self._settings))
             except PlanningError as exc:
                 self.planning_error = str(exc)
-                self._plan = [list(packet["joint_position"])] * _UNREACHABLE_HOLD_STEPS
+                self._plan = [list(packet["joint_position"])] * UNREACHABLE_HOLD_STEPS
         return self._plan[step] if step < len(self._plan) else None
 
     def _perturbed(self, plan: list[Joints]) -> list[Joints]:

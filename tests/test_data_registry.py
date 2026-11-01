@@ -49,6 +49,9 @@ class _Policy:
 class _Unplanned(_Policy):
     planning_error = "no joint solution"
 
+    def __call__(self, packet: Packet, step: int) -> list[float] | None:
+        return list(packet["joint_position"]) if step < 15 else None
+
 
 @pytest.fixture
 def episode(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
@@ -137,6 +140,52 @@ def test_a_family_edit_is_caught(episode: Path, family: str, message: str) -> No
         check_episode(episode)
 
 
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        (lambda m: m.update(purpose="evaluation"), "purpose evaluation is not training"),
+        (lambda m: m["split"].update(suite_id="sealed"), "suite or inheritance"),
+        (lambda m: m["split"].update(inherited_from_parent=True), "suite or inheritance"),
+    ],
+)
+def test_other_declarations_are_tied_down(episode: Path, change: Any, message: str) -> None:
+    _edit(episode, change)
+    with pytest.raises(RegistryError, match=message):
+        check_episode(episode)
+
+
+def _flip_success(manifest: dict[str, Any]) -> None:
+    manifest["outcome"]["success"] = not manifest["outcome"]["success"]
+
+
+def _relabel(manifest: dict[str, Any]) -> None:
+    manifest["outcome"]["reason"] = "other_label: forged"
+
+
+@pytest.mark.parametrize("change", [_flip_success, _relabel])
+def test_a_declared_outcome_must_match_the_assessment(episode: Path, change: Any) -> None:
+    _edit(episode, change)
+    with pytest.raises(RegistryError, match="disagrees with its assessment"):
+        check_episode(episode)
+
+
+def test_a_planning_failure_note_cannot_be_added(episode: Path) -> None:
+    _edit(episode, lambda m: m.update(notes=f"{m['notes']} planning_failed: forged"))
+    with pytest.raises(RegistryError, match="notes and its length disagree"):
+        check_episode(episode)
+
+
+def test_a_planning_failure_note_cannot_be_removed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(record, "ScriptedPickPlace", _Unplanned)
+    path = record.record_scripted(_Env(), 2012, "nominal", "r", FROZEN, tmp_path, "")
+    assert check_episode(path).planning_failed is True
+    _edit(path, lambda m: m.update(notes="no note"))
+    with pytest.raises(RegistryError, match="notes and its length disagree"):
+        check_episode(path)
+
+
 def test_an_edited_seed_is_caught_if_the_state_hash_was_not_also_changed(episode: Path) -> None:
     state = episode / "initial-state.json"
     saved = json.loads(state.read_text(encoding="utf-8"))
@@ -206,6 +255,56 @@ def test_planning_failures_cannot_carry_the_failure_share() -> None:
     assert summary["et_m0_6_counts_met"] is False
 
 
+def _build_args(
+    tmp_path: Path, root: Path, out: Path, count: int, session: str = "run-1"
+) -> list[str]:
+    plan = tmp_path / "plan.json"
+    family = {"variant": "nominal", "partition": "train", "first_seed": 2012, "count": count}
+    plan.write_text(json.dumps({"families": [family]}), encoding="utf-8")
+    ledger = tmp_path / "runs.jsonl"
+    ledger.write_text(json.dumps({"run_id": session, "status": "completed"}) + "\n", "utf-8")
+    return [
+        "build",
+        "--root",
+        str(root),
+        "--out",
+        str(out),
+        "--plan",
+        str(plan),
+        "--runs-ledger",
+        str(ledger),
+    ]
+
+
+@pytest.mark.parametrize(("count", "text"), [(3, "1 missing"), (1, "1 unplanned")])
+def test_a_set_that_differs_from_the_plan_is_refused(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    count: int,
+    text: str,
+) -> None:
+    monkeypatch.setattr(record, "ScriptedPickPlace", _Policy)
+    root = tmp_path / "set"
+    for seed in (2012, 2013):
+        record.record_scripted(_Env(), seed, "nominal", "run-1", FROZEN, root, "")
+    out = tmp_path / "manifest.json"
+    assert registry.main(_build_args(tmp_path, root, out, count)) == 2
+    assert text in capsys.readouterr().err
+    assert not out.exists()
+
+
+def test_a_session_with_no_completed_run_is_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(record, "ScriptedPickPlace", _Policy)
+    root = tmp_path / "set"
+    record.record_scripted(_Env(), 2012, "nominal", "not-a-real-run", FROZEN, root, "")
+    out = tmp_path / "manifest.json"
+    assert registry.main(_build_args(tmp_path, root, out, 1)) == 2
+    assert "no completed run" in capsys.readouterr().err
+
+
 def test_build_writes_once_and_summarize_rechecks(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -214,7 +313,7 @@ def test_build_writes_once_and_summarize_rechecks(
     for seed in (2012, 2013):
         record.record_scripted(_Env(), seed, "nominal", "run-1", FROZEN, root, "")
     out = tmp_path / "manifest.json"
-    args = ["build", "--root", str(root), "--out", str(out)]
+    args = _build_args(tmp_path, root, out, 2)
     assert registry.main(args) == 1  # two episodes miss the frozen count
     manifest = json.loads(out.read_text(encoding="utf-8"))
     assert manifest["summary"]["episodes"] == 2
@@ -235,7 +334,7 @@ def test_build_refuses_a_set_holding_one_bad_split(
     bad = record.record_scripted(_Env(), 2013, "nominal", "run-1", FROZEN, root, "")
     _edit(bad, _forged_dev_split)
     out = tmp_path / "manifest.json"
-    assert registry.main(["build", "--root", str(root), "--out", str(out)]) == 2
+    assert registry.main(_build_args(tmp_path, root, out, 2)) == 2
     assert not out.exists()
 
 
@@ -353,6 +452,28 @@ def test_collect_stops_at_its_time_limit(tmp_path: Path, monkeypatch: pytest.Mon
             lambda: next(ticks),
         )
     assert len(list(tmp_path.iterdir())) == 1
+
+
+def test_the_command_says_when_it_stopped_at_its_limit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def stopped(_: Any) -> None:
+        raise TimeoutError("limit")
+
+    monkeypatch.setattr(collect, "_run", stopped)
+    code = collect.main(
+        [
+            "--config",
+            str(PLAN),
+            "--partition",
+            "train",
+            "--tolerance-file",
+            str(FROZEN),
+            "--out",
+            str(tmp_path),
+        ]
+    )
+    assert code == 4
 
 
 def test_collect_refuses_a_partition_with_no_families(tmp_path: Path) -> None:
