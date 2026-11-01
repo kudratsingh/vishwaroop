@@ -58,8 +58,8 @@ All **measured**.
 | `never_lifted` | 66, of which 27 are `planning_failed` |
 | `outside_target` | 50 |
 | `still_grasped` | 45 |
-| Failures | 161 of 320, 50.3% (Wilson 95% interval 44.9% to 55.7%) |
-| Failures without planning failures | 134 of 293, 45.7% (Wilson 95% interval 40.1% to 51.4%) |
+| Failures | 161 of 320, 50.3% (Wilson 95% interval 44.9% to 55.8%) |
+| Failures without planning failures | 134 of 293, 45.7% (Wilson 95% interval 40.1% to 51.5%) |
 | Failure modes | 3 |
 | `audit_splits` | `declared_group_and_lineage_checks_passed` |
 | Sampled replays, 3 per family, 3 repeats each | 30 of 30 valid, all at 0.0 |
@@ -83,7 +83,7 @@ All **measured**.
 - **Planning failures are 27 of the 66 `never_lifted` episodes, 12 of them in `nominal`.** They hold still because the far edge of the task area is out of reach, and the manifest marks each one. They count as failures, since the controller did fail, and the frozen share holds with or without them. Anyone training on this data can tell them apart: they are 15 steps long and carry no contact.
 - **`nominal` reached 67 of 68 planned episodes** (Wilson 95% interval 92.1% to 99.7%). The other seed ended `outside_target`.
 - **Failure families do not always fail.** `early-release` succeeded 27 times: dropped from about 5 cm, the cube mostly lands in the target. It is a poor failure family, and useful as contact data. Counts come from the rubric, not from family names.
-- **`dev-grasp-offset` shows a real threshold:** an offset of 0.012 m misses on some seeds and holds on others (8 successes, 11 real misses), since the jaws also push the cube.
+- **`dev-grasp-offset` shows a real threshold:** an offset of 0.012 m misses on some seeds and holds on others (8 successes, 11 misses with a plan made, 1 `outside_target`). Why a given seed holds was not investigated.
 - **Only 3 failure modes, the frozen minimum.** `not_on_table` and `not_settled` never occurred, so a learned model sees no examples of them from this dataset.
 - **Out-of-range object poses were not collected.** WO-002's scope lists them, but `evals/M0-protocol.md §3` freezes M0's shift axes to placement by seed.
 
