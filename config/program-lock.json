@@ -1,6 +1,0 @@
-{
-  "program_version": "1.1",
-  "program_sha256": "58f4c930ca08aaa2fd630826905e9ef9892968e7ceda8e2d920863f5142d02a9",
-  "path": "PROGRAM.md",
-  "note": "PROGRAM.md is the single program document, identical in both repositories and in the owner's Claude Project. Change it through a program-level ADR applied to both."
-}

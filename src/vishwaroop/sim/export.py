@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from ..outcome.pickplace import Outcome, PlaceRubric, assess, samples_from_records
-from .contract import writer
+from .contract import writer_module
 from .env import Packet, SimEnv
 
 Policy = Callable[[Packet, int], list[float] | None]
@@ -212,7 +212,7 @@ def record_episode(env: SimEnv, policy: Policy, spec: EpisodeSpec, target_dir: P
         packet = next_packet
     outcome = assess(samples_from_records(records), spec.rubric)
     created_at = spec.created_at or datetime.now(UTC).isoformat(timespec="seconds")
-    builder = writer().EpisodeBuilder(_manifest(env, spec, outcome, terminated, created_at))
+    builder = writer_module().EpisodeBuilder(_manifest(env, spec, outcome, terminated, created_at))
     builder.add_file("rubric.json", _json_bytes(asdict(spec.rubric)))
     builder.add_file("configuration.json", _json_bytes(env.configuration()))
     builder.add_file("stack.json", _json_bytes(env.stack_identity()))

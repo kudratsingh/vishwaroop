@@ -4,7 +4,7 @@ version = "0.0.1"
 description = "World Model & Planner: learning, planning, evaluation and synthetic-data infrastructure for robot policies"
 requires-python = ">=3.12"
 readme = "README.md"
-dependencies = ["jsonschema>=4.26,<5"]
+dependencies = ["ironclad-kit @ git+https://github.com/kudratsingh/ironclad@v1.1.0"]
 
 [build-system]
 requires = ["setuptools>=70"]
@@ -14,16 +14,16 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "contracts/v1/tests"]
-pythonpath = ["src", "contracts/v1", "tools"]
+testpaths = ["tests"]
+pythonpath = ["src"]
 addopts = "-q -p no:cacheprovider"
-filterwarnings = ["error::DeprecationWarning:vishwaroop.*"]
+filterwarnings = ["error::DeprecationWarning:vishwaroop.*", "error::DeprecationWarning:ironclad.*"]
 markers = ["sim: needs the pinned simulator stack; skipped when it is absent"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-src = ["src", "tools", "tests", "contracts/v1"]
+src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "N", "S", "C4", "SIM", "RUF"]
@@ -36,7 +36,6 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "B011"]
-"contracts/v1/tests/**" = ["S", "B011", "E501"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -45,5 +44,5 @@ quote-style = "double"
 python_version = "3.12"
 strict = true
 warn_unreachable = true
-mypy_path = ["src", "contracts/v1", "tools"]
+mypy_path = ["src"]
 ignore_missing_imports = true

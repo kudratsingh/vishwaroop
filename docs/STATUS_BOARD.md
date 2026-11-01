@@ -1,14 +1,14 @@
 # Status board — vishwaroop
 
-_Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `tools/status_board.py`. Do not edit by hand._
+_Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-01 00:43 UTC · ledger records: 66
+Generated: 2026-11-01 04:56 UTC · ledger records: 69
 
 ## Phases
 
 | Phase | Name | State | Exit tests (passed / frozen / total) | Prerequisites | Work orders |
 |---|---|---|---|---|---|
-| M0 | Grounded development environment | **in_progress** | 0 / 6 / 6 | — | WO-001, WO-002, WO-003, WO-007, WO-008, WO-009, WO-010 |
+| M0 | Grounded development environment | **in_progress** | 0 / 6 / 6 | — | WO-001, WO-002, WO-003, WO-007, WO-008, WO-009, WO-010, WO-011 |
 | M1 | Compact predictor, latent planner, action-chunk scorer | **not_started** | 0 / 5 / 5 | M0 | WO-004, WO-005, WO-006 |
 | M2a | Closed-loop policy evaluator (simulation) | **not_started** | 0 / 0 / 5 | M1 | — |
 | M2b | Real-arm evaluator validation | **not_started** | 0 / 0 / 4 | M2a | — |
@@ -73,4 +73,5 @@ Generated: 2026-11-01 00:43 UTC · ledger records: 66
 | WO-008 | Fix three starter-kit tooling defects found during the rename review | M0 | **accepted** | 2026-10-31T22:15:23.768846Z | reports/WO-008-starter-kit-tooling-fixes.md |
 | WO-009 | Designate the private GitHub remote and create the repository | M0 | **accepted** | 2026-10-31T10:19:25.741665Z | reports/WO-009-designate-github-remote.md |
 | WO-010 | Protect accepted work orders, widen the secret scan, restore the broad ignore rule | M0 | **accepted** | 2026-10-31T22:15:23.806356Z | reports/WO-010-status-freeze-and-token-scan.md |
+| WO-011 | Adopt ironclad v1.1.0 and remove the vendored shared files | M0 | **in_progress** | 2026-11-01T04:55:01.327108Z | — |
 

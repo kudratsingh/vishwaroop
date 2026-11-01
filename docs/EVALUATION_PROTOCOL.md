@@ -6,7 +6,7 @@ Rules: `AGENTS.md §5–7`. Exit tests that cite this protocol: `docs/PHASES.md`
 - Partitions: `train`, `dev`, `sealed` (confirmation), `regression` (revealed).
 - Freeze the shift axes before training: object identity, position range, lighting, distractors, instruction wording, camera/session, and **policy identity**.
 - Group by session and by **policy training run/family**, never by adjacent checkpoint ids. Snapshots from one run are candidates, not independent held-out policies.
-- Synthetic descendants inherit their source partition. Keep sibling sessions/assets/run families together where the holdout requires it. Record licenses and lineage (`contracts/v1/audit_splits.py` must pass on every assembled set).
+- Synthetic descendants inherit their source partition. Keep sibling sessions/assets/run families together where the holdout requires it. Record licenses and lineage (`ironclad.contracts.v1/audit_splits.py` must pass on every assembled set).
 
 ## 2. Sealed suites and the opening budget
 - At most **one owner-authorized opening** of a named sealed suite per milestone report. Freeze candidate hashes, analysis code hash, exclusions and thresholds *before* access; log the opening in `ledgers/sealed_access.jsonl` (`config/sealed-access.schema.json`).

@@ -1,3 +1,4 @@
+<!-- ironclad-policy v1.1.0 -->
 # <WO-id or Phase-id> — <title>
 
 **Status:** not started / partial / passed / failed

@@ -70,3 +70,6 @@ An independent review before the push found that this code failed open in severa
 
 ## After import: the simulator runs on the Mac; WO-003 moved (2026-10-31)
 On the owner's one-attempt approval, ManiSkill3 runs state-only CPU physics on the Mac with MoltenVK in a scratch folder. `reports/BLOCKER-2026-10-31-m0.md` records the measurements in an appended section. WO-003 is superseded: the launcher is built in `ironclad` and adopted at the v1.0.0+ migration. WO-006 stays unstarted until an arm export exists.
+
+## After import: shared files come from `ironclad` (2026-11-01)
+WO-011 pins `ironclad-kit` v1.1.0 and removes the vendored contract, tools, record helpers, shared tests, hash locks and the root `SHA256SUMS.json`. `docs/adr/ADR-0007-adopt-ironclad.md` records it, and maps the old paths that stay in frozen or historical text.

@@ -1,3 +1,4 @@
+<!-- ironclad-policy v1.1.0 -->
 # ADR-NNNN — <decision in one line>
 
 **Date:** YYYY-MM-DD · **Status:** proposed / accepted / superseded by ADR-MMMM · **Work order:** WO-xxx · **Program link:** PROGRAM §<n>

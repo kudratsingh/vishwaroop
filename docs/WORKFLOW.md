@@ -1,3 +1,4 @@
+<!-- ironclad-policy v1.1.0 -->
 # WORKFLOW.md — how work moves through this repository
 
 Rules live in `AGENTS.md` (§3–§5). This file is the procedure: the commands, templates and cadence that satisfy those rules. If this file and `AGENTS.md` disagree, `AGENTS.md` wins.
@@ -19,14 +20,15 @@ Expected cadence: a WO is sized S (hours), M (a day or two of agent work), or L 
 
 ```bash
 # append an event (validates the transition and the WO/phase ids)
-python tools/status_board.py --append --wo WO-001 --event in_progress --note "branch wo/WO-001-m0"
-python tools/status_board.py --append --phase M0 --event in_progress
-python tools/status_board.py --append --wo WO-001 --event accepted --report reports/WO-001-m0.md --commit <sha>
+ironclad-status --append --wo WO-001 --event in_progress --note "branch wo/WO-001-m0"
+ironclad-status --append --phase M0 --event in_progress
+ironclad-status --append --wo WO-001 --event accepted --report reports/WO-001-m0.md --commit <sha>
 # regenerate the derived board
-python tools/status_board.py --render > docs/STATUS_BOARD.md
+ironclad-status --render > docs/STATUS_BOARD.md
 ```
 Events for a WO: `created, ready, in_progress, blocked, unblocked, accepted, failed, superseded`.
 Events for a phase: `ready, in_progress, blocked, unblocked, passed, failed`.
+Before `v1.0.0`, and in a repository that has not adopted `ironclad`, the same commands are `python tools/status_board.py ...`.
 The ledger is append-only; a mistaken event is corrected by appending a `superseded`/`unblocked` event with a note, never by editing the file.
 
 ## 3. Branches, worktrees, subagents
@@ -57,7 +59,7 @@ WO-xxx — <title>  (phase <id>; exit tests advanced: ET-...)
 ## Checks
 - [ ] ruff format --check, ruff check, mypy clean
 - [ ] pytest CPU tier green on this commit
-- [ ] contract + program hash check green
+- [ ] `ironclad verify` green (policy copies, vendored files, install source, contract manifest)
 - [ ] secrets/absolute-path scan green
 - [ ] append-only check green (no protected path modified or deleted)
 - [ ] no new dependency, or justified below
@@ -72,7 +74,7 @@ Revert commit <sha> restores the previous state because ...
 ```bash
 make check          # everything the CPU tier runs in CI
 make lint type test # individually
-make hashes         # contract + program lock verification
+make verify         # ironclad sync-policy --check and ironclad verify
 make secrets        # secret and absolute-path scan
 make links          # markdown link check
 make board          # regenerate docs/STATUS_BOARD.md
@@ -99,5 +101,5 @@ A tier that did not run is written as **not run** in the PR and the report.
 ## 8. When the owner designates a remote
 
 1. Owner fills `config/repo.json` (`remote`, `visibility: private`, `designated: true`) and creates the empty repository themselves or explicitly authorizes an agent to create it under the named account.
-2. Agent: `git remote add origin <url>`, push `main` and open branches, enable required checks (`ci / cpu-tier`), require PRs to `main`, disallow force-push and deletion on `main`, and record the configuration in an ADR.
+2. Agent: `git remote add origin <url>`, push `main` and open branches, enable the required check `cpu-tier` (a gate job: a matrix job reports one check per version and cannot be required by its own name), require PRs to `main`, apply the rules to administrators, disallow force-push and deletion on `main`, read the settings back, and record them in an ADR.
 3. Until step 1 happens, everything above still applies to local branches and local merges; the PR template is kept as the merge commit message.

@@ -18,6 +18,8 @@ make check                      # the CPU tier; must be green before any work
 make board                      # regenerate docs/STATUS_BOARD.md
 ```
 
+`requirements-dev.txt` pins the private `ironclad-kit`. On a developer machine your normal GitHub login installs it, and CI uses the read-only deploy key. It requires Python 3.12 or newer.
+
 ## 3. Bootstrap (robotics/ML env) — proposed, unverified
 
 Resolved by WO-001. Proposed starting point (versions are **proposed, not tested** here; record the exact commits/digests you install):
