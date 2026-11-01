@@ -21,11 +21,13 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
 
-from .baseline import VARIANTS
 from .env import ManiSkillPickCube, SimEnv, SimulatorUnavailableError
 from .record import STACK_LOCK, partition_for_seed, record_scripted
 from .replay import ReplayInvalidError, load_frozen, replay_episode, require_frozen_file
 from .runlog import ledgered_run, require_code_root
+
+# The families WO-001's report measures. WO-002 collects the others.
+SWEEP_FAMILIES = ("nominal", "missed-grasp", "no-release", "wrong-place")
 
 
 def measure(
@@ -43,7 +45,7 @@ def measure(
     deviations: list[float] = []
     invalid: list[dict[str, Any]] = []
     with tempfile.TemporaryDirectory(prefix="m0-sweep-") as tmp:
-        for variant in VARIANTS:
+        for variant in SWEEP_FAMILIES:
             for seed in seeds:
                 episode = record_scripted(
                     env, seed, variant, run_id, tolerance_file, Path(tmp), code_note

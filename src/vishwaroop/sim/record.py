@@ -33,9 +33,10 @@ EMBODIMENT = "maniskill3_so100"
 INSTRUCTION = "Pick up the cube and place it on the table at the goal's xy position."
 STACK_LOCK = Path("config") / "stack-lock.resolved.v2.json"
 
-# A policy family lies wholly in one partition (evals/M0-protocol.md section 3). Every family so
-# far is a training family, so a dev seed is refused. Dev needs families of its own.
-FAMILY_PARTITION = dict.fromkeys(VARIANTS, "train")
+# A policy family lies wholly in one partition (evals/M0-protocol.md section 3).
+FAMILY_PARTITION = {
+    variant: "dev" if variant.startswith("dev-") else "train" for variant in VARIANTS
+}
 
 
 def partition_for_seed(seed: int) -> str:
@@ -74,7 +75,7 @@ def episode_spec(
     return EpisodeSpec(
         episode_id=f"{family}-seed-{seed:06d}",
         seed=seed,
-        purpose="training",
+        purpose="training" if partition == "train" else "evaluation",
         task_id=task["env_id"],
         task_version=task["version"],
         instruction=INSTRUCTION,
@@ -114,7 +115,7 @@ def record_scripted(
         f"{code_note}"
     )
     spec = episode_spec(seed, variant, run_id, frozen, rubric, provenance.rstrip())
-    policy = ScriptedPickPlace(VARIANTS[variant])
+    policy = ScriptedPickPlace(VARIANTS[variant], noise_seed=seed)
 
     def closing_note() -> str | None:
         error = policy.planning_error

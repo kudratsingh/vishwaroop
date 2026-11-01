@@ -143,6 +143,41 @@ def test_the_controller_loads_no_outcome_or_replay_code() -> None:
     assert [name for name in loaded if "outcome" in name or "replay" in name] == []
 
 
+def test_noise_is_seeded_bounded_and_leaves_the_gripper_alone() -> None:
+    settings = VARIANTS["noisy-actions"]
+    packet = _packet()
+    clean = plan_pick_and_place(packet, settings)
+
+    def actions(seed: int) -> list[list[float]]:
+        policy = ScriptedPickPlace(settings, noise_seed=seed)
+        return [action for step in range(len(clean)) if (action := policy(packet, step))]
+
+    assert actions(5) == actions(5)
+    assert actions(5) != actions(6)
+    noisy = actions(5)
+    assert noisy != clean
+    for joints, plain in zip(noisy, clean, strict=True):
+        assert joints[4:] == plain[4:]
+        assert max(abs(a - b) for a, b in zip(joints[:4], plain[:4], strict=True)) < 0.1
+        for value, (low, high) in zip(joints[:4], JOINT_LIMITS, strict=False):
+            assert low <= value <= high
+
+
+def test_the_timeout_family_ends_early() -> None:
+    policy = ScriptedPickPlace(VARIANTS["timeout"])
+    packet = _packet()
+    assert policy(packet, 0) is not None
+    assert policy(packet, 119) is not None
+    assert policy(packet, 120) is None
+    assert VARIANTS["timeout"].stop_after_steps == 120
+
+
+def test_early_release_opens_at_carrying_height() -> None:
+    settings = VARIANTS["early-release"]
+    assert settings.place_height_m == settings.carry_height_m
+    assert plan_pick_and_place(_packet(), settings)[-1][5] == settings.gripper_open_rad
+
+
 def test_a_reference_stream_cannot_change_the_plan() -> None:
     plain = plan_pick_and_place(_packet(), PlanSettings())
     told = {**_packet(), "object_grasped": [1.0]}

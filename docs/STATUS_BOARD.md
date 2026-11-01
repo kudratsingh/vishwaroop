@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-01 05:32 UTC · ledger records: 76
+Generated: 2026-11-01 05:52 UTC · ledger records: 78
 
 ## Phases
 
@@ -64,7 +64,7 @@ Generated: 2026-11-01 05:32 UTC · ledger records: 76
 | WO | Title | Phase | State | Last event (UTC) | Report |
 |---|---|---|---|---|---|
 | WO-001 | M0 grounded environment: one reproducible simulator episode and its evidence chain | M0 | **accepted** | 2026-11-01T05:32:28.583459Z | reports/WO-001-m0-grounded-environment.md |
-| WO-002 | M0 dataset: scripted and perturbed episodes with successes and failures | M0 | **created** | 2026-10-31T07:51:47.916399Z | — |
+| WO-002 | M0 dataset: scripted and perturbed episodes with successes and failures | M0 | **in_progress** | 2026-11-01T05:36:07.696703Z | — |
 | WO-003 | Supervised resource and spend enforcement (local, no paid execution) | M0 | **superseded** | 2026-11-01T00:40:56.445935Z | — |
 | WO-004 | M1 predictors: nominal + residual ensemble, compact latent model, calibration | M1 | **created** | 2026-10-31T07:51:47.999197Z | — |
 | WO-005 | M1 planner (CEM MPC) and action-chunk scorer with simulator-branch validation | M1 | **created** | 2026-10-31T07:51:48.038418Z | — |

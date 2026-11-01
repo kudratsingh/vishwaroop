@@ -148,10 +148,22 @@ def test_the_spec_takes_its_groups_and_task_from_the_frozen_protocol() -> None:
 
 
 @pytest.mark.parametrize("variant", sorted(record.FAMILY_PARTITION))
-def test_a_family_cannot_cross_into_the_dev_holdout(variant: str) -> None:
+def test_a_family_cannot_leave_its_partition(variant: str) -> None:
     frozen, rubric = _frozen()
+    home = record.FAMILY_PARTITION[variant]
+    wrong_seed = 8123 if home == "train" else 123
+    right_seed = 123 if home == "train" else 8123
     with pytest.raises(ValueError, match="wholly in one partition"):
-        episode_spec(8123, variant, "r", frozen, rubric)
+        episode_spec(wrong_seed, variant, "r", frozen, rubric)
+    spec = episode_spec(right_seed, variant, "r", frozen, rubric)
+    assert spec.partition == home
+    assert spec.purpose == ("training" if home == "train" else "evaluation")
+
+
+def test_dev_holds_only_families_of_its_own() -> None:
+    dev = {name for name, home in record.FAMILY_PARTITION.items() if home == "dev"}
+    assert dev == {"dev-grasp-offset", "dev-place-offset", "dev-noisy-actions"}
+    assert "nominal" not in dev
 
 
 def test_unknown_variant_is_refused() -> None:
@@ -187,7 +199,7 @@ class _FakeStack(FakeArmEnv):
 class _Policy:
     planning_error: str | None = None
 
-    def __init__(self, _settings: Any = None) -> None:
+    def __init__(self, _settings: Any = None, noise_seed: int = 0) -> None:
         self._inner = plan_policy(scripted_plan(3))
 
     def __call__(self, packet: Packet, step: int) -> list[float] | None:
@@ -838,6 +850,7 @@ def test_a_sweep_counts_rubric_labels_plans_and_replays(
         FakeArmEnv(), [12, 13], FROZEN, "run", "Code commit c.", lambda *_: next(reports)
     )
     assert result["episodes"] == 8
+    assert sorted(result["labels"]) == sorted(sweep.SWEEP_FAMILIES)
     assert result["labels"]["nominal"] == {"success": 2}
     assert result["episodes_with_zero_deviation"] == 7
     assert result["max_deviation"] == 0.5
