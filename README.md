@@ -25,14 +25,14 @@ These commands do not run ManiSkill, train anything, read the arm repository, or
 ## Current status (2026-10-31)
 | Implemented and tested here | Specified, not implemented |
 |---|---|
-| contract v1 (schemas, validator with append-only ledger merge, split audit, write-once reference writer, fixtures, 41 tests) | first real simulator episode, replay and negative tests (WO-001; export and replay logic exist, the adapter has **not run**) |
+| contract v1 (schemas, validator with append-only ledger merge, split audit, write-once reference writer, fixtures, 41 tests) | first real simulator episode, replay and negative tests (WO-001; the adapter has run, but no scripted baseline or exported episode exists yet) |
 | core record helpers: append-only ledgers, content-addressed artifacts, write-once run dirs, structured logs, strict config | dataset collection and registry (WO-002, WO-006) |
 | read-only export importer with completion-marker and hash verification; independent pick-and-place outcome; contract export, replay and negative-test logic, tested on a fabricated fake | predictors, planner, scorer (WO-004, WO-005) |
 | typed Protocol interfaces for every planned module | evaluator, synthetic engine, drone adaptation (M2–M4) |
-| tools: status ledger/board, append-only CI check, hash locks, secrets scan, link check, budget preflight | enforcing paid launcher (WO-003), provider adapter |
+| tools: status ledger/board, append-only CI check, hash locks, secrets scan, link check, budget preflight | enforcing paid launcher and provider adapter (moved to `ironclad`) |
 | CI workflow (CPU tier), Makefile, pre-commit hooks | sealed-data storage, physical outcome sensing |
 
-Phase M0 is `blocked` on the simulator (`reports/BLOCKER-2026-10-31-m0.md`), and every other phase is `not_started`; see `docs/STATUS_BOARD.md`. No paid compute or hardware is authorized by these files, and no remote other than the one in `config/repo.json` (`AGENTS.md §2`).
+Phase M0 is `in_progress`, and every other phase is `not_started`; see `docs/STATUS_BOARD.md`. No paid compute or hardware is authorized by these files, and no remote other than the one in `config/repo.json` (`AGENTS.md §2`).
 
 ## Layout
 ```

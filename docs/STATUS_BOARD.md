@@ -2,13 +2,13 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `tools/status_board.py`. Do not edit by hand._
 
-Generated: 2026-10-31 23:47 UTC · ledger records: 61
+Generated: 2026-11-01 00:43 UTC · ledger records: 66
 
 ## Phases
 
 | Phase | Name | State | Exit tests (passed / frozen / total) | Prerequisites | Work orders |
 |---|---|---|---|---|---|
-| M0 | Grounded development environment | **blocked** | 0 / 6 / 6 | — | WO-001, WO-002, WO-003, WO-007, WO-008, WO-009, WO-010 |
+| M0 | Grounded development environment | **in_progress** | 0 / 6 / 6 | — | WO-001, WO-002, WO-003, WO-007, WO-008, WO-009, WO-010 |
 | M1 | Compact predictor, latent planner, action-chunk scorer | **not_started** | 0 / 5 / 5 | M0 | WO-004, WO-005, WO-006 |
 | M2a | Closed-loop policy evaluator (simulation) | **not_started** | 0 / 0 / 5 | M1 | — |
 | M2b | Real-arm evaluator validation | **not_started** | 0 / 0 / 4 | M2a | — |
@@ -63,9 +63,9 @@ Generated: 2026-10-31 23:47 UTC · ledger records: 61
 
 | WO | Title | Phase | State | Last event (UTC) | Report |
 |---|---|---|---|---|---|
-| WO-001 | M0 grounded environment: one reproducible simulator episode and its evidence chain | M0 | **blocked** | 2026-10-31T22:29:24.082737Z | — |
+| WO-001 | M0 grounded environment: one reproducible simulator episode and its evidence chain | M0 | **in_progress** | 2026-11-01T00:43:09.801397Z | — |
 | WO-002 | M0 dataset: scripted and perturbed episodes with successes and failures | M0 | **created** | 2026-10-31T07:51:47.916399Z | — |
-| WO-003 | Supervised resource and spend enforcement (local, no paid execution) | M0 | **created** | 2026-10-31T07:51:47.961798Z | — |
+| WO-003 | Supervised resource and spend enforcement (local, no paid execution) | M0 | **superseded** | 2026-11-01T00:40:56.445935Z | — |
 | WO-004 | M1 predictors: nominal + residual ensemble, compact latent model, calibration | M1 | **created** | 2026-10-31T07:51:47.999197Z | — |
 | WO-005 | M1 planner (CEM MPC) and action-chunk scorer with simulator-branch validation | M1 | **created** | 2026-10-31T07:51:48.038418Z | — |
 | WO-006 | Read-only arm snapshot import and policy-holdout registry | M1 | **created** | 2026-10-31T07:51:48.074460Z | — |

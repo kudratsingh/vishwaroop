@@ -31,7 +31,7 @@ Resolved by WO-001. Proposed starting point (versions are **proposed, not tested
 - Can: everything in the tooling env; LeRobot teleop/recording with the SO-101 (MPS for small policies); CAD, printing, docs.
 - Cannot: ManiSkill3/SAPIEN GPU sim, Isaac Lab, VLA fine-tuning at useful speed, tier-1 world-model training. These rent until the workstation exists.
 
-Measured on the owner's M3 Pro on 2026-10-31 (`reports/BLOCKER-2026-10-31-m0.md`): `mani_skill` 3.0.1 and `sapien` 3.0.3 install and import on Python 3.11, but creating an environment fails without a Vulkan driver, even for state-only CPU physics. Whether a driver is enough is **not run**.
+**CPU physics on the Mac, measured on the owner's M3 Pro (`reports/BLOCKER-2026-10-31-m0.md`, last section):** `mani_skill` 3.0.1 and `sapien` 3.0.3 install on Python 3.11, and creating an environment fails only for lack of a Vulkan driver. With Khronos's MoltenVK v1.4.2 unpacked anywhere and `VK_ICD_FILENAMES` pointing at its `MoltenVK_icd.json`, ManiSkill3 runs state-only CPU physics at about 1,260 control steps per second. Nothing is installed system-wide. The robotics environment runs this package with `PYTHONPATH=src`. GPU simulation and visual data still need Linux and NVIDIA.
 
 ## 5. Stack lock discipline
 - `config/stack-lock.pending.json` lists the pins that must be resolved. `null` is a blocker, not "use latest".

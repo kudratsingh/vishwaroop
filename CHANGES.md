@@ -67,3 +67,6 @@ Before any simulator run or training: `evals/M0-exit-tests.json`, `evals/M0-prot
 Adds the independent outcome (`src/vishwaroop/outcome/`), contract export, initial-state-only replay and the five negative tests (`src/vishwaroop/sim/`), tested on a fabricated fake environment. The ManiSkill3 adapter is written and has **not run**. WO-001's simulator steps are blocked (`reports/BLOCKER-2026-10-31-m0.md`). Package code reaches the contract through `src/vishwaroop/sim/contract.py`; what else the `ironclad` migration touches is unknown until it exists.
 
 An independent review before the push found that this code failed open in several ways, including NaN read as a perfect replay, zero repeats passing, and a forged recorded outcome going unnoticed. All were fixed with regression tests before anything was pushed, and the protocol became `m0-protocol-2` before any result.
+
+## After import: the simulator runs on the Mac; WO-003 moved (2026-10-31)
+On the owner's one-attempt approval, ManiSkill3 runs state-only CPU physics on the Mac with MoltenVK in a scratch folder. `reports/BLOCKER-2026-10-31-m0.md` records the measurements in an appended section. WO-003 is superseded: the launcher is built in `ironclad` and adopted at the v1.0.0+ migration. WO-006 stays unstarted until an arm export exists.
