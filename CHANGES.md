@@ -76,3 +76,6 @@ WO-001 adds a scripted controller with pure-Python SO-100 kinematics, four named
 
 ## After import: shared files come from `ironclad` (2026-11-01)
 WO-011 pins `ironclad-kit` v1.1.0 and removes the vendored contract, tools, record helpers, shared tests, hash locks and the root `SHA256SUMS.json`. `docs/adr/ADR-0007-adopt-ironclad.md` records it, and maps the old paths that stay in frozen or historical text.
+
+## After import: the M0 dataset (2026-11-01)
+WO-002 adds the dataset plan, the collector and the registry. The registry ties each episode's seed to its block and partition, which the contract validator cannot do.
