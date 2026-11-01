@@ -4,7 +4,7 @@
 **Size:** L (split into PRs: stack lock → adapter + export → replay + negatives → frozen spec)
 **Prerequisites:** WO-007, WO-008 and WO-010 `accepted` (status ledger). Otherwise none beyond a machine for the simulator: the Mac with MoltenVK (`docs/ENVIRONMENT.md §4`), or a Linux + NVIDIA machine the owner provides ($0 spend unless a line in `ledgers/approvals.jsonl` approves it). CPU-tier work (`make check`, scaffolding, specification) proceeds on any machine.
 **Authorization:** AGENTS §2.1 only, except: any paid rental needs a §2.3 approval recorded first.
-**Files:** `src/vishwaroop/sim/`, `src/vishwaroop/outcome/`, `tests/`, `pyproject.toml`, `config/stack-lock.resolved.json`, `evals/M0-*`, `evals/M1-*`, `reports/WO-001-m0-grounded-environment.md`, `reports/BLOCKER-*`, `docs/adr/`, `docs/ARCHITECTURE.md`, `docs/ENVIRONMENT.md`, `docs/PHASES.md`, `docs/STATUS_BOARD.md`, `config/phases.json`, `README.md`, `START_HERE.md`, `AGENTS.md` section 13, `CHANGES.md`, `VERIFICATION.md`, `prompts/`, `ledgers/approvals.jsonl`, this work order, `work_orders/WO-002-*` (sealed partition wording only), `work_orders/STATUS.jsonl`, `SHA256SUMS.json`, ignored `data/`, `runs/`.
+**Files:** `src/vishwaroop/sim/`, `src/vishwaroop/outcome/`, `tests/`, `pyproject.toml`, `config/stack-lock.resolved.json`, `config/robotics-requirements.*`, `scripts/setup_gpu_host.sh`, `evals/M0-*`, `evals/M1-*`, `reports/WO-001-m0-grounded-environment.md`, `reports/BLOCKER-*`, `docs/adr/`, `docs/ARCHITECTURE.md`, `docs/ENVIRONMENT.md`, `docs/PHASES.md`, `docs/STATUS_BOARD.md`, `config/phases.json`, `README.md`, `START_HERE.md`, `AGENTS.md` section 13, `CHANGES.md`, `VERIFICATION.md`, `prompts/`, `ledgers/approvals.jsonl`, this work order, `work_orders/WO-002-*` (sealed partition wording only), `work_orders/STATUS.jsonl`, `SHA256SUMS.json`, ignored `data/`, `runs/`.
 
 ## Objective
 Produce one genuinely reproducible ManiSkill3 episode with its full evidence chain, so that everything the project later claims rests on a simulator that is pinned, exportable through the contract, replayable from its initial state only, and judged by code that shares nothing with any policy or reward. Then freeze the evaluation specification that M1 will be measured against.
@@ -33,7 +33,7 @@ Neural training, VLA fine-tuning, video generation, teleop data, physical hardwa
 1. `make check` green on a clean checkout → status `in_progress` for WO-001 and phase M0 (`ready` first if not yet).
 2. Resolve the stack on the GPU machine; write the lock; commit (PR 1).
 3. Implement outcome code and its CPU tests; implement the baseline policy; run 1 success and 1 failure episode; inspect and record (PR 2).
-4. Implement the export adapter; export both episodes; `python contracts/v1/validate.py <episode>/episode.json` must print `contract_valid` (PR 2).
+4. Implement the export adapter; export both episodes; `ironclad-validate <episode>/episode.json` must print `contract_valid` (PR 2).
 5. Freeze `evals/M0-exit-tests.json` (replay tolerance) → `frozen` events for ET-M0-3; implement replay; run 3 repeats; record deviations (PR 3).
 6. Run the five negative tests; record each failure message (PR 3).
 7. Write `evals/M0-protocol.md` and `evals/M1-exit-tests.json`; append `frozen` events for ET-M1-1…5 (PR 4).
@@ -42,10 +42,10 @@ Neural training, VLA fine-tuning, video generation, teleop data, physical hardwa
 ## Verification
 ```bash
 make check
-python contracts/v1/validate.py data/derived/m0/<episode>/episode.json
+ironclad-validate data/derived/m0/<commit>/<episode>/episode.json
 python -m vishwaroop.sim.replay --episode data/derived/m0/<episode> --repeats 3 --tolerance-file evals/M0-exit-tests.json
 python -m vishwaroop.sim.negative_tests --episode data/derived/m0/<episode>   # 5/5 must be rejected
-python tools/status_board.py --render > docs/STATUS_BOARD.md
+ironclad-status --render > docs/STATUS_BOARD.md
 ```
 Expected: validator prints `contract_valid`; replay report shows max deviation ≤ frozen tolerance on all 3 repeats and identical outcome labels; negative-test log shows 5 rejections with distinct reasons; `make check` green on the final commit.
 

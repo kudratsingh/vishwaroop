@@ -153,8 +153,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--episode", type=Path, required=True)
     parser.add_argument("--tolerance-file", type=Path, default=Path("evals/M0-exit-tests.json"))
+    parser.add_argument("--out", type=Path, help="write-once report path")
     args = parser.parse_args(argv)
     try:
+        if args.out is not None and (args.out.exists() or not args.out.parent.is_dir()):
+            raise ValueError(f"{args.out} exists or has no directory; reports are write-once")
         require_frozen_file(args.tolerance_file)
         tolerance, rubric = load_frozen(args.tolerance_file)
         env = env_for_manifest(args.episode, _manifest(args.episode))
@@ -168,7 +171,11 @@ def main(argv: list[str] | None = None) -> int:
     except (ValueError, OSError, KeyError, TypeError, RuntimeError) as exc:
         print(f"REFUSED: {type(exc).__name__}: {exc}")
         return 2
-    print(json.dumps([asdict(result) for result in results], indent=2))
+    text = json.dumps([asdict(result) for result in results], indent=2)
+    if args.out is not None:
+        with args.out.open("x", encoding="utf-8") as stream:
+            stream.write(text + "\n")
+    print(text)
     distinct = len({result.reason for result in results}) == len(results)
     return 0 if distinct and all(result.rejected for result in results) else 1
 

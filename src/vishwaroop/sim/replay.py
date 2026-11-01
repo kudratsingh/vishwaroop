@@ -372,6 +372,7 @@ def env_for_manifest(episode_dir: Path, manifest: dict[str, Any]) -> SimEnv:
     engine = manifest["simulator"]["engine"]
     if engine != ManiSkillPickCube.engine:
         raise SimulatorUnavailableError(f"no adapter for engine {engine}")
+    validator().validate_episode(episode_dir / "episode.json")
     configuration = _read_json(episode_dir, manifest["configuration"]["embodiment_artifact"])
     return ManiSkillPickCube(
         env_id=configuration["env_id"], max_episode_steps=configuration["max_episode_steps"]

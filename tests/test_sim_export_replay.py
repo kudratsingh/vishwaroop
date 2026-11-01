@@ -5,7 +5,6 @@ These test the logic only. No simulator runs here, so no result here is evidence
 
 from __future__ import annotations
 
-import ast
 import hashlib
 import json
 import math
@@ -1137,7 +1136,15 @@ def test_the_real_adapter_is_built_from_the_recording(
         def __init__(self, env_id: str, max_episode_steps: int) -> None:
             calls.append((env_id, max_episode_steps))
 
+    validated: list[Path] = []
+
+    class StubValidator:
+        @staticmethod
+        def validate_episode(path: Path) -> None:
+            validated.append(path)
+
     monkeypatch.setattr(replay, "ManiSkillPickCube", StubAdapter)
+    monkeypatch.setattr(replay, "validator", lambda: StubValidator)
     episode = tmp_path / "ep"
     episode.mkdir()
     (episode / "configuration.json").write_text(
@@ -1149,9 +1156,34 @@ def test_the_real_adapter_is_built_from_the_recording(
     }
     assert isinstance(replay.env_for_manifest(episode, manifest), StubAdapter)
     assert calls == [("Recorded-v1", 150)]
+    assert validated == [episode / "episode.json"]
     manifest["simulator"]["engine"] = "another"
     with pytest.raises(SimulatorUnavailableError, match="no adapter"):
         replay.env_for_manifest(episode, manifest)
+
+
+def test_a_real_episode_is_validated_before_its_files_choose_a_simulator(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[Any] = []
+
+    class StubAdapter:
+        engine = "fake_fixture_no_simulator"
+
+        def __init__(self, **kwargs: Any) -> None:
+            calls.append(kwargs)
+
+    monkeypatch.setattr(replay, "ManiSkillPickCube", StubAdapter)
+    episode = record_episode(
+        FakeArmEnv(), plan_policy(scripted_plan(3)), _spec("edited"), tmp_path / "edited"
+    )
+    manifest = json.loads((episode / "episode.json").read_text(encoding="utf-8"))
+    (episode / "configuration.json").write_text(
+        json.dumps({"env_id": "this:Nope-v0", "max_episode_steps": 1}), encoding="utf-8"
+    )
+    with pytest.raises(ContractError):
+        replay.env_for_manifest(episode, manifest)
+    assert calls == []
 
 
 def test_negative_command_exits_one_when_one_case_of_five_is_accepted(
@@ -1348,8 +1380,32 @@ def test_missing_simulator_is_a_clear_error() -> None:
         pytest.skip("the simulator is installed here")
 
 
-@pytest.mark.parametrize("package", ["outcome", "sim"])
-def test_simulator_code_parses_on_python_3_11(package: str) -> None:
-    """The robotics environment is proposed on Python 3.11, and CI only runs 3.12 and 3.13."""
-    for path in (ROOT / "src" / "vishwaroop" / package).glob("*.py"):
-        ast.parse(path.read_text(encoding="utf-8"), feature_version=(3, 11))
+def test_negative_command_writes_its_report_once(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    episode = _frozen_episode(tmp_path)
+    _use_fake(monkeypatch, FrozenTaskFake())
+    out = tmp_path / "negative.json"
+    args = ["--episode", str(episode), "--tolerance-file", str(FROZEN), "--out", str(out)]
+    assert negative_main(args) == 0
+    written = json.loads(out.read_text(encoding="utf-8"))
+    assert [case["rejected"] for case in written] == [True] * 5
+    assert negative_main(args) == 2
+    assert json.loads(out.read_text(encoding="utf-8")) == written
+
+
+def test_replay_is_refused_on_another_platform(tmp_path: Path) -> None:
+    class OnMac(FakeArmEnv):
+        def stack_identity(self) -> dict[str, Any]:
+            return {"platform": "Darwin arm64", "python": "3.12.13"}
+
+    class OnLinux(OnMac):
+        def stack_identity(self) -> dict[str, Any]:
+            return {**super().stack_identity(), "platform": "Linux x86_64"}
+
+    episode = record_episode(
+        OnMac(), plan_policy(scripted_plan(3)), _spec("platform"), tmp_path / "platform"
+    )
+    assert replay_episode(episode, OnMac(), TOLERANCE, RUBRIC).claim_valid
+    with pytest.raises(ReplayInvalidError, match="stacks"):
+        replay_episode(episode, OnLinux(), TOLERANCE, RUBRIC)

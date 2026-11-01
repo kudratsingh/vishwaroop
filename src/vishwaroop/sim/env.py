@@ -1,8 +1,8 @@
 """The simulator interface, and the ManiSkill3 adapter that implements it.
 
 Everything else in this package works against ``SimEnv``, so its logic can be tested on the CPU tier
-with a fake. ``ManiSkillPickCube`` imports the simulator only when constructed. **It has not run:**
-it was written from the ``mani_skill`` 3.0.1 source, and no episode has been produced with it.
+with a fake. ``ManiSkillPickCube`` imports the simulator only when constructed, and the CPU tier
+never constructs it. ``reports/WO-001-m0-grounded-environment.md`` holds what it has measured.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 
 JOINT_STREAM = "joint_position"
+KNOWN_ENV_IDS = frozenset({"PickCubeSO100-v1"})
 Packet = dict[str, list[float]]
 
 
@@ -96,16 +97,26 @@ def _to_jsonable(value: Any) -> Any:
 
 
 class ManiSkillPickCube:
-    """``PickCubeSO100-v1`` on CPU physics (ADR-0004). Simulated SO-100; no transfer claim. Not run.
+    """``PickCubeSO100-v1`` on CPU physics (ADR-0004). Simulated SO-100; no transfer claim.
 
     Joint positions are in rad, positions in metres in the world frame. Initial state is saved as
-    JSON, never pickled.
+    JSON, never pickled. Restoring is close but not exact (ADR-0006). The environment id can come
+    from an episode's files, so only known ids are accepted: Gymnasium imports the module named in
+    an id like ``module:Name``.
     """
 
     engine = "maniskill3"
     frames = ["joint_coordinates", "world"]
 
-    def __init__(self, env_id: str = "PickCubeSO100-v1", max_episode_steps: int = 200) -> None:
+    def __init__(
+        self,
+        env_id: str = "PickCubeSO100-v1",
+        max_episode_steps: int = 200,
+        *,
+        render: bool = False,
+    ) -> None:
+        if env_id not in KNOWN_ENV_IDS:
+            raise ValueError(f"unknown environment id {env_id}; known: {sorted(KNOWN_ENV_IDS)}")
         try:
             import gymnasium
             import mani_skill
@@ -138,8 +149,8 @@ class ManiSkillPickCube:
                 env_id,
                 obs_mode="state_dict",
                 control_mode="pd_joint_pos",
-                render_mode=None,
-                render_backend="none",
+                render_mode="rgb_array" if render else None,
+                render_backend="cpu" if render else "none",
                 sim_backend="physx_cpu",
                 max_episode_steps=max_episode_steps,
             )
@@ -223,6 +234,10 @@ class ManiSkillPickCube:
         command = self._torch.as_tensor(action, dtype=self._torch.float32).unsqueeze(0)
         self._env.step(command)
         return self._packet()
+
+    def render_rgb(self) -> Any:
+        """The current view as a height x width x 3 uint8 array. Needs ``render=True``."""
+        return self._env.render()[0].cpu().numpy()
 
     def configuration(self) -> dict[str, Any]:
         return {
