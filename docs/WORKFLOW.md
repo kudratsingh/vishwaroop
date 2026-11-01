@@ -1,4 +1,4 @@
-<!-- ironclad-policy v1.1.0 -->
+<!-- ironclad-policy v1.2.0 -->
 # WORKFLOW.md — how work moves through this repository
 
 Rules live in `AGENTS.md` (§3–§5). This file is the procedure: the commands, templates and cadence that satisfy those rules. If this file and `AGENTS.md` disagree, `AGENTS.md` wins.

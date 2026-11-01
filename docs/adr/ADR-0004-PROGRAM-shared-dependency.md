@@ -1,4 +1,4 @@
-<!-- ironclad-policy v1.1.0 -->
+<!-- ironclad-policy v1.2.0 -->
 # ADR-0004 — Shared material becomes a versioned dependency: `ironclad`
 
 **Date:** 2026-10-31 · **Status:** accepted (owner decision; implementation in `ironclad` WO-001…WO-005, adoption in each project's own work order) · **Work order:** WO-001 in `ironclad` · **Program link:** PROGRAM §5.3, §6, §10
@@ -8,7 +8,7 @@ ADR-0001 chose two independent projects joined by one shared contract, and ADR-0
 
 ## Decision
 1. **A new repository and Python package, `ironclad`,** holds every shared artifact in one canonical location: `contracts/v1`, the `core` record helpers, the six CPU-tier tools as console scripts, the shared tests as a pytest plugin, `AGENTS_CORE.md`, `PROGRAM.md`, and the program-level ADRs. Design: `docs/DESIGN.md`.
-2. **Consumers pin a version** (`ironclad @ git+…@vX.Y.Z`) and upgrade in work orders of their own. A consumer may lag indefinitely and must stay green. The hash locks (`config/contract-lock.json`, `config/program-lock.json`) are replaced by `ironclad verify`.
+2. **Consumers pin a version** (`ironclad-kit @ git+…@vX.Y.Z`, or a full commit) and upgrade in work orders of their own. A consumer may lag indefinitely and must stay green. The hash locks (`config/contract-lock.json`, `config/program-lock.json`) are replaced by `ironclad verify`.
 3. **Policy is authored in `ironclad`.** The `AGENTS.md` core and `PROGRAM.md` change through program-level ADRs written here and reach projects through `ironclad sync-policy`. Project `§13` addenda and project ADRs stay in the projects. Program ADRs number in `ironclad` (this is ADR-0004 here; ADR-0001–0003 are copied in as history). Project ADRs number locally and never collide with program ADRs again.
 4. **`ironclad` is a dependency, not a third project.** No runtime, no shared state, no knowledge of either consumer, no imports from them, tests pass with only itself installed. This honours the 2026-10-30 review warning against a third project or shared runtime: a pinned dev-time and data-format dependency is what makes the two projects *more* independent, not less.
 5. **Numbering.** `ironclad` has its own work-order sequence (WO-001…) and its own stage ladder (I0–I2).
@@ -30,3 +30,6 @@ ADR-0001 chose two independent projects joined by one shared contract, and ADR-0
 
 ## Authorization
 Owner decision recorded 2026-10-31 (`ledgers/approvals.jsonl` in this repository once the first session records it). Creating the private remote `kudratsingh/ironclad` is a separate `§2.2` approval (WO-004). No purchase, hardware or paid action is implied.
+
+## Amendment 2026-10-31
+ADR-0007 corrected the pin form in decision 2, after the distribution was named `ironclad-kit` because `ironclad` on PyPI is an unrelated project. Wording only.

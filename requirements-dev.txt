@@ -5,4 +5,4 @@ jsonschema==4.26.0
 pytest==9.1.1
 ruff==0.16.9
 mypy==2.3.1
-ironclad-kit @ git+https://github.com/kudratsingh/ironclad@v1.1.0
+ironclad-kit @ git+https://github.com/kudratsingh/ironclad@v1.2.0

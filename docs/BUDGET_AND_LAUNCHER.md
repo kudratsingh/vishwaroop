@@ -1,4 +1,4 @@
-<!-- ironclad-policy v1.1.0 -->
+<!-- ironclad-policy v1.2.0 -->
 # BUDGET_AND_LAUNCHER.md — spend control
 
 **Approved spend for this repository today: $0** (`config/budget.json`). Planning ranges in `PROGRAM.md §9` and in the owner's purchase plan are not approvals or quotes. An agent cannot approve its own spending by editing a file or passing a flag (`AGENTS.md §2.3, §9`).

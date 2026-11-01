@@ -1,10 +1,10 @@
-<!-- ironclad-policy v1.1.0 -->
+<!-- ironclad-policy v1.2.0 -->
 # PROGRAM.md — Physical AI Program: trajectory, projects, and plan
 
-**Version 1.1 — 2026-10-31. Owner: Kudrat Singh.**
-Canonical copies: byte-identical at the root of the `banshee` and `vishwaroop` repositories (sha256 pinned in each repo's `config/program-lock.json`) and in the owner's "Omni Drone / World Model / Planner" Claude Project.
+**Version 1.2 — 2026-11-01. Owner: Kudrat Singh.**
+Canonical source: the `ironclad` package, at the version each repository pins, not vendored copies with hash locks. `ironclad sync-policy` writes the copy at the root of the `banshee` and `vishwaroop` repositories, and the owner's "Omni Drone / World Model / Planner" Claude Project keeps a copy.
 
-This is the single document that says **where the whole program is going and why**. It covers every project the owner is building, not only the two repositories that carry it. Enforceable rules for agents live in `AGENTS.md`; the interface between projects lives in `contracts/v1/`; this document explains the destination, the order of work, and the reasoning behind both.
+This is the single document that says **where the whole program is going and why**. It covers every project the owner is building, not only the two repositories that carry it. Enforceable rules for agents live in `AGENTS.md`; the interface between projects is the contract in `ironclad.contracts.v1`; this document explains the destination, the order of work, and the reasoning behind both.
 
 ---
 
@@ -15,10 +15,10 @@ This is the single document that says **where the whole program is going and why
 2. Every work order names the program stage and project phase it serves (for example `PROGRAM §6 → vishwaroop M1`). Work that serves no listed stage is out of scope until the owner adds it here.
 3. Nothing in this document authorizes spending, hardware motion, flight, or remote operations. Authorization lives in `AGENTS.md §2` and in dated owner approvals.
 4. If this document and a repository document disagree, stop and report the conflict; do not pick the convenient reading.
-5. Propose changes to this document as an ADR plus a pull request in the repository you work in, titled `PROGRAM: <change>`. The owner approves program changes; the same change is then applied to both repositories so the copies stay identical.
+5. Propose changes to this document as an ADR plus a pull request in the repository you work in, titled `PROGRAM: <change>`. The owner approves program changes; the change is released through `ironclad`, and each repository takes it by moving its pin.
 
 **Owner**
-- Edit the Project copy, then paste the result into both repositories (or ask an agent to), bump the version line, and add a changelog entry at the bottom.
+- Have the change released through `ironclad` (or ask an agent to), then refresh the Project copy from the release, bump the version line, and add a changelog entry at the bottom.
 - Keep the decision log (§11) and open decisions (§12) current; they are what agents read when they must choose.
 
 **Status words used throughout:** *confirmed* = owner stated it; *proposed default* = Claude or an agent suggested it and the owner has not objected, so it is the working assumption; *unknown* = nobody has established it; *future option* = a possibility the owner likes but has not decided.
@@ -90,7 +90,7 @@ Rule kept from the roadmap: **manipulation first; simulation foundations before 
 | `movielens-recommender`, `arxiv-research-agent`, mock-interview app | Smaller ML/agent portfolio projects | Various | Portfolio only |
 | `physical-ai-foundations` | Stage-0 learning repo | Through Week 8 | Foundations |
 
-Ground rules for the new repositories with respect to these: **never modify, import runtime code from, launch, or interfere with any of them.** The arm project becomes a *producer* only through completed, immutable, owner-provided exports (see §6 and `contracts/v1/README.md`).
+Ground rules for the new repositories with respect to these: **never modify, import runtime code from, launch, or interfere with any of them.** The arm project becomes a *producer* only through completed, immutable, owner-provided exports (see §6 and the contract README in `ironclad.contracts.v1`).
 
 ---
 
@@ -142,7 +142,7 @@ In pure simulation the physics engine already *is* the perfect world model, so a
 | Arm → World Model | arm produces; WM imports read-only | Completed, immutable exports: episodes, checkpoints with ids, frozen task suite, action convention, camera setup | Edits to the arm repo, imports of its training code, hooks into its training loop |
 | Drone → World Model | drone produces flight logs; WM imports | Contract-v1 episodes from SITL, later real flights | A shared runtime or live command path |
 | World Model → Drone | WM proposes; drone decides | Exported model manifests (same contract boundary), shadow-mode predictions, evaluation reports | Command authority; the drone can always reject or run without it |
-| Both → Contract | both consume the same release | Byte-identical vendored `contracts/v1`, hash-pinned | Per-repo forks of semantics |
+| Both → Contract | both consume the same release | `ironclad.contracts.v1` from a pinned `ironclad` release | Per-repo forks of semantics |
 
 Ordering rules that follow:
 1. World Model M0/M1 need only sim data the agent can generate today; they do not wait for the arm project.
@@ -230,7 +230,7 @@ Source of detail: the owner's "Lab Purchase Plan v1" (Oct 30, 2026; prices are U
 
 **Running costs (LA, ~$0.30/kWh):** ~$50/month training 6 h/day on one card; ~$75/month 24/7 inference; put the numbers in each repo's budget config.
 
-**Environment facts agents must respect:** ManiSkill3 (SAPIEN) and Isaac Lab are Linux + CUDA only; they do not run on the Macs. The Macs handle coding, CAD, slicing, LeRobot teleop/recording, PX4 SITL (Ubuntu VM for ROS 2 + Gazebo), and small local LLMs. Until the workstation exists, GPU work is rented and each repo's `docs/ENVIRONMENT.md` says what runs where.
+**Environment facts agents must respect:** ManiSkill3 (SAPIEN) CPU physics runs on the M3 Pro with MoltenVK (measured by `vishwaroop`, 2026-11-01); its GPU simulation and large-scale visual work still need Linux + NVIDIA. Isaac Lab is Linux + CUDA only and does not run on the Macs. The Macs handle coding, CAD, slicing, LeRobot teleop/recording, PX4 SITL (Ubuntu VM for ROS 2 + Gazebo), and small local LLMs. Until the workstation exists, GPU work is rented and each repo's `docs/ENVIRONMENT.md` says what runs where.
 
 ---
 
@@ -240,7 +240,7 @@ Source of detail: the owner's "Lab Purchase Plan v1" (Oct 30, 2026; prices are U
 2. **Conventional first, learned by evidence.** Baselines exist before learned replacements; learned components pass held-out → shadow → controlled closed-loop before they touch anything real.
 3. **Independent validation is permanent.** Training reward, development evaluator and final assessment have separate authority. Sealed suites are opened only with owner authorization and logged.
 4. **Sim-first; no hardware before its simulation foundation** (the SO-101 is the approved exception).
-5. **One shared technical boundary** (the contract), vendored identically; everything else is per project.
+5. **One shared technical boundary** (the contract), plus shared tooling and policy, all from a pinned `ironclad` release; no shared runtime; everything else is per project.
 6. **Append-only records.** Data, runs, logs, ledgers, reports and accepted work orders are never deleted or overwritten; corrections are new records.
 7. **Budgets are enforced, default $0, and an agent cannot approve its own spending.** Cost is tracked per accepted trajectory, per evaluated checkpoint, per flight hour.
 8. **Honest status.** Measured, estimated, mocked and not-run are different words and are never mixed.
@@ -284,7 +284,7 @@ Source of detail: the owner's "Lab Purchase Plan v1" (Oct 30, 2026; prices are U
 | 4 | Drone test space: garage/field vs room (decides X500 V2 vs 3–5 inch frame and containment method) | Unknown — D0 must resolve | Drone hardware purchase |
 | 5 | Companion computer (Orin Nano Super 8 GB vs Orin NX 16 GB) and depth camera (OAK-D Pro vs RealSense D435i) | Orin Nano Super; OAK-D Pro | Drone BOM |
 | 6 | LEAP Hand v1 full bundle vs Lite | v1 full | Build #2 |
-| 7 | Remote repository designation for each new project (account, name, private) | None designated; local git only | Pushes, PRs on GitHub |
+| 7 | Remote repository designation for each new project (account, name, private) | Designated: `kudratsingh/banshee`, `kudratsingh/vishwaroop`, `kudratsingh/ironclad`, all private | Nothing |
 | 8 | Open-source license for the two repositories | None (all rights reserved) until chosen | Public release |
 | 9 | Where sealed evaluation data physically lives (outside agent access) | Unknown | M2 real validation |
 | 10 | Hardware purchase timing (Black Friday window for printer; workstation now) | As in §9 | — |
@@ -318,3 +318,4 @@ Source of detail: the owner's "Lab Purchase Plan v1" (Oct 30, 2026; prices are U
 |---|---|---|
 | 1.0 | 2026-10-31 | First consolidated program document, assembled from the Sept–Oct 2026 planning conversations, the Physical AI Leadership Roadmap, the Lab Purchase Plan v1, and the reviewed starter-kit material. |
 | 1.1 | 2026-10-31 | Project names `banshee` and `vishwaroop` adopted (ADR-0003): repository identifiers updated throughout and a §11 decision added. No change to scope, order of work, budgets or authorization. |
+| 1.2 | 2026-11-01 | The header and the lines that described vendored copies say where shared material comes from now, §9 corrects where ManiSkill3 runs, and §12 row 7 records the designated remotes (ADR-0007). No change to scope, order of work, budgets or authorization. |
