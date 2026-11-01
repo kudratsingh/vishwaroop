@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-01 23:00 UTC · ledger records: 89
+Generated: 2026-11-01 23:09 UTC · ledger records: 90
 
 ## Phases
 
@@ -76,5 +76,5 @@ Generated: 2026-11-01 23:00 UTC · ledger records: 89
 | WO-011 | Adopt ironclad v1.1.0 and remove the vendored shared files | M0 | **accepted** | 2026-11-01T04:59:08.566289Z | reports/WO-011-adopt-ironclad.md |
 | WO-012 | Split M1 between the Mac and a GPU, from a measured pilot | M1 | **accepted** | 2026-11-01T07:57:36.907206Z | reports/WO-012-m1-compute-split.md |
 | WO-013 | M1 visual latent model, on the Mac first | M1 | **created** | 2026-11-01T07:48:28.393883Z | — |
-| WO-015 | Bump the ironclad pin to v1.2.0 | M1 | **in_progress** | 2026-11-01T23:00:37.331530Z | — |
+| WO-015 | Bump the ironclad pin to v1.2.0 | M1 | **accepted** | 2026-11-01T23:09:05.286326Z | reports/WO-015-ironclad-v1.2.0.md |
 

@@ -87,3 +87,4 @@
 {"actor":"claude-code-vishwaroop","event":"created","note":"owner instruction 2026-11-01: move the CPU-tier pin to ironclad v1.2.0","record_id":"status-20261101T230037242395Z-6d1e4e","ts":"2026-11-01T23:00:37.242395Z","wo":"WO-015"}
 {"actor":"claude-code-vishwaroop","event":"ready","note":"v1.2.0 released; CI only","record_id":"status-20261101T230037286663Z-8f2e5a","ts":"2026-11-01T23:00:37.286663Z","wo":"WO-015"}
 {"actor":"claude-code-vishwaroop","event":"in_progress","note":"branch wo/WO-015-ironclad-v1.2.0","record_id":"status-20261101T230037331530Z-a4fffc","ts":"2026-11-01T23:00:37.331530Z","wo":"WO-015"}
+{"actor":"claude-code-vishwaroop","commit":"1dc16daa153ce56496bc34bc6dfa214b10e66edb","event":"accepted","note":"CI only, closes no exit test; CI run 41360563833","record_id":"status-20261101T230905286326Z-034f4f","report":"reports/WO-015-ironclad-v1.2.0.md","ts":"2026-11-01T23:09:05.286326Z","wo":"WO-015"}
