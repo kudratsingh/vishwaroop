@@ -24,10 +24,10 @@ Pin: `ironclad-kit @ git+https://github.com/kudratsingh/ironclad@v1.2.0`, instal
 
 ## 4. Results
 All **measured**, on the owner's Mac with Python 3.13. CI on the merged commit is the status ledger's `accepted` record.
-- `make check` passed in a clean worktree, with `ironclad verify OK: v1.2.0` and: .....................                                                    [100%]
+- `make check` passed in a clean worktree, with `ironclad verify OK: v1.2.0`, and 589 tests passed, 8 skipped (simulator and torch) and 1 deselected by the plugin.
 - `ironclad-check-immutable` passed against `origin/main`.
 - **The diff is the expected alignment.** `AGENTS.md`: line 3 and the core's tool paths, policy version 1.2. `PROGRAM.md`: version 1.2, the header, `§6`, `§9`, `§10`, `§12` row 7, `§14`. ADR-0004: the pin form and an amendment. ADR-0007 is new. The other eight policy files change only their marker line. `§13` has the same sha256 before and after, `7c37c3b6…`. The contract's `schema_version` stays 1.0.0.
-- **The stored log clears.** In the checkout that holds it, `ironclad-scan-secrets` from v1.2.0 passes, and so does the shared test `test_repository_has_no_secrets_or_machine_paths`, which failed there under v1.1.0. The log stays in place and is untracked. That checkout is on another branch, so the rest of `make check` did not run there.
+- **The stored log clears.** In the checkout that holds it, `ironclad-scan-secrets` from v1.2.0 passes, and so does the shared test `test_repository_has_no_secrets_or_machine_paths`, which failed there under v1.1.0. The log stays in place, and git ignores it. That checkout is on another branch, so the rest of `make check` did not run there.
 - **The scanner still works.** A fake AWS key planted in a tracked file was reported, and then removed.
 
 ## 5. Failure analysis
@@ -44,7 +44,7 @@ This work order closes no exit test.
 
 ## 9. Limits
 - **Two versions on purpose.** The robotics environment stays on 1.1.0, commit `d5b91b6`, as `config/stack-lock.resolved.v2.json` records. A changed pin there is a new lock version, and episode provenance is tied to that lock. No schema or fixture byte changed in this release, so the difference does not affect episode validity. A later work order can move it with a lock v3.
-- **A scanner gap to know about.** A secret in an untracked file is no longer reported by default, which is what clears the log. Ignored paths are therefore outside the scan unless asked for.
+- **What the scan now skips.** By default it reads tracked files and untracked files that are not ignored, so it skips ignored files only, which is what clears the log. `ironclad-scan-secrets --all` is still the full walk, and it still reports the log.
 
 ## 10. Appendix
 `AGENTS.md`'s `§13.9` resume rule, from WO-014, is not in this change.
