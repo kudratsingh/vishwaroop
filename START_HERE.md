@@ -24,7 +24,7 @@ git status   # if this is not yet a git repository: git init -b main && git add 
 - Hardware: the SO-101 is ordered, not confirmed arrived; it is not needed for M0/M1.
 
 ## 4. First work order
-`work_orders/WO-001-m0-grounded-environment.md` is the first work order. Its CPU-tier parts are done, and its simulator parts run on the Mac with MoltenVK (`docs/ENVIRONMENT.md §4`). WO-003 (budget enforcement, local) can run in parallel in its own worktree. WO-002 follows WO-001.
+`work_orders/WO-001-m0-grounded-environment.md` is the first work order. Its CPU-tier parts are done, and its simulator parts run on the Mac with MoltenVK (`docs/ENVIRONMENT.md §4`). WO-003 is superseded: the launcher is built in `ironclad`. WO-002 follows WO-001.
 
 ## 5. Unresolved owner decisions you may hit
 See `docs/CONTEXT_AND_DECISIONS.md §5` and `PROGRAM.md §12`: first ManiSkill3 task if no arm export exists (default: a readily available pick-and-place task, honestly labelled); GPU rental approval (none yet); sealed-data location. Take the recorded default, write the assumption into the report, and continue — stop only at `AGENTS.md §2.3` gates or §12 conditions.
@@ -34,8 +34,8 @@ The next action is WO-001's simulator steps. Merge on green checks, with a full 
 
 1. `make check` green. Branch from `main`.
 2. `evals/M0-exit-tests.json`, `evals/M0-protocol.md` and `evals/M1-exit-tests.json` are frozen, and their `frozen` events are appended. Phase M0 and WO-001 are `in_progress`. Exit tests are frozen before `ready`, as `AGENTS.md §5.3` requires.
-3. Outcome code, export, replay and negative tests are done, and tested on a fabricated fake. The real adapter in `src/vishwaroop/sim/env.py` has not run.
-4. The simulator starts on the Mac with MoltenVK (`docs/ENVIRONMENT.md §4`). Resolve the stack lock, write the scripted baseline, export the first episode, replay, and run the negative tests.
+3. Outcome code, export, replay and negative tests are done, and tested on a fabricated fake.
+4. The simulator runs on the Mac with MoltenVK (`docs/ENVIRONMENT.md §4`). The stack lock and scripted baseline exist; record the real episodes, replay them, and run the negative tests.
 5. Write `reports/WO-001-m0-grounded-environment.md`; append `accepted`; `make board`; continue to WO-002.
 
 The first-session prompt the owner pastes into a fresh agent is `prompts/FIRST_SESSION.md`.

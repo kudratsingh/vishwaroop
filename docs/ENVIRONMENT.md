@@ -18,20 +18,29 @@ make check                      # the CPU tier; must be green before any work
 make board                      # regenerate docs/STATUS_BOARD.md
 ```
 
-## 3. Bootstrap (robotics/ML env) — proposed, unverified
+## 3. Bootstrap (robotics/ML env)
 
-Resolved by WO-001. Proposed starting point (versions are **proposed, not tested** here; record the exact commits/digests you install):
+**On the Mac (tested, `config/stack-lock.resolved.json`):** Python 3.11, the versions in `config/robotics-requirements.macos.txt`, and MoltenVK as in section 4.
 
-- Ubuntu 22.04 or 24.04 with an NVIDIA driver supporting the CUDA build you pick; one GPU with ≥ 24 GB VRAM for M1.
-- `uv venv --python 3.11` (ManiSkill3 has historically targeted 3.9–3.11; confirm against the pinned release) → `pip install mani_skill` at a pinned version, `torch` at the matching CUDA build, `jsonschema`.
-- Headless rendering: SAPIEN's Vulkan backend needs the Vulkan loader and ICD on the box; verify with the ManiSkill demo before writing the adapter.
-- Containers are preferred when the provider supports them; record the image digest in the stack lock.
+**On an owner-provided Linux GPU machine (proposed, not yet run on any machine):**
+
+```bash
+scripts/setup_gpu_host.sh --check-only   # read-only: what the machine has and lacks
+scripts/setup_gpu_host.sh                # checks, pinned install, smoke episode
+```
+
+The script needs a clone of this repository on the machine, and the owner decides how it gets there. It checks the platform, the NVIDIA driver, an idle GPU, the Vulkan loader and ICD, disk space and an installer. It then installs `config/robotics-requirements.linux.txt` (every package hash-pinned, resolved from `config/robotics-requirements.in`), records the driver, CUDA and versions it finds, and runs one episode through record, contract validation and frozen replay. Evidence goes to `runs/gpu-smoke-*/`. It never starts or stops a machine, installs system packages, uses `sudo`, resets a GPU or writes to `data/`. If the image lacks `libvulkan.so.1` it stops and says so, and the owner picks an image that has it.
+
+- Containers are preferred when the provider supports them; record the image digest in a new stack lock version.
+- Hardware for M1: one GPU with at least 24 GB of VRAM. State-only CPU physics does not need it.
 
 ## 4. What the Macs can and cannot do (owner's machines)
 - Can: everything in the tooling env; LeRobot teleop/recording with the SO-101 (MPS for small policies); CAD, printing, docs.
 - Cannot: ManiSkill3/SAPIEN GPU sim, Isaac Lab, VLA fine-tuning at useful speed, tier-1 world-model training. These rent until the workstation exists.
 
-**CPU physics on the Mac, measured on the owner's M3 Pro (`reports/BLOCKER-2026-10-31-m0.md`, last section):** `mani_skill` 3.0.1 and `sapien` 3.0.3 install on Python 3.11, and creating an environment fails only for lack of a Vulkan driver. With Khronos's MoltenVK v1.4.2 unpacked anywhere and `VK_ICD_FILENAMES` pointing at its `MoltenVK_icd.json`, ManiSkill3 runs state-only CPU physics at about 1,260 control steps per second. Nothing is installed system-wide. The robotics environment runs this package with `PYTHONPATH=src`. GPU simulation and visual data still need Linux and NVIDIA.
+**CPU physics on the Mac, measured on the owner's M3 Pro (`reports/BLOCKER-2026-10-31-m0.md`, last section):** `mani_skill` 3.0.1 and `sapien` 3.0.3 install on Python 3.11, and creating an environment fails only for lack of a Vulkan driver. With Khronos's MoltenVK v1.4.2 unpacked anywhere and `VK_ICD_FILENAMES` pointing at its `MoltenVK_icd.json`, ManiSkill3 runs state-only CPU physics at about 1,260 control steps per second. Nothing is installed system-wide. The robotics environment runs this package with `PYTHONPATH=src`. Rendering works through the same driver with `render_backend="cpu"`, and `src/vishwaroop/sim/inspect_episode.py` uses it for contact sheets. GPU simulation and large-scale visual data still need Linux and NVIDIA.
+
+The simulator stays outside the tooling environment. To run a simulator command, set `VK_ICD_FILENAMES` and `PYTHONPATH=src`, and use the robotics environment's Python.
 
 ## 5. Stack lock discipline
 - `config/stack-lock.pending.json` lists the pins that must be resolved. `null` is a blocker, not "use latest".

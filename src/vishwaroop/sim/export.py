@@ -192,14 +192,17 @@ def _json_bytes(value: Any) -> bytes:
 def record_episode(env: SimEnv, policy: Policy, spec: EpisodeSpec, target_dir: Path) -> Path:
     """Run one episode and write it once. Raises the contract's error if it does not validate.
 
-    The initial state is saved right after ``reset``, before any action. The policy sees only the
-    streams declared as inputs. The outcome comes from the independent rubric. An existing
+    The initial state is saved right after ``reset``, before any action, and the episode then runs
+    from that saved state, by the same path a replay takes. Starting straight from ``reset`` instead
+    was measured to diverge from replay on 22 of 100 real episodes (WO-001 report). The policy sees
+    only the streams declared as inputs. The outcome comes from the independent rubric. An existing
     ``target_dir`` is refused by the writer. The manifest says ``scripted``, because M0's only
     policies are scripted (evals/M0-protocol.md section 6).
     """
     inputs = {stream.name for stream in env.stream_specs if stream.role == "input"}
-    packet = env.reset(spec.seed)
+    env.reset(spec.seed)
     initial_state = env.save_state()
+    packet = env.restore_state(initial_state)
     records: list[dict[str, Any]] = []
     terminated = False
     for step in range(spec.max_steps):
