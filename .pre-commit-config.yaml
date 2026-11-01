@@ -4,21 +4,21 @@ repos:
     hooks:
       - id: ruff-format
         name: ruff format --check
-        entry: python -m ruff format --check src tools tests contracts/v1
+        entry: python -m ruff format --check src tests
         language: system
         pass_filenames: false
       - id: ruff-check
         name: ruff check
-        entry: python -m ruff check src tools tests contracts/v1
+        entry: python -m ruff check src tests
         language: system
         pass_filenames: false
       - id: scan-secrets
         name: secrets and absolute-path scan
-        entry: python tools/scan_secrets.py
+        entry: ironclad-scan-secrets
         language: system
         pass_filenames: false
-      - id: check-hashes
-        name: contract and program locks
-        entry: python tools/check_hashes.py
+      - id: ironclad-verify
+        name: policy copies, pin and contract
+        entry: ironclad verify --root .
         language: system
         pass_filenames: false

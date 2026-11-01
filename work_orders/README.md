@@ -1,3 +1,4 @@
+<!-- ironclad-policy v1.1.0 -->
 # Work orders
 
 A work order (WO) is the backlog item and the unit of agent work. Rules: `AGENTS.md §3, §5`. Procedure: `docs/WORKFLOW.md`.
@@ -22,7 +23,7 @@ followed by sections: **Objective**, **Scope**, **Out of scope**, **Deliverables
 
 `created → ready → in_progress → (blocked ↔ in_progress) → accepted | failed | superseded`
 
-- Append every transition to `STATUS.jsonl` with `python tools/status_board.py --append ...`.
+- Append every transition to `STATUS.jsonl` with `ironclad-status --append ...`.
 - `accepted` requires: verification ran and is recorded in the report; CI green on the merged commit; status event with report path and commit.
 - Once `accepted`, the WO file is **frozen** (append-only check enforces it). Follow-ups are new WOs.
 - Numbering is global and never reused. Later WOs may be milestone-level stubs; they are expanded into full detail only when they become the next WO (`AGENTS §3.2`).

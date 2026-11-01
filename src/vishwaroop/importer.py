@@ -31,9 +31,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .core.artifacts import sha256_file
-from .core.config import ConfigError, load_json
-from .core.ledger import append_record
+from ironclad.core.artifacts import sha256_file
+from ironclad.core.config import ConfigError, load_json
+from ironclad.core.ledger import append_record
 
 COMPLETE_MARKER = "COMPLETE"
 MANIFEST_NAME = "MANIFEST.json"

@@ -1,5 +1,7 @@
 # VERIFICATION.md — vishwaroop (World Model & Planner), imported from the world-model starter kit
 
+**Historical since WO-011.** This records checks from before `ironclad` was adopted, and its paths and commands are as they were then. Old paths map to new ones in `docs/adr/ADR-0007-adopt-ironclad.md`.
+
 ## Post-rename verification (2026-10-31, branch `wo/WO-007-program-rename`)
 
 **These are the current hashes.** The packaging record further down is kept as history and shows the values before the rename.

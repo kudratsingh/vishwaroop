@@ -1,3 +1,4 @@
+<!-- ironclad-policy v1.1.0 -->
 # ADR-0002 — Autonomous iterative agents inside designated repositories; append-only records
 
 **Date:** 2026-10-31 · **Status:** accepted · **Work order:** starter kit · **Program link:** PROGRAM §10–11
