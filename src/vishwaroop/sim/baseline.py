@@ -8,6 +8,7 @@ fail on purpose, for failure data.
 
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass
 
 from .env import Packet
@@ -32,6 +33,8 @@ class PlanSettings:
     grasp_offset_xy_m: tuple[float, float] = (0.0, 0.0)
     place_offset_xy_m: tuple[float, float] = (0.0, 0.0)
     release: bool = True
+    arm_noise_rad: float = 0.0
+    stop_after_steps: int | None = None
     approach_steps: int = 35
     descend_steps: int = 20
     close_steps: int = 20
@@ -134,6 +137,13 @@ VARIANTS: dict[str, PlanSettings] = {
     "missed-grasp": PlanSettings(grasp_offset_xy_m=(-0.04, 0.0)),
     "no-release": PlanSettings(release=False),
     "wrong-place": PlanSettings(place_offset_xy_m=(-0.03, 0.0)),
+    "noisy-actions": PlanSettings(arm_noise_rad=0.01),
+    "early-release": PlanSettings(place_height_m=0.05),
+    "timeout": PlanSettings(stop_after_steps=120),
+    # Held out in dev: settings never used in train (evals/M0-dataset-plan.json).
+    "dev-grasp-offset": PlanSettings(grasp_offset_xy_m=(-0.012, 0.0)),
+    "dev-place-offset": PlanSettings(place_offset_xy_m=(-0.016, 0.0)),
+    "dev-noisy-actions": PlanSettings(arm_noise_rad=0.02),
 }
 
 # Long enough for the rubric's 11 samples, when nothing can be planned.
@@ -147,8 +157,9 @@ class ScriptedPickPlace:
     independent rubric labels the episode. ``planning_error`` says that this is what happened.
     """
 
-    def __init__(self, settings: PlanSettings | None = None) -> None:
+    def __init__(self, settings: PlanSettings | None = None, noise_seed: int = 0) -> None:
         self._settings = settings or PlanSettings()
+        self._noise_seed = noise_seed
         self._plan: list[Joints] = []
         self.planning_error: str | None = None
 
@@ -156,8 +167,25 @@ class ScriptedPickPlace:
         if step == 0:
             self.planning_error = None
             try:
-                self._plan = plan_pick_and_place(packet, self._settings)
+                self._plan = self._perturbed(plan_pick_and_place(packet, self._settings))
             except PlanningError as exc:
                 self.planning_error = str(exc)
                 self._plan = [list(packet["joint_position"])] * _UNREACHABLE_HOLD_STEPS
         return self._plan[step] if step < len(self._plan) else None
+
+    def _perturbed(self, plan: list[Joints]) -> list[Joints]:
+        """Cut the plan short, and add seeded noise to the arm joints, as the settings ask."""
+        settings = self._settings
+        if settings.stop_after_steps is not None:
+            plan = plan[: settings.stop_after_steps]
+        if settings.arm_noise_rad == 0.0:
+            return plan
+        rng = random.Random(self._noise_seed)  # noqa: S311 - simulated noise, not cryptography
+        noisy: list[Joints] = []
+        for joints in plan:
+            arm = [
+                min(high, max(low, value + rng.gauss(0.0, settings.arm_noise_rad)))
+                for value, (low, high) in zip(joints[:4], _ARM_LIMITS, strict=True)
+            ]
+            noisy.append([*arm, *joints[4:]])
+        return noisy

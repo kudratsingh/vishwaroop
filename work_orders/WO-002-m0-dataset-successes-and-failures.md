@@ -4,7 +4,7 @@
 **Size:** M
 **Prerequisites:** WO-001 accepted (export, replay and independent outcome exist); `evals/M0-exit-tests.json` has the dataset thresholds frozen (episode count, failure share, failure modes).
 **Authorization:** AGENTS §2.1 only (simulator time on an already-approved machine; no new spend).
-**Files:** `src/vishwaroop/data/`, `src/vishwaroop/sim/collect.py`, `tests/`, `artifacts/manifests/m0-dataset-*.json`, `reports/WO-002-m0-dataset-successes-and-failures.md`, ignored `data/derived/m0-dataset/`.
+**Files:** `src/vishwaroop/data/`, `src/vishwaroop/sim/collect.py`, `src/vishwaroop/sim/baseline.py`, `src/vishwaroop/sim/record.py`, `src/vishwaroop/sim/sweep.py`, `evals/M0-dataset-plan.json`, `ledgers/licenses.jsonl`, `tests/`, `artifacts/manifests/m0-dataset-*.json`, `reports/WO-002-m0-dataset-successes-and-failures.md`, ignored `data/derived/m0-dataset/`.
 
 ## Objective
 Collect the first dataset the predictors will learn from: enough episodes, deliberately including failures of several kinds, every one validated and the whole set split-audited — so that M1 has honest training and dev partitions and the evaluator later has failure data to learn from.
@@ -25,8 +25,10 @@ Any learned model; teleop or real data; imagined data; changes to the frozen thr
 ## Verification
 ```bash
 make check
-python -m vishwaroop.sim.collect --config evals/M0-dataset-plan.json --out data/derived/m0-dataset
-python contracts/v1/audit_splits.py data/derived/m0-dataset/*/episode.json
+python -m vishwaroop.sim.collect --config evals/M0-dataset-plan.json --partition train --tolerance-file evals/M0-exit-tests.json --out data/derived/m0-dataset/<commit>
+python -m vishwaroop.sim.collect --config evals/M0-dataset-plan.json --partition dev --tolerance-file evals/M0-exit-tests.json --out data/derived/m0-dataset/<commit>
+ironclad-audit-splits data/derived/m0-dataset/<commit>/*/episode.json
+python -m vishwaroop.data.registry build --root data/derived/m0-dataset/<commit> --out artifacts/manifests/m0-dataset-v1.json
 python -m vishwaroop.data.registry summarize artifacts/manifests/m0-dataset-v1.json
 ```
 Expected: ≥ frozen episode count; failure share and failure-mode count at or above the frozen minimum; `audit_splits.py` passes; summary table in the report matches the manifest.

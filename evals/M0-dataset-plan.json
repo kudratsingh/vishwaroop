@@ -1,0 +1,20 @@
+{
+  "dataset": "m0-dataset-v1",
+  "protocol_version": "m0-protocol-2",
+  "note": "Written before any of these episodes existed. Outcomes come only from the frozen rubric. train uses seed block 2, which no earlier sweep or tuning touched, and dev uses block 8. Every family lies wholly in one partition (evals/M0-protocol.md section 3). The dev families are parameter settings never used in train.",
+  "replay_sample_per_family": 3,
+  "min_free_disk_gb": 5,
+  "max_seconds_per_run": 1800,
+  "families": [
+    {"variant": "nominal", "partition": "train", "first_seed": 2000, "count": 80},
+    {"variant": "missed-grasp", "partition": "train", "first_seed": 2000, "count": 30},
+    {"variant": "no-release", "partition": "train", "first_seed": 2000, "count": 30},
+    {"variant": "wrong-place", "partition": "train", "first_seed": 2000, "count": 30},
+    {"variant": "noisy-actions", "partition": "train", "first_seed": 2000, "count": 40},
+    {"variant": "early-release", "partition": "train", "first_seed": 2000, "count": 30},
+    {"variant": "timeout", "partition": "train", "first_seed": 2000, "count": 20},
+    {"variant": "dev-grasp-offset", "partition": "dev", "first_seed": 8000, "count": 20},
+    {"variant": "dev-place-offset", "partition": "dev", "first_seed": 8000, "count": 20},
+    {"variant": "dev-noisy-actions", "partition": "dev", "first_seed": 8000, "count": 20}
+  ]
+}
