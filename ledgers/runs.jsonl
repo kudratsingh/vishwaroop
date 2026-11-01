@@ -12,3 +12,5 @@
 {"note":"260 episodes; 0 sampled replays invalid","record_id":"runs-20261101T053937057876Z-53e25a55","run_dir":"runs/20261101T053745Z_fe51550b","run_id":"20261101T053745Z_fe51550b","status":"completed","ts":"2026-11-01T05:39:37.057917Z"}
 {"purpose":"m0 dataset, dev","record_id":"runs-20261101T053940775380Z-8af922f7","run_dir":"runs/20261101T053940Z_87e0fa2c","run_id":"20261101T053940Z_87e0fa2c","status":"started","ts":"2026-11-01T05:39:40.775499Z"}
 {"note":"60 episodes; 0 sampled replays invalid","record_id":"runs-20261101T054012223128Z-618f93ad","run_dir":"runs/20261101T053940Z_87e0fa2c","run_id":"20261101T053940Z_87e0fa2c","status":"completed","ts":"2026-11-01T05:40:12.223170Z"}
+{"purpose":"WO-012: can the M1 models train on this Mac; timing and memory only","record_id":"runs-20261101T073257613189Z-35cfe7ce","run_dir":"runs/20261101T073257Z_aa206789","run_id":"20261101T073257Z_aa206789","status":"started","ts":"2026-11-01T07:32:57.613242Z"}
+{"note":"6 workloads","record_id":"runs-20261101T073322369410Z-68dd7220","run_dir":"runs/20261101T073257Z_aa206789","run_id":"20261101T073257Z_aa206789","status":"completed","ts":"2026-11-01T07:33:22.369457Z"}
