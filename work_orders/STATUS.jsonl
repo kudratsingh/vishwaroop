@@ -83,3 +83,4 @@
 {"actor":"claude-code-vishwaroop","event":"ready","note":"M0 passed; no thresholds claimed","record_id":"status-20261101T073431180781Z-cd3bd9","ts":"2026-11-01T07:34:31.180781Z","wo":"WO-012"}
 {"actor":"claude-code-vishwaroop","event":"in_progress","note":"branch wo/WO-012-m1-compute-split","record_id":"status-20261101T073431219530Z-76ef20","ts":"2026-11-01T07:34:31.219530Z","wo":"WO-012"}
 {"actor":"claude-code-vishwaroop","event":"created","note":"split from WO-004 by WO-012; no exit test depends on it","record_id":"status-20261101T074828393883Z-a26708","ts":"2026-11-01T07:48:28.393883Z","wo":"WO-013"}
+{"actor":"claude-code-vishwaroop","commit":"e11c5eab030638f22fb6a5352bf697ca0e1d4375","event":"accepted","note":"CI only, closes no exit test; CI run 41286768542","record_id":"status-20261101T075736907206Z-234dec","report":"reports/WO-012-m1-compute-split.md","ts":"2026-11-01T07:57:36.907206Z","wo":"WO-012"}
