@@ -4,3 +4,5 @@
 {"note":"100 seeds","record_id":"runs-20261101T020251143680Z-7747f673","run_dir":"runs/20261101T020129Z_136f5b62","run_id":"20261101T020129Z_136f5b62","status":"completed","ts":"2026-11-01T02:02:51.143708Z"}
 {"purpose":"m0 scripted episodes","record_id":"runs-20261101T051303606566Z-8f19b96e","run_dir":"runs/20261101T051303Z_16437bc4","run_id":"20261101T051303Z_16437bc4","status":"started","ts":"2026-11-01T05:13:03.606677Z"}
 {"note":"2 episodes","record_id":"runs-20261101T051304414377Z-db611231","run_dir":"runs/20261101T051303Z_16437bc4","run_id":"20261101T051303Z_16437bc4","status":"completed","ts":"2026-11-01T05:13:04.414414Z"}
+{"purpose":"m0 sweep of every controller family, with replay","record_id":"runs-20261101T051338049506Z-b27b6bd7","run_dir":"runs/20261101T051337Z_31331650","run_id":"20261101T051337Z_31331650","status":"started","ts":"2026-11-01T05:13:38.049599Z"}
+{"note":"200 episodes","record_id":"runs-20261101T051741980852Z-146ebf2a","run_dir":"runs/20261101T051337Z_31331650","run_id":"20261101T051337Z_31331650","status":"completed","ts":"2026-11-01T05:17:41.980890Z"}
