@@ -1,0 +1,206 @@
+{
+  "claim": "Simulated SO-100 on one machine and stack. No claim about any physical arm.",
+  "code_commit": "5a80e67d217af145a2ae55f5b99f7b8e185e5e24",
+  "created_at": "2026-11-01T02:03:18+00:00",
+  "dirty": false,
+  "environment_lock": {
+    "file": "config/stack-lock.resolved.json",
+    "full_environment_sha256": "65a1e94b894fbd14e602201ffaf183d477100f51c12b35a0393e6661e47b5913",
+    "sha256": "4568316ba29226cd0d93401708f690f6cac09f1975976be73c8a894c91fb2d4e"
+  },
+  "episodes": [
+    {
+      "episode_id": "m0-scripted-nominal-seed-000012",
+      "evidence": [
+        {
+          "bytes": 290,
+          "path": "runs/20261101T015203Z_24865645/validate-nominal.json",
+          "sha256": "0d6702cb692c8a1488d3fa5b93da29594216ce762b9cd023c9b8665aa5a7ce7d"
+        },
+        {
+          "bytes": 68702,
+          "path": "runs/20261101T015203Z_24865645/replay-nominal.json",
+          "sha256": "e82d62663c45e5ce98ee421924eca92f36269c4f76b93b201dbcdc292610c825"
+        },
+        {
+          "bytes": 2579,
+          "path": "runs/20261101T015203Z_24865645/negative-nominal.out",
+          "sha256": "beaab0b3d5a7dd857d0e6d15f41d5b1dab02f37a65c6189e0f97bb88a2fd5cde"
+        },
+        {
+          "bytes": 789,
+          "path": "runs/20261101T015203Z_24865645/inspect-nominal/inspection.json",
+          "sha256": "874bf9334c31253846252a4c43fc4aa1e613a6c05bcc0f55d9c3da0dab40dfd5"
+        },
+        {
+          "bytes": 1255469,
+          "path": "runs/20261101T015203Z_24865645/inspect-nominal/contact-sheet.png",
+          "sha256": "6bbaaf1d8b42b24da962429418f84e3af42b63ca6688ba0de60bdd46348f8a64"
+        }
+      ],
+      "files": [
+        {
+          "bytes": 4202,
+          "path": "data/derived/m0/5a80e67/m0-scripted-nominal-seed-000012/assets.json",
+          "sha256": "3178fbbc593786da5c40ee2ace2ce9f9943c5ead256ca9cdd7229e51ec9da991"
+        },
+        {
+          "bytes": 279,
+          "path": "data/derived/m0/5a80e67/m0-scripted-nominal-seed-000012/configuration.json",
+          "sha256": "74e1aabfabff5248b59dc92bf5a7c311f536b5866286c8e7f4686cfa3d83ced3"
+        },
+        {
+          "bytes": 5357,
+          "path": "data/derived/m0/5a80e67/m0-scripted-nominal-seed-000012/episode.json",
+          "sha256": "8ed68969c504b7d458b16d19a10f090f74232ca9becf2b63741ff8a3e4f3a808"
+        },
+        {
+          "bytes": 170,
+          "path": "data/derived/m0/5a80e67/m0-scripted-nominal-seed-000012/final-assessment.json",
+          "sha256": "f92e05275807ae3f90e5641b03ac1ba1800f984b220ba84bedcea998ac1b8915"
+        },
+        {
+          "bytes": 853,
+          "path": "data/derived/m0/5a80e67/m0-scripted-nominal-seed-000012/initial-state.json",
+          "sha256": "92f7018f9b84091ba594590d021fd85c65185e786c289e92a018f67434eb499d"
+        },
+        {
+          "bytes": 215,
+          "path": "data/derived/m0/5a80e67/m0-scripted-nominal-seed-000012/rubric.json",
+          "sha256": "63eac6b91646f21b077af5bfb99b447c7901d0cd3d722d8637375c9fc9d9e8a9"
+        },
+        {
+          "bytes": 167,
+          "path": "data/derived/m0/5a80e67/m0-scripted-nominal-seed-000012/stack.json",
+          "sha256": "d1df91fc8a7d181552648b7bf44cdc8e921fe39875acd764292023c5d50b541e"
+        },
+        {
+          "bytes": 362446,
+          "path": "data/derived/m0/5a80e67/m0-scripted-nominal-seed-000012/transitions.jsonl",
+          "sha256": "cfb168784b2ee3bd4535cd6d4d518f60d98fcf6f9f276ad73dcf9b384d0b41f7"
+        }
+      ],
+      "outcome": "success: lifted, released, on the table, in the target, and settled",
+      "role": "success",
+      "split": {
+        "inherited_from_parent": false,
+        "partition": "train",
+        "policy_run_group_id": "m0-scripted-nominal",
+        "scene_group_id": "m0-seed-block-0",
+        "session_group_id": "20261101T015203Z_24865645",
+        "suite_id": "m0-collection"
+      }
+    },
+    {
+      "episode_id": "m0-scripted-wrong-place-seed-000012",
+      "evidence": [
+        {
+          "bytes": 294,
+          "path": "runs/20261101T015203Z_24865645/validate-wrong-place.json",
+          "sha256": "8e5061e8dd55082f5306aa1f6ed7040817e319d50ef9c4339a73025c99061582"
+        },
+        {
+          "bytes": 68737,
+          "path": "runs/20261101T015203Z_24865645/replay-wrong-place.json",
+          "sha256": "36efcfb5cdc70bde62636356d0b065f72ff9dc5c7dd78cff9ac9299284c96654"
+        },
+        {
+          "bytes": 2579,
+          "path": "runs/20261101T015203Z_24865645/negative-wrong-place.out",
+          "sha256": "beaab0b3d5a7dd857d0e6d15f41d5b1dab02f37a65c6189e0f97bb88a2fd5cde"
+        },
+        {
+          "bytes": 776,
+          "path": "runs/20261101T015203Z_24865645/inspect-wrong-place/inspection.json",
+          "sha256": "3059faac93e6a50fd2bfc65107f6623938afc666945b8dd2f304c7d27ebe1eee"
+        },
+        {
+          "bytes": 1257972,
+          "path": "runs/20261101T015203Z_24865645/inspect-wrong-place/contact-sheet.png",
+          "sha256": "8986046c4e1ecb69a8d0ddd29f99a4ca6573cad4abbcdf2f923291df0e6e72d3"
+        }
+      ],
+      "files": [
+        {
+          "bytes": 4202,
+          "path": "data/derived/m0/5a80e67/m0-scripted-wrong-place-seed-000012/assets.json",
+          "sha256": "3178fbbc593786da5c40ee2ace2ce9f9943c5ead256ca9cdd7229e51ec9da991"
+        },
+        {
+          "bytes": 279,
+          "path": "data/derived/m0/5a80e67/m0-scripted-wrong-place-seed-000012/configuration.json",
+          "sha256": "74e1aabfabff5248b59dc92bf5a7c311f536b5866286c8e7f4686cfa3d83ced3"
+        },
+        {
+          "bytes": 5356,
+          "path": "data/derived/m0/5a80e67/m0-scripted-wrong-place-seed-000012/episode.json",
+          "sha256": "e56603c379d9ce1ead3f6e602cbedc8ff0297d5084b208f7978e0fc319476b7b"
+        },
+        {
+          "bytes": 157,
+          "path": "data/derived/m0/5a80e67/m0-scripted-wrong-place-seed-000012/final-assessment.json",
+          "sha256": "63198033beba00ae35143f39dedde40c2c40f24874a82d441b8c799958ef57a4"
+        },
+        {
+          "bytes": 853,
+          "path": "data/derived/m0/5a80e67/m0-scripted-wrong-place-seed-000012/initial-state.json",
+          "sha256": "92f7018f9b84091ba594590d021fd85c65185e786c289e92a018f67434eb499d"
+        },
+        {
+          "bytes": 215,
+          "path": "data/derived/m0/5a80e67/m0-scripted-wrong-place-seed-000012/rubric.json",
+          "sha256": "63eac6b91646f21b077af5bfb99b447c7901d0cd3d722d8637375c9fc9d9e8a9"
+        },
+        {
+          "bytes": 167,
+          "path": "data/derived/m0/5a80e67/m0-scripted-wrong-place-seed-000012/stack.json",
+          "sha256": "d1df91fc8a7d181552648b7bf44cdc8e921fe39875acd764292023c5d50b541e"
+        },
+        {
+          "bytes": 362963,
+          "path": "data/derived/m0/5a80e67/m0-scripted-wrong-place-seed-000012/transitions.jsonl",
+          "sha256": "76271bf590dc4e946e48a3d15047e0b0ae552bc448f52654991b86eadb96ee72"
+        }
+      ],
+      "outcome": "outside_target: object was 0.034913 m from the target",
+      "role": "failure",
+      "split": {
+        "inherited_from_parent": false,
+        "partition": "train",
+        "policy_run_group_id": "m0-scripted-wrong-place",
+        "scene_group_id": "m0-seed-block-0",
+        "session_group_id": "20261101T015203Z_24865645",
+        "suite_id": "m0-collection"
+      }
+    }
+  ],
+  "further_evidence": [
+    {
+      "bytes": 596,
+      "path": "runs/20261101T015203Z_24865645/sweep-100-149.json",
+      "sha256": "1c74e8516cd550b2c024140d4f4be46e753626de86f2a8ccae246fcde3d0a609"
+    },
+    {
+      "bytes": 1625,
+      "path": "runs/20261101T015203Z_24865645/sweep.py",
+      "sha256": "e3c98a6ef083be649e286aea67a577cff19a368223976dcf7f83b392932724a6"
+    },
+    {
+      "bytes": 2393,
+      "path": "runs/20261101T020129Z_136f5b62/sensitivity.json",
+      "sha256": "903c883a5e341e3a509bce37a08248871ecfbd4b425304d4de4ce623f6bcbc16"
+    }
+  ],
+  "inputs": {
+    "evals/M0-exit-tests.json": "22fbc41c88e549b97076725e61af6ce38d3ee8d0f3f6bb8f7cd7ecfcd4efadda",
+    "evals/M0-protocol.md": "977b189bce26190a880e69877d02805ca2b1d81d4e8aa0cf09242924424a52bd"
+  },
+  "license": {
+    "mani_skill": "Apache-2.0, per the LICENSE file in the mani_skill 3.0.1 wheel",
+    "so100_assets": "the LICENSE file shipped beside the SO-100 assets in the mani_skill 3.0.1 wheel, Apache-2.0 text; hashes of all asset files are in each episode's assets.json"
+  },
+  "name": "m0-first-episode",
+  "producer": "vishwaroop WO-001, src/vishwaroop/sim/record.py",
+  "run_id": "20261101T015203Z_24865645",
+  "storage": "The bytes are in git-ignored paths on the owner's Mac only, in the paths below and by content under artifacts/sha256/. There is no second copy."
+}

@@ -40,7 +40,7 @@ The script needs a clone of this repository on the machine, and the owner decide
 
 **CPU physics on the Mac, measured on the owner's M3 Pro (`reports/BLOCKER-2026-10-31-m0.md`, last section):** `mani_skill` 3.0.1 and `sapien` 3.0.3 install on Python 3.11, and creating an environment fails only for lack of a Vulkan driver. With Khronos's MoltenVK v1.4.2 unpacked anywhere and `VK_ICD_FILENAMES` pointing at its `MoltenVK_icd.json`, ManiSkill3 runs state-only CPU physics at about 1,260 control steps per second. Nothing is installed system-wide. The robotics environment runs this package with `PYTHONPATH=src`. Rendering works through the same driver with `render_backend="cpu"`, and `src/vishwaroop/sim/inspect_episode.py` uses it for contact sheets. GPU simulation and large-scale visual data still need Linux and NVIDIA.
 
-The simulator stays outside the tooling environment. To run a simulator command, set `VK_ICD_FILENAMES` and `PYTHONPATH=src`, and use the robotics environment's Python.
+The simulator stays outside the tooling environment. To run a simulator command, set `VK_ICD_FILENAMES` and `PYTHONPATH=src`, and use the robotics environment's Python. The Vulkan loader prints its driver path on stdout, even with `MVK_CONFIG_LOG_LEVEL=0`, so save results through each command's `--out` and never store raw simulator stdout under `artifacts/`.
 
 ## 5. Stack lock discipline
 - `config/stack-lock.pending.json` lists the pins that must be resolved. `null` is a blocker, not "use latest".
