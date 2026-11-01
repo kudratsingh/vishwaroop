@@ -4,7 +4,7 @@ version = "0.0.1"
 description = "World Model & Planner: learning, planning, evaluation and synthetic-data infrastructure for robot policies"
 requires-python = ">=3.12"
 readme = "README.md"
-dependencies = ["ironclad-kit @ git+https://github.com/kudratsingh/ironclad@v1.1.0"]
+dependencies = ["ironclad-kit @ git+https://github.com/kudratsingh/ironclad@v1.2.0"]
 
 [build-system]
 requires = ["setuptools>=70"]

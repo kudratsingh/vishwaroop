@@ -1,4 +1,4 @@
-<!-- ironclad-policy v1.1.0 -->
+<!-- ironclad-policy v1.2.0 -->
 # Work orders
 
 A work order (WO) is the backlog item and the unit of agent work. Rules: `AGENTS.md §3, §5`. Procedure: `docs/WORKFLOW.md`.

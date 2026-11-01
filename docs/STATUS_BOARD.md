@@ -2,14 +2,14 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-01 07:57 UTC · ledger records: 86
+Generated: 2026-11-01 23:00 UTC · ledger records: 89
 
 ## Phases
 
 | Phase | Name | State | Exit tests (passed / frozen / total) | Prerequisites | Work orders |
 |---|---|---|---|---|---|
 | M0 | Grounded development environment | **passed** | 6 / 6 / 6 | — | WO-001, WO-002, WO-003, WO-007, WO-008, WO-009, WO-010, WO-011 |
-| M1 | Compact predictor, latent planner, action-chunk scorer | **not_started** | 0 / 5 / 5 | M0 | WO-004, WO-005, WO-006, WO-012, WO-013 |
+| M1 | Compact predictor, latent planner, action-chunk scorer | **not_started** | 0 / 5 / 5 | M0 | WO-004, WO-005, WO-006, WO-012, WO-013, WO-015 |
 | M2a | Closed-loop policy evaluator (simulation) | **not_started** | 0 / 0 / 5 | M1 | — |
 | M2b | Real-arm evaluator validation | **not_started** | 0 / 0 / 4 | M2a | — |
 | M3 | Synthetic-data engine (SFT route) | **not_started** | 0 / 0 / 5 | M0 | — |
@@ -76,4 +76,5 @@ Generated: 2026-11-01 07:57 UTC · ledger records: 86
 | WO-011 | Adopt ironclad v1.1.0 and remove the vendored shared files | M0 | **accepted** | 2026-11-01T04:59:08.566289Z | reports/WO-011-adopt-ironclad.md |
 | WO-012 | Split M1 between the Mac and a GPU, from a measured pilot | M1 | **accepted** | 2026-11-01T07:57:36.907206Z | reports/WO-012-m1-compute-split.md |
 | WO-013 | M1 visual latent model, on the Mac first | M1 | **created** | 2026-11-01T07:48:28.393883Z | — |
+| WO-015 | Bump the ironclad pin to v1.2.0 | M1 | **in_progress** | 2026-11-01T23:00:37.331530Z | — |
 

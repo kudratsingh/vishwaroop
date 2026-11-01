@@ -1,4 +1,4 @@
-<!-- ironclad-policy v1.1.0 -->
+<!-- ironclad-policy v1.2.0 -->
 # DATA_POLICY.md — records, retention, provenance, imports, privacy
 
 Rule summary in `AGENTS.md §6`. This file is the operating detail.
