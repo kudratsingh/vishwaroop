@@ -85,6 +85,9 @@ def test_states_come_twenty_per_family_from_long_enough_episodes() -> None:
     assert len(chosen) == 40
     assert "a-0" not in {name for name, _ in chosen}
     assert all(3 <= step <= 60 - 11 for _, step in chosen)
+    rest = select_states(entries, lengths, 20, 70)
+    assert len(rest) == 8  # 24 long enough per family, 20 already taken
+    assert not {name for name, _ in rest} & {name for name, _ in chosen}
 
 
 class _FakeEnv:

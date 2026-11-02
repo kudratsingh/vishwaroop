@@ -1,6 +1,7 @@
 """Simulator branches for ET-M1-2 and ET-M1-5: several action chunks from the same dev states.
 
-    python -m vishwaroop.sim.branches
+    python -m vishwaroop.sim.branches                # ET-M1-2's 60 states
+    python -m vishwaroop.sim.branches --extension    # the rest of dev, for ET-M1-5 (amendment 3)
 
 Run it from the repository root, in the robotics environment. The states, chunks and costs are
 frozen in ``evals/M1-planner-scorer.json`` and its first amendment. Every chunk starts from the
@@ -33,6 +34,9 @@ PLAN_SHA256 = "88c952ed4ee1ca91db359e5ff964a913f460e6cfc67ef6fdeee79e7a420453bf"
 AMENDMENT_PATH = Path("evals/M1-planner-scorer-amendment-1.json")
 AMENDMENT_SHA256 = "2025f7c2c701b3f44841f39dea908816e424def0fee08fb6f2272ada8e9fd81c"
 AMENDMENT_2_PATH = Path("evals/M1-planner-scorer-amendment-2.json")
+AMENDMENT_3_PATH = Path("evals/M1-planner-scorer-amendment-3.json")
+AMENDMENT_3_SHA256 = "4bf3c0e8f7630b5e36488e7cd9d97184b92192bca7c6041d472a6ff2e83bf729"
+EXTENSION_LAST = 70
 AMENDMENT_2_SHA256 = "eac5449dfb3aba44ed0a293f31821e5908b397910860cdaf1130ce19b5b6158b"
 DEV_MANIFESTS = (
     Path("artifacts/manifests/m0-dataset-v1.json"),
@@ -51,9 +55,13 @@ COMPARED = slice(0, 12)  # joints, cube and target; the flag must match exactly
 
 
 def select_states(
-    entries: Sequence[dict[str, Any]], lengths: dict[str, int]
+    entries: Sequence[dict[str, Any]],
+    lengths: dict[str, int],
+    first: int = 0,
+    last: int = STATES_PER_FAMILY,
 ) -> list[tuple[str, int]]:
-    """For each dev family, its 20 lowest-seed episodes with enough steps, and one step in each."""
+    """For each dev family, its episodes ranked ``first`` to ``last`` by seed among those with
+    enough steps, and one step in each."""
     chosen: list[tuple[str, int]] = []
     for family in sorted({entry["family"] for entry in entries}):
         candidates = sorted(
@@ -61,9 +69,9 @@ def select_states(
             key=lambda entry: entry["seed"],
         )
         usable = [entry for entry in candidates if lengths[entry["episode_id"]] >= MIN_STEPS]
-        for entry in usable[:STATES_PER_FAMILY]:
-            last = lengths[entry["episode_id"]] - CHUNK - 1
-            step = random.Random(entry["seed"]).randint(FIRST_STATE, last)  # noqa: S311
+        for entry in usable[first:last]:
+            final_step = lengths[entry["episode_id"]] - CHUNK - 1
+            step = random.Random(entry["seed"]).randint(FIRST_STATE, final_step)  # noqa: S311
             chosen.append((entry["episode_id"], step))
     return chosen
 
@@ -132,7 +140,7 @@ def run_chunk(
     return states
 
 
-def _branches(env: Any) -> dict[str, Any]:
+def _branches(env: Any, extension: bool) -> dict[str, Any]:
     entries: list[dict[str, Any]] = []
     for path in DEV_MANIFESTS:
         manifest = json.loads(path.read_text(encoding="utf-8"))
@@ -148,7 +156,8 @@ def _branches(env: Any) -> dict[str, Any]:
     family = {entry["episode_id"]: entry["family"] for entry in entries}
     lower, upper = env.action_spec.lower, env.action_spec.upper
     results = []
-    for index, (name, step) in enumerate(select_states(entries, lengths)):
+    first, last = (STATES_PER_FAMILY, EXTENSION_LAST) if extension else (0, STATES_PER_FAMILY)
+    for index, (name, step) in enumerate(select_states(entries, lengths, first, last)):
         episode = episodes[name]
         print(f"state {index} {name} step {step}", file=sys.stderr, flush=True)
         chunks = make_chunks(episode.actions[step : step + CHUNK], episode.seed, step, lower, upper)
@@ -185,6 +194,7 @@ def _branches(env: Any) -> dict[str, Any]:
             }
         )
     return {
+        "part": "extension, for ET-M1-5 only" if extension else "ET-M1-2's states",
         "states": len(results),
         "chunks": sum(len(item["chunks"]) for item in results),
         "violating_chunks": sum(c["violated"] for item in results for c in item["chunks"]),
@@ -194,13 +204,15 @@ def _branches(env: Any) -> dict[str, Any]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.parse_args(argv)
+    parser.add_argument("--extension", action="store_true")
+    args = parser.parse_args(argv)
     try:
         require_code_root()
         for path, expected in (
             (PLAN_PATH, PLAN_SHA256),
             (AMENDMENT_PATH, AMENDMENT_SHA256),
             (AMENDMENT_2_PATH, AMENDMENT_2_SHA256),
+            (AMENDMENT_3_PATH, AMENDMENT_3_SHA256),
         ):
             actual = hashlib.sha256(path.read_bytes()).hexdigest()
             if actual != expected:
@@ -210,14 +222,19 @@ def main(argv: list[str] | None = None) -> int:
             purpose="WO-005: simulator branches on dev states, for ET-M1-2 and ET-M1-5",
             config={
                 "plan_sha256": PLAN_SHA256,
-                "amendments_sha256": [AMENDMENT_SHA256, AMENDMENT_2_SHA256],
+                "amendments_sha256": [AMENDMENT_SHA256, AMENDMENT_2_SHA256, AMENDMENT_3_SHA256],
+                "extension": args.extension,
             },
             seeds={"chunks": 100},
             env_lock={"stack": env.stack_identity()},
         ) as run:
             if run.dirty:
                 raise ValueError("commit first, so the code note stays true")
-            report = {"run": run.directory.name, "code": run.code_note, **_branches(env)}
+            report = {
+                "run": run.directory.name,
+                "code": run.code_note,
+                **_branches(env, args.extension),
+            }
             with (run.directory / "branches.json").open("x", encoding="utf-8") as stream:
                 json.dump(report, stream, sort_keys=True, allow_nan=False)
                 stream.write("\n")
