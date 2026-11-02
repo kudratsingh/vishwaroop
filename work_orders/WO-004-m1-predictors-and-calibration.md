@@ -14,6 +14,8 @@ Data loaders over contract episodes (train/dev only; sealed untouched); baseline
 
 ET-M1-1's streams are frozen in `evals/M1-definitions.json`, the stricter reading, by owner decision. Before any dev result, freeze ET-M1-3's streams the same way. A state-based latent model satisfies M1's "compact latent predictor" (owner decision, 2026-11-01). Any run over 30 minutes must be resumable (`AGENTS.md §13.9`).
 
+WO-014 chose what this scales: `carry-contact-beta`, the carrying nominal with the contact input and beta-NLL at 0.5 (`reports/WO-014-m1-cube-prediction-diagnosis.md`). Three conditions follow from it. Every stream is measured in its own units, and no normalized number decides anything, because one joint with a 0.009 rad spread dominates the normalized joint error. Before scaling and before any dev metric, run each of the seven train families held out whole, and report them: `missed-grasp` and `early-release` missed 20% when held out. Before training longer, test a free-fall term in the nominal against those holdouts, because 100 epochs barely moved the worst value and the fall after release is the largest remaining cube error.
+
 ## Out of scope
 Planner, scorer, evaluator, synthetic data, real data, the visual latent model (WO-013), any threshold change after results are seen.
 
