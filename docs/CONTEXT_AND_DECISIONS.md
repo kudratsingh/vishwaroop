@@ -68,6 +68,8 @@ What an agent needs from the planning conversations (Sept–Oct 2026) to make th
 
 ## 7. M1 results and owner decisions (2026-11-02)
 
+**Where learned dynamics first earned their place (owner, 2026-11-02, keep this prominent).** On chunks that invert the gripper command, the nominal model is below chance at predicting a constraint violation: AUROC 0.405 against the learned model's 0.944, on fresh states (`reports/WO-016-m1-et5-retest.md`). This is the first case in this project where a learned model does what the nominal cannot.
+
 **M1's primary result.** The learned dynamics model matched the nominal model on planning success. On m1-suite-1 (200 seeds, same seeds per planner), learned-model MPC and nominal-model MPC each succeeded 184 times, and the scripted controller 183 (`reports/WO-005-m1-planner-and-chunk-scorer.md`). Owner's interpretation: learned dynamics show no advantage on this deterministic simulated task. M2 and M3 are where it must prove itself.
 
 On constraint prediction, the learned model matched the nominal on fresh states, except where a chunk changes the gripper command. On fresh states, for chunks kept:
