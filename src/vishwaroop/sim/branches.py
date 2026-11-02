@@ -153,9 +153,11 @@ def _branches(env: Any) -> dict[str, Any]:
         print(f"state {index} {name} step {step}", file=sys.stderr, flush=True)
         chunks = make_chunks(episode.actions[step : step + CHUNK], episode.seed, step, lower, upper)
         _, _, initial_state = _load_episode(paths[name])
-        executed = []
+        executed: list[dict[str, Any]] = []
+        reached: list[float] = []
         for number, chunk in enumerate(chunks):
             states = run_chunk(env, episode, step, chunk, initial_state)
+            reached = states[0]
             scaled = margins(states)
             executed.append(
                 {
@@ -167,7 +169,6 @@ def _branches(env: Any) -> dict[str, Any]:
                     "violated": violated(scaled),
                 }
             )
-        reached = executed[0]["states"][0]
         results.append(
             {
                 "reached_deviation": max(
