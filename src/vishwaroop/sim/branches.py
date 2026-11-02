@@ -2,6 +2,8 @@
 
     python -m vishwaroop.sim.branches                # ET-M1-2's 60 states
     python -m vishwaroop.sim.branches --extension    # the rest of dev, for ET-M1-5 (amendment 3)
+    python -m vishwaroop.sim.branches --set calibration   # WO-016: the calibration split's states
+    python -m vishwaroop.sim.branches --set evaluation    # WO-016: fresh states, scored once
 
 Run it from the repository root, in the robotics environment. The states, chunks and costs are
 frozen in ``evals/M1-planner-scorer.json`` and its first amendment. Every chunk starts from the
@@ -40,6 +42,13 @@ AMENDMENT_3_PATH = Path("evals/M1-planner-scorer-amendment-3.json")
 AMENDMENT_3_SHA256 = "4bf3c0e8f7630b5e36488e7cd9d97184b92192bca7c6041d472a6ff2e83bf729"
 EXTENSION_LAST = 70
 AMENDMENT_2_SHA256 = "eac5449dfb3aba44ed0a293f31821e5908b397910860cdaf1130ce19b5b6158b"
+RETEST_PATH = Path("evals/M1-et5-retest.json")
+RETEST_SHA256 = "aa9c128a46be3219d5194bef3a65969689537b8a8779944a860f18baeff7ebcb"
+# WO-016's sets: manifests, and every episode long enough, one state each.
+RETEST_SETS = {
+    "calibration": (Path("artifacts/manifests/m1-calibration-v1.json"),),
+    "evaluation": (Path("artifacts/manifests/m1-et5-eval-v1.json"),),
+}
 DEV_MANIFESTS = (
     Path("artifacts/manifests/m0-dataset-v1.json"),
     Path("artifacts/manifests/m1-dev-topup-v1.json"),
@@ -146,9 +155,9 @@ def run_chunk(
     return states
 
 
-def _branches(env: Any, extension: bool) -> dict[str, Any]:
+def _branches(env: Any, extension: bool, retest_set: str | None = None) -> dict[str, Any]:
     entries: list[dict[str, Any]] = []
-    for path in DEV_MANIFESTS:
+    for path in RETEST_SETS[retest_set] if retest_set else DEV_MANIFESTS:
         manifest = json.loads(path.read_text(encoding="utf-8"))
         entries.extend(entry for entry in manifest["episodes"] if entry["partition"] == "dev")
     episodes = {
@@ -164,6 +173,8 @@ def _branches(env: Any, extension: bool) -> dict[str, Any]:
     results = []
     excluded: list[dict[str, Any]] = []
     first, last = (STATES_PER_FAMILY, EXTENSION_LAST) if extension else (0, STATES_PER_FAMILY)
+    if retest_set:
+        first, last = 0, 10**6
     for index, (name, step) in enumerate(select_states(entries, lengths, first, last)):
         episode = episodes[name]
         print(f"state {index} {name} step {step}", file=sys.stderr, flush=True)
@@ -206,7 +217,13 @@ def _branches(env: Any, extension: bool) -> dict[str, Any]:
             }
         )
     return {
-        "part": "extension, for ET-M1-5 only" if extension else "ET-M1-2's states",
+        "part": (
+            f"WO-016 {retest_set}"
+            if retest_set
+            else "extension, for ET-M1-5 only"
+            if extension
+            else "ET-M1-2's states"
+        ),
         "states": len(results),
         "chunks": sum(len(item["chunks"]) for item in results),
         "violating_chunks": sum(c["violated"] for item in results for c in item["chunks"]),
@@ -218,6 +235,7 @@ def _branches(env: Any, extension: bool) -> dict[str, Any]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--extension", action="store_true")
+    parser.add_argument("--set", choices=tuple(RETEST_SETS), default=None)
     args = parser.parse_args(argv)
     try:
         require_code_root()
@@ -227,6 +245,7 @@ def main(argv: list[str] | None = None) -> int:
             (AMENDMENT_2_PATH, AMENDMENT_2_SHA256),
             (AMENDMENT_3_PATH, AMENDMENT_3_SHA256),
             (AMENDMENT_4_PATH, AMENDMENT_4_SHA256),
+            (RETEST_PATH, RETEST_SHA256),
         ):
             actual = hashlib.sha256(path.read_bytes()).hexdigest()
             if actual != expected:
@@ -243,6 +262,8 @@ def main(argv: list[str] | None = None) -> int:
                     AMENDMENT_4_SHA256,
                 ],
                 "extension": args.extension,
+                "set": args.set,
+                "retest_sha256": RETEST_SHA256 if args.set else None,
             },
             seeds={"chunks": 100},
             env_lock={"stack": env.stack_identity()},
@@ -252,7 +273,7 @@ def main(argv: list[str] | None = None) -> int:
             report = {
                 "run": run.directory.name,
                 "code": run.code_note,
-                **_branches(env, args.extension),
+                **_branches(env, args.extension, args.set),
             }
             with (run.directory / "branches.json").open("x", encoding="utf-8") as stream:
                 json.dump(report, stream, sort_keys=True, allow_nan=False)

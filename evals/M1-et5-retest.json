@@ -1,0 +1,16 @@
+{
+  "phase": "M1",
+  "work_order": "WO-016",
+  "decided_by": "owner, 2026-11-02: ET-M1-5 option (b), a calibration split including perturbed chunks, frozen before scoring, on fresh states; the 20% abstention cap stays; if it fails, close M1 with the negative recorded",
+  "frozen_on": "2026-11-02",
+  "frozen_before": "the evaluation episodes exist; any branch of the calibration or evaluation states",
+  "changes_a_threshold": false,
+  "unchanged_from_WO-005": "the model (plain A, WO-004 seed-0 ensemble), the four chunks per state and their seeds, the branch protocol with all four amendments (restore the saved initial state, M0's replay tolerance, exclusion of states that do not reproduce), the violation definition, the model-based violation score, AUROC with ties as half, the bootstrap over states, the 10-violation minimum, and the rule: AUROC on chunks kept at least 0.75 and abstention at most 20%",
+  "what_changes": "Only the calibration. WO-005 fitted the interval scales and the abstention threshold on recorded scripted windows, which hold no perturbed chunk. Here both come from branches of the calibration split, every chunk kind included.",
+  "calibration_branches": "artifacts/manifests/m1-calibration-v1.json (120 episodes, block 9 seeds 9050 to 9089, never used to score anything): every episode with at least 25 steps, one state each, step drawn as in WO-005, the same four chunks, executed through physics.",
+  "calibration_method": "per stream and horizon, the split-conformal 90% scale of absolute error over predicted std, over every calibration chunk window (4 recorded history states, then the 10 simulated chunk states); the abstention threshold is the 90th percentile of the calibrated cube std at the last step over every calibration chunk",
+  "evaluation_branches": "evals/M1-et5-eval-plan.json, collected after this file is committed: every episode with at least 25 steps, one state each, the same rules",
+  "reported_with_it": "the nominal model's AUROC on chunks kept and on every chunk; abstention by chunk kind; the WO-005 result beside it",
+  "scored_once": "src/vishwaroop/scoring/score_et5_retest.py refuses a second scoring once a result exists",
+  "if_it_fails": "ET-M1-5 is recorded as failed and M1 closes with the negative recorded (owner)"
+}
