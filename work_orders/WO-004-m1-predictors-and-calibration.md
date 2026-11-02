@@ -1,7 +1,7 @@
 # WO-004 | M1 predictors on the Mac: nominal + residual ensemble, state-based latent model, calibration
 **Phase:** M1
 **Exit tests advanced:** ET-M1-1, ET-M1-3
-**Size:** L (milestone-level stub; expand into full detail when it becomes the next WO)
+**Size:** L
 **Prerequisites:** phase M0 `passed`; `evals/M1-exit-tests.json` frozen (WO-001 step 7); WO-012's compute split accepted; WO-014 accepted, and its findings reported to the owner before training is scaled.
 **Authorization:** AGENTS §2.1 only: it runs on the owner's M3 Pro. Any paid GPU time would need §2.3 approval and a new estimate from a measured need (`docs/BUDGET_AND_LAUNCHER.md`).
 **Files:** `src/vishwaroop/models/`, `src/vishwaroop/data/registry.py`, `tests/`, `evals/M1-*`, `work_orders/`, `docs/`, `START_HERE.md`, `artifacts/manifests/`, `reports/WO-004-m1-predictors-and-calibration.md`, ignored `runs/`, `artifacts/sha256/`.
