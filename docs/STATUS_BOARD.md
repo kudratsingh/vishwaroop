@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-02 01:37 UTC · ledger records: 93
+Generated: 2026-11-02 01:39 UTC · ledger records: 94
 
 ## Phases
 
@@ -76,6 +76,6 @@ Generated: 2026-11-02 01:37 UTC · ledger records: 93
 | WO-011 | Adopt ironclad v1.1.0 and remove the vendored shared files | M0 | **accepted** | 2026-11-01T04:59:08.566289Z | reports/WO-011-adopt-ironclad.md |
 | WO-012 | Split M1 between the Mac and a GPU, from a measured pilot | M1 | **accepted** | 2026-11-01T07:57:36.907206Z | reports/WO-012-m1-compute-split.md |
 | WO-013 | M1 visual latent model, on the Mac first | M1 | **created** | 2026-11-01T07:48:28.393883Z | — |
-| WO-014 | Diagnose why the pilot predictor did not learn the cube | M1 | **in_progress** | 2026-11-01T22:39:13.973572Z | — |
+| WO-014 | Diagnose why the pilot predictor did not learn the cube | M1 | **accepted** | 2026-11-02T01:39:57.993547Z | reports/WO-014-m1-cube-prediction-diagnosis.md |
 | WO-015 | Bump the ironclad pin to v1.2.0 | M1 | **accepted** | 2026-11-01T23:09:05.286326Z | reports/WO-015-ironclad-v1.2.0.md |
 
