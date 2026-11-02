@@ -113,3 +113,5 @@
 {"note":"learned: 46 of 50 succeeded","record_id":"runs-20261102T100137435054Z-abce3a06","run_dir":"runs/20261102T094459Z_febd3237","run_id":"20261102T094459Z_febd3237","status":"completed","ts":"2026-11-02T10:01:37.435137Z"}
 {"note":"nominal: 184 of 200 succeeded","record_id":"runs-20261102T104545579489Z-96716fa9","run_dir":"runs/20261102T094359Z_691fb281","run_id":"20261102T094359Z_691fb281","status":"completed","ts":"2026-11-02T10:45:45.579540Z"}
 {"note":"learned: 184 of 200 succeeded","record_id":"runs-20261102T105318060261Z-59bf9a9b","run_dir":"runs/20261102T094328Z_ea6e1a6d","run_id":"20261102T094328Z_ea6e1a6d","status":"completed","ts":"2026-11-02T10:53:18.060317Z"}
+{"purpose":"m0 dataset, dev","record_id":"runs-20261102T120608643998Z-7fa1be64","run_dir":"runs/20261102T120608Z_b621cdd4","run_id":"20261102T120608Z_b621cdd4","status":"started","ts":"2026-11-02T12:06:08.644063Z"}
+{"note":"210 episodes; 0 sampled replays invalid","record_id":"runs-20261102T120719094622Z-96bd59a1","run_dir":"runs/20261102T120608Z_b621cdd4","run_id":"20261102T120608Z_b621cdd4","status":"completed","ts":"2026-11-02T12:07:19.094647Z"}
