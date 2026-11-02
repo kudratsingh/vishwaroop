@@ -208,7 +208,7 @@ def _coverage(mean: Any, std: Any, truth: Any, scales: dict[str, list[float]]) -
     for stream in CALIBRATED_STREAMS:
         a, b = STREAM_SLICES[stream]
         result[stream] = [
-            float((error[:, h, a:b] <= k * std[:, h, a:b]).double().mean().item())
+            float((error[:, h, a:b] <= k * std[:, h, a:b]).cpu().double().mean().item())
             for h, k in enumerate(scales[stream])
         ]
     return result
