@@ -1,0 +1,59 @@
+{
+  "phase": "M1",
+  "work_order": "WO-004",
+  "protocol_version": "m0-protocol-2",
+  "adds_to": ["evals/M1-exit-tests.json", "evals/M1-definitions.json"],
+  "frozen_on": "2026-11-01",
+  "frozen_before": "any dev metric of any predictor, and the top-up's collection; any training past 30 epochs with the fall term; any latent result with the frozen structure",
+  "already_seen": "train-side results only: reports/WO-014-m1-cube-prediction-diagnosis.md and section 4 of reports/WO-004-m1-predictors-and-calibration.md, including ET-M1-3's measures pooled over horizons on train holdouts. Those measures per horizon have not been computed for any model.",
+  "changes_a_threshold": false,
+  "final_variant": "carry-contact-beta-fall",
+  "final_variant_decided_by": "the rules in evals/M1-family-holdouts.json, applied in the report",
+  "seeds": [0, 1, 2],
+  "members_per_seed": 3,
+  "data": {
+    "fit": "the 234 train episodes with seeds not divisible by 10, the split every earlier result used",
+    "calibration": "the 26 train episodes with seeds divisible by 10, never fitted on",
+    "dev": "the 60 dev episodes of artifacts/manifests/m0-dataset-v1.json plus the 150 of evals/M1-dev-topup-plan.json",
+    "sealed": "none exists in M1 and none is touched"
+  },
+  "allowed_epochs": [30, 100],
+  "epochs_rule": {
+    "comparison": "carry-contact-beta-fall at 100 epochs, seeds 0, 1 and 2, holding out in turn the seed holdout, m0-scripted-early-release and m0-scripted-missed-grasp, on train data",
+    "against": "the same at 30 epochs: runs/20261102T035805Z_ddb5d0d0 for the seed holdout and runs/20261102T041509Z_93dd348c for the two families",
+    "value": "the worst value, taking the worst seed, horizon and required stream, with the same five baselines",
+    "rule": "Use 100 epochs only if the worst value is higher at 100 than at 30 on all three holdouts. Otherwise use 30, because the seed holdout's 30-epoch models are already measured and a longer run that helps one holdout and hurts another gives no reason to prefer it."
+  },
+  "final_models": "the seed-holdout ensembles trained at the chosen epochs, one per seed. No retraining on the 26 calibration episodes.",
+  "baselines_in_best": ["constant", "linear", "nominal_hold", "nominal_carry", "nominal_carry_fall"],
+  "baselines_note": "evals/M1-definitions.json names the nominal inside the learned predictor, here nominal_carry_fall. The other two nominals are also counted, because every nominal tested so far counts. This can only make ET-M1-1 harder.",
+  "ET-M1-1": {
+    "rule": "evals/M1-definitions.json, unchanged, for the ensemble on each of the three seeds: joint_position and object_position, each in own units, at every horizon 1 to 10, at least 20% below the lowest baseline. Decided on the point estimates. Passing needs all three seeds, so the worst seed decides.",
+    "reported_with_it": "a 95% interval on each reduction from resampling whole episodes, which does not decide the test; object_grasped, report-only; every dev family and phase, report-only"
+  },
+  "ET-M1-3": {
+    "decided_by": "owner, 2026-11-01: freeze ET-M1-3's streams the same way as ET-M1-1. The per-horizon reading below is the agent's, the stricter of the two, and made without having seen any per-horizon value.",
+    "streams_each_required_to_pass": ["joint_position", "object_position"],
+    "streams_reported_only": [],
+    "streams_excluded": {
+      "object_grasped": "a flag: its error is not a continuous quantity an interval describes",
+      "target_position": "it never moves within an episode"
+    },
+    "predicted_std": "the square root of the mean predicted variance of the members plus the variance of the members' means, for the ensemble's mean",
+    "calibration": "one scale per stream and horizon: the split-conformal 90% quantile of absolute error over predicted std, on the 26 calibration episodes, per seed. Dev is never used to fit it.",
+    "spearman_rule": "Spearman rank correlation, with tied ranks averaged, of predicted std against absolute error, pooled over all dev windows and the stream's coordinates, at least 0.5 at every horizon 1 to 10, on all three seeds. A per-horizon scale cannot change this rank.",
+    "coverage_rule": "The share of absolute errors within the calibrated scale times predicted std is within 10 points of 90% at every horizon 1 to 10, on all three seeds.",
+    "reported_with_it": "uncalibrated 90% coverage at z = 1.6449; both measures pooled over horizons; Spearman by coordinate. None decides the test."
+  },
+  "latent": {
+    "model": "src/vishwaroop/models/latent_predictor.py: a recurrent state-space model on state observations, with observation-update and imagination modes, its decoder giving the residual over the same nominal structure",
+    "epochs": 30,
+    "seeds": [0, 1, 2],
+    "role": "Report-only on dev, with the same tables. It decides no exit test, so dev does not choose between two predictors.",
+    "scope_note": "It satisfies M1's compact latent predictor (owner, 2026-11-01). The visual version is WO-013."
+  },
+  "use_of_dev": {
+    "scored_once": "src/vishwaroop/models/m1_evaluate.py scores once and refuses a second scoring once one has completed.",
+    "after_a_miss": "A miss is reported as a miss. No model, epoch, calibration or threshold is changed on evidence from dev under this work order. Trying again needs a new work order, with the owner told first."
+  }
+}

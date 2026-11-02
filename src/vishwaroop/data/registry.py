@@ -213,7 +213,7 @@ def build(root: Path, plan: dict[str, Any], runs_ledger: Path) -> dict[str, Any]
     result = audit([directory / "episode.json" for directory in directories])
     return {
         "name": root.name,
-        "dataset": "m0-dataset-v1",
+        "dataset": plan["dataset"],
         "created_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "licenses": LICENSES,
         "lineage": "simulator episodes under scripted controllers; no parents",

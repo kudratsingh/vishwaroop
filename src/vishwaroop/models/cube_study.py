@@ -400,9 +400,8 @@ def _uncertainty(means: Any, log_vars: Any, truth: Any, delta_std: Any) -> dict[
     return result
 
 
-def _baselines(
-    data: _Data, stats: dict[str, Any], masks: dict[str, Any]
-) -> dict[str, dict[str, Any]]:
+def _baseline_predictions(data: _Data, stats: dict[str, Any]) -> dict[str, Any]:
+    """Every baseline's prediction for each window in ``data.holdout_s``."""
     torch = _torch()
     states, actions = data.holdout_s, data.holdout_a
     start = states[:, HISTORY]
@@ -443,7 +442,7 @@ def _baselines(
         )
         fall_oracle_previous, fall_oracle_state = fall_oracle_state, moved_state
         falling_true_gate.append(fall_oracle_state)
-    predictions = {
+    return {
         "constant": start.unsqueeze(1).expand_as(truth),
         "linear": torch.stack([start + (start - previous) * (h + 1) for h in range(HORIZON)], 1),
         "nominal_hold": torch.stack(held, 1),
@@ -452,8 +451,15 @@ def _baselines(
         "nominal_carry_fall": torch.stack(falling, 1),
         "nominal_carry_fall_true_flag_diagnostic": torch.stack(falling_true_gate, 1),
     }
+
+
+def _baselines(
+    data: _Data, stats: dict[str, Any], masks: dict[str, Any]
+) -> dict[str, dict[str, Any]]:
+    truth = data.holdout_s[:, HISTORY + 1 : HISTORY + 1 + HORIZON]
     return {
-        name: _metrics(value, truth, data.state_std, masks) for name, value in predictions.items()
+        name: _metrics(value, truth, data.state_std, masks)
+        for name, value in _baseline_predictions(data, stats).items()
     }
 
 
