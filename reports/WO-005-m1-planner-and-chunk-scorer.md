@@ -222,3 +222,9 @@ After M1, M2a's observation model is the first work that likely needs a GPU (est
 - **Size:** L, as estimated. About 4 hours of agent time and 1.5 hours of machine time.
 
 ## Errata (append-only)
+- **2026-11-02, owner decisions and the retest; nothing above is changed.**
+  - **The grasp flag** is accepted as a simulation-only input for M1 and excluded from M2a onward. The disclosure above is sufficient.
+  - **ET-M1-5** was retested under option (b) in `reports/WO-016-m1-et5-retest.md`, with the cap kept. It **passed** on fresh states: AUROC 0.922 on the chunks kept, abstention 9.4%. The failure above stands as WO-005's first test.
+  - **M1's primary result.** The learned model matched the nominal model on planning success (184 against 184). On constraint prediction it matched on WO-016's fresh states, except on chunks that change the gripper command, where it leads. On this work order's chunks it was also ahead on arm offsets, 0.736 against 0.672. See `docs/CONTEXT_AND_DECISIONS.md` §7.
+  - **The 100 ms planner against the 50 ms period** is logged as a prerequisite before M4's shadow mode.
+

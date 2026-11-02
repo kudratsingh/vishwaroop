@@ -65,3 +65,19 @@ What an agent needs from the planning conversations (Sept–Oct 2026) to make th
 | Reference kit: `WO-002` numbering used twice (budget and D1 in the drone kit) | Renumbered; numbering is global and never reused |
 | Reference kit CLAUDE.md held the whole policy and was identical across projects including world-model-only rules | Policy moved to `AGENTS.md` with a shared core and a project addendum; `CLAUDE.md` is a pointer |
 | Reference kit README implied evidence could be added by editing an episode manifest | Append-only validation ledger added to the contract; manifests are write-once |
+
+## 7. M1 results and owner decisions (2026-11-02)
+
+**M1's primary result.** The learned dynamics model matched the nominal model on planning success. On m1-suite-1 (200 seeds, same seeds per planner), learned-model MPC and nominal-model MPC each succeeded 184 times, and the scripted controller 183 (`reports/WO-005-m1-planner-and-chunk-scorer.md`). Owner's interpretation: learned dynamics show no advantage on this deterministic simulated task. M2 and M3 are where it must prove itself.
+
+On constraint prediction, the learned model matched the nominal on fresh states, except where a chunk changes the gripper command. On fresh states, for chunks kept:
+- **Arm-offset chunks:** AUROC 0.882 learned against 0.890 nominal.
+- **Gripper-inverted chunks:** 0.944 learned against 0.405 nominal, which is below chance. The cause was not tested.
+
+That one kind accounts for the learned model's pooled lead, 0.922 against 0.632 (`reports/WO-016-m1-et5-retest.md`). In WO-005 the learned model was also ahead on arm offsets, 0.736 against 0.672, so the arm-offset tie rests on one set of 20 violations.
+
+**Owner decisions recorded, 2026-11-02:**
+- **Grasp flag.** `object_grasped` (declared `reference_only`) is accepted as a simulation-only input for M1's predictor and planners, and excluded from M2a onward. Disclosure in the WO-004 and WO-005 reports is sufficient, with no redo.
+- **ET-M1-5.** Retested under option (b) in WO-016, with the 20% abstention cap kept. It passed. Had it failed, M1 would have closed with the negative recorded.
+- **Real time, before M4's shadow mode.** The M1 planner takes about 100 ms per decision against a 50 ms control period (WO-005). This must be closed before M4's shadow mode. No work now.
+- **M2a GPU.** A 30-minute Mac pilot confirms the estimate in WO-005's plan first. No rental until that pilot gives a number.

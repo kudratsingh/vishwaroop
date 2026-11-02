@@ -104,7 +104,7 @@ Details: `docs/SYNTHETIC_DATA_M3.md`.
 
 **Deliverable.** Residual-dynamics model for the drone on imported SITL and later real flight logs; calibrated uncertainty and a proposed trust gate (the research question in `PROGRAM.md §8.2`); shadow-mode predictions logged only; exported model manifest at the contract boundary. **No command authority; live use is a future drone-owned work order.**
 
-**Prerequisites.** M1 infrastructure; drone episodes exist (banshee D1 or later). Branches from M0/M1; never waits for M2/M3.
+**Prerequisites.** M1 infrastructure; drone episodes exist (banshee D1 or later). Branches from M0/M1; never waits for M2/M3. **Before shadow mode (owner, 2026-11-02):** close the planner real-time gap. The M1 planner takes about 100 ms per decision against a 50 ms control period (`reports/WO-005-m1-planner-and-chunk-scorer.md`).
 
 | Exit test | Statement | Threshold |
 |---|---|---|

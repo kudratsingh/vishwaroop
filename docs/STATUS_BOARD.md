@@ -2,14 +2,14 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-02 09:10 UTC · ledger records: 99
+Generated: 2026-11-02 12:05 UTC · ledger records: 102
 
 ## Phases
 
 | Phase | Name | State | Exit tests (passed / frozen / total) | Prerequisites | Work orders |
 |---|---|---|---|---|---|
 | M0 | Grounded development environment | **passed** | 6 / 6 / 6 | — | WO-001, WO-002, WO-003, WO-007, WO-008, WO-009, WO-010, WO-011 |
-| M1 | Compact predictor, latent planner, action-chunk scorer | **not_started** | 0 / 5 / 5 | M0 | WO-004, WO-005, WO-006, WO-012, WO-013, WO-014, WO-015 |
+| M1 | Compact predictor, latent planner, action-chunk scorer | **not_started** | 0 / 5 / 5 | M0 | WO-004, WO-005, WO-006, WO-012, WO-013, WO-014, WO-015, WO-016 |
 | M2a | Closed-loop policy evaluator (simulation) | **not_started** | 0 / 0 / 5 | M1 | — |
 | M2b | Real-arm evaluator validation | **not_started** | 0 / 0 / 4 | M2a | — |
 | M3 | Synthetic-data engine (SFT route) | **not_started** | 0 / 0 / 5 | M0 | — |
@@ -78,4 +78,5 @@ Generated: 2026-11-02 09:10 UTC · ledger records: 99
 | WO-013 | M1 visual latent model, on the Mac first | M1 | **created** | 2026-11-01T07:48:28.393883Z | — |
 | WO-014 | Diagnose why the pilot predictor did not learn the cube | M1 | **accepted** | 2026-11-02T01:39:57.993547Z | reports/WO-014-m1-cube-prediction-diagnosis.md |
 | WO-015 | Bump the ironclad pin to v1.2.0 | M1 | **accepted** | 2026-11-01T23:09:05.286326Z | reports/WO-015-ironclad-v1.2.0.md |
+| WO-016 | Retest ET-M1-5 with a calibration split that includes perturbed chunks | M1 | **in_progress** | 2026-11-02T12:05:07.025491Z | — |
 

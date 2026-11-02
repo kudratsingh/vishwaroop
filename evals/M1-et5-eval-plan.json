@@ -1,0 +1,13 @@
+{
+  "dataset": "m1-et5-eval-v1",
+  "protocol_version": "m0-protocol-2",
+  "note": "Fresh states for WO-016's ET-M1-5 retest (owner, 2026-11-02, option b). The three dev families, block 9 seeds 9300 to 9369, which no run has simulated (m1-suite-1 ended at 9299). Used only to score ET-M1-5 once. Outcomes come only from the frozen rubric.",
+  "replay_sample_per_family": 3,
+  "min_free_disk_gb": 5,
+  "max_seconds_per_run": 1800,
+  "families": [
+    {"variant": "dev-grasp-offset", "partition": "dev", "first_seed": 9300, "count": 70},
+    {"variant": "dev-place-offset", "partition": "dev", "first_seed": 9300, "count": 70},
+    {"variant": "dev-noisy-actions", "partition": "dev", "first_seed": 9300, "count": 70}
+  ]
+}
