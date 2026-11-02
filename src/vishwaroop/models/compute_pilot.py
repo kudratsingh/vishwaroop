@@ -90,9 +90,14 @@ def _peak_tracker(device: str) -> Callable[[], float]:
 class _Data:
     """Windows of the train partition, normalized on the fit part only."""
 
-    def __init__(self, manifest: Path, device: str) -> None:
+    def __init__(
+        self,
+        manifest: Path,
+        device: str,
+        split: Callable[[Any], tuple[list[Any], list[Any]]] = split_holdout,
+    ) -> None:
         torch = _torch()
-        fit, holdout = split_holdout(load_train(manifest, Path()))
+        fit, holdout = split(load_train(manifest, Path()))
         self.device = device
         self.fit_episodes = len(fit)
         self.holdout_episodes = len(holdout)

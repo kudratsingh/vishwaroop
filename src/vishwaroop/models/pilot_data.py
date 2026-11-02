@@ -8,7 +8,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +26,7 @@ class EpisodeArrays:
     seed: int
     states: list[list[float]]
     actions: list[list[float]]
+    family: str = ""
 
 
 def state_vector(packets: Sequence[Mapping[str, Any]]) -> list[float]:
@@ -71,9 +72,8 @@ def load_train(manifest_path: Path, root: Path) -> list[EpisodeArrays]:
             continue
         if entry["seed"] >= FIRST_DEV_SEED:
             raise ValueError(f"{entry['episode_id']}: seed {entry['seed']} is a dev seed")
-        sequences.append(
-            read_episode(root / entry["path"], entry["transitions_sha256"], entry["seed"])
-        )
+        episode = read_episode(root / entry["path"], entry["transitions_sha256"], entry["seed"])
+        sequences.append(replace(episode, family=entry.get("family", "")))
     if not sequences:
         raise ValueError("the manifest has no train episodes")
     return sequences
@@ -85,4 +85,15 @@ def split_holdout(
     """Split by seed, within train: this is a sanity check for the pilot, not the dev set."""
     fit = [item for item in sequences if item.seed % HOLDOUT_EVERY != 0]
     holdout = [item for item in sequences if item.seed % HOLDOUT_EVERY == 0]
+    return fit, holdout
+
+
+def split_family(
+    sequences: Sequence[EpisodeArrays], family: str
+) -> tuple[list[EpisodeArrays], list[EpisodeArrays]]:
+    """Hold out one whole family, within train, the way dev holds out families from train."""
+    fit = [item for item in sequences if item.family != family]
+    holdout = [item for item in sequences if item.family == family]
+    if not fit or not holdout:
+        raise ValueError(f"family {family} does not split this data in two")
     return fit, holdout

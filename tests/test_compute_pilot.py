@@ -10,7 +10,7 @@ from typing import Any
 import pytest
 
 from vishwaroop.models.compute_pilot import _parse_time_output
-from vishwaroop.models.pilot_data import load_train, split_holdout, state_vector
+from vishwaroop.models.pilot_data import load_train, split_family, split_holdout, state_vector
 
 
 def _packets(base: float) -> list[dict[str, Any]]:
@@ -79,6 +79,26 @@ def test_holdout_is_by_seed(tmp_path: Path) -> None:
     fit, holdout = split_holdout(load_train(_manifest(tmp_path, entries), tmp_path))
     assert [item.seed for item in fit] == [2001]
     assert [item.seed for item in holdout] == [2000, 2010]
+
+
+def test_a_family_holdout_is_the_whole_family(tmp_path: Path) -> None:
+    entries = [_episode(tmp_path, f"e{seed}", seed, "train") for seed in (2000, 2001, 2002)]
+    entries[0]["family"] = entries[2]["family"] = "m0-scripted-wrong-place"
+    entries[1]["family"] = "m0-scripted-nominal"
+    loaded = load_train(_manifest(tmp_path, entries), tmp_path)
+    fit, holdout = split_family(loaded, "m0-scripted-wrong-place")
+    assert [item.seed for item in fit] == [2001]
+    assert [item.seed for item in holdout] == [2000, 2002]
+
+
+def test_a_family_that_does_not_split_is_refused(tmp_path: Path) -> None:
+    entry = _episode(tmp_path, "a", 2000, "train")
+    entry["family"] = "m0-scripted-nominal"
+    loaded = load_train(_manifest(tmp_path, [entry]), tmp_path)
+    with pytest.raises(ValueError, match="does not split"):
+        split_family(loaded, "m0-scripted-nominal")
+    with pytest.raises(ValueError, match="does not split"):
+        split_family(loaded, "m0-scripted-wrong-place")
 
 
 def test_state_vector_refuses_an_invalid_stream() -> None:
