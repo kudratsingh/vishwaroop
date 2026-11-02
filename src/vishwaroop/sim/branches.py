@@ -170,13 +170,11 @@ def _branches(env: Any, extension: bool) -> dict[str, Any]:
         chunks = make_chunks(episode.actions[step : step + CHUNK], episode.seed, step, lower, upper)
         _, _, initial_state = _load_episode(paths[name])
         executed: list[dict[str, Any]] = []
-        reached: list[float] = []
         try:
             runs = [run_chunk(env, episode, step, chunk, initial_state) for chunk in chunks]
         except NotReproducedError as exc:
             excluded.append({"episode_id": name, "step": step, "reason": str(exc)})
             continue
-        reached = runs[0][0]
         for number, (chunk, states) in enumerate(zip(chunks, runs, strict=True)):
             scaled = margins(states)
             executed.append(
@@ -193,7 +191,10 @@ def _branches(env: Any, extension: bool) -> dict[str, Any]:
             {
                 "reached_deviation": max(
                     abs(a - b)
-                    for a, b in zip(reached[COMPARED], episode.states[step][COMPARED], strict=True)
+                    for states in runs
+                    for a, b in zip(
+                        states[0][COMPARED], episode.states[step][COMPARED], strict=True
+                    )
                 ),
                 "episode_id": name,
                 "family": family[name],

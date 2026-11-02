@@ -39,6 +39,7 @@ from .cem import Planner, Settings
 SUITE_SEEDS = range(9100, 9300)
 TUNING_SEEDS = range(5000, 5050)
 SETTINGS = Path("evals/M1-planner-settings.json")
+SETTINGS_SHA256 = "e5354588f554f966a205f153933d56b27c87ec6e987030750a573a01b7af8f96"
 TOLERANCE_FILE = Path("evals/M0-exit-tests.json")
 MAX_STEPS = 200
 SEED = 0
@@ -66,7 +67,8 @@ def _state(packet: Packet) -> list[float]:
 
 
 def run_episode(env: Any, seed: int, act: Any) -> dict[str, Any]:
-    """One episode: ``act(states, actions, step)`` gives the next action or ``None`` to stop."""
+    """One episode: ``act(states, actions, packet, step, seed)`` gives the next action and its
+    notes, or ``None`` to stop."""
     packet = env.reset(seed)
     states = [_state(packet)]
     actions: list[list[float]] = []
@@ -75,7 +77,7 @@ def run_episode(env: Any, seed: int, act: Any) -> dict[str, Any]:
     stages: dict[str, int] = {}
     for step in range(MAX_STEPS):
         started = time.perf_counter()
-        decided = act(states, actions, packet, step)
+        decided = act(states, actions, packet, step, seed)
         times.append(time.perf_counter() - started)
         if decided is None:
             break
@@ -102,10 +104,14 @@ def run_episode(env: Any, seed: int, act: Any) -> dict[str, Any]:
 
 def _model_actor(planner: Planner) -> Any:
     def act(
-        states: list[list[float]], actions: list[list[float]], _packet: Packet, step: int
+        states: list[list[float]],
+        actions: list[list[float]],
+        _packet: Packet,
+        step: int,
+        seed: int,
     ) -> Any:
         if step == 0:
-            planner.reset()
+            planner.reset(seed)
         last = states[-1]
         history = ([states[0]] * 4 + states)[-4:]
         padded = ([last[:6]] * 3 + actions)[-3:]
@@ -117,7 +123,7 @@ def _model_actor(planner: Planner) -> Any:
 def _scripted_actor() -> Any:
     controller = ScriptedPickPlace()
 
-    def act(_states: Any, _actions: Any, packet: Packet, step: int) -> Any:
+    def act(_states: Any, _actions: Any, packet: Packet, step: int, _seed: int) -> Any:
         action = controller(packet, step)
         return None if action is None else (action, {})
 
@@ -127,6 +133,9 @@ def _scripted_actor() -> Any:
 def _settings(args: argparse.Namespace) -> tuple[Settings, str]:
     path = args.settings if args.tuning else SETTINGS
     raw = path.read_bytes()
+    digest = hashlib.sha256(raw).hexdigest()
+    if not args.tuning and digest != SETTINGS_SHA256:
+        raise ValueError(f"{path} has sha256 {digest}, not the frozen {SETTINGS_SHA256}")
     loaded = json.loads(raw)
     values = loaded.get("settings", loaded)
     return Settings(**values), hashlib.sha256(raw).hexdigest()

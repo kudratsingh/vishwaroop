@@ -96,13 +96,17 @@ class Planner:
         self.upper = torch.tensor(upper, device=device)
         self.cube_scales = None if cube_scales is None else torch.tensor(cube_scales, device=device)
         self.device = device
+        self.seed = seed
         self.generator = torch.Generator(device="cpu").manual_seed(seed)
         self.plan: Any = None
         self.carried = False
 
-    def reset(self) -> None:
+    def reset(self, episode_seed: int) -> None:
+        """Start an episode. Each episode draws from its own stream, so a resumed suite equals an
+        unbroken one. The recorded suite runs (commit ddf9df8) used one stream per process."""
         self.plan = None
         self.carried = False
+        self.generator.manual_seed(self.seed * 1_000_003 + episode_seed)
 
     def decide(
         self,

@@ -13,6 +13,8 @@ Stage 0 carried the owner's two follow-ups from WO-004:
 - **Free cube.** Plain A is adopted, and its free-cube gap is measured in millimetres. The dev-informed refinement failed its frozen rule on fresh data.
 - **Calibration.** On a held-out calibration split, coverage is 89.9% to 90.0%, for information.
 
+**A contract issue the review found, which changes no verdict.** The planners read the simulator's grasp flag, `object_grasped`, which `sim/env.py` declares `reference_only`, to choose their stage. WO-004's model also takes it as an input and predicts it. `docs/EVALUATION_PROTOCOL.md` keeps reference streams out of policy inputs for experiments that claim independence. Learned and nominal planners use it identically, so ET-M1-4's comparison stands as a simulation comparison. A real controller would not have this signal, and the scripted controller does not use it. Whether it is acceptable for M1 is an owner decision (section 10).
+
 **Not done:** the visual latent model (WO-013), M3, real data. Phase M1 has now run all five exit tests. With ET-M1-5 failed, M1 is not passed.
 
 All results are **measured** in simulation, on a simulated SO-100 under scripted and model-predictive controllers. Nothing here says anything about a physical arm or about any VLA policy, and chunk scores are not policy success.
@@ -21,7 +23,7 @@ All results are **measured** in simulation, on a simulated SO-100 under scripted
 |---|---|---|
 | **ET-M1-2** | At least 50 states, at least 2 chunks each, pairwise ordering accuracy at least 0.8 | **Passed.** 96.3% on 294 pairs from 60 states (Wilson 93.4% to 97.9%). Nominal model: 90.5%. |
 | **ET-M1-4** | Learned-model MPC success at least nominal-model MPC success minus 5 points | **Passed.** 184 of 200 against 184 of 200: a difference of 0.0 points, paired 95% interval −5.5 to +5.5. Scripted: 183 of 200. |
-| **ET-M1-5** | AUROC at least 0.75 for predicting a constraint violation; abstention reported (agent's frozen cap: at most 20%) | **Failed.** AUROC is 0.766 on the chunks kept, but it abstains on 37.7% of chunks. On every chunk the AUROC is 0.790. The nominal model's is 0.551. |
+| **ET-M1-5** | AUROC at least 0.75 for predicting a constraint violation; abstention reported (agent's frozen cap: at most 20%) | **Failed.** AUROC is 0.766 on the chunks kept, but it abstains on 37.7% of chunks. On every chunk the AUROC is 0.790, against the nominal model's 0.551. On the kept chunks the nominal scores 0.764, as good as the learned. |
 
 ## 2. Frozen method
 Each rule was committed before the result it governs. Amendments were all made before any score, and each records what had been seen.
@@ -102,13 +104,13 @@ Cube RMSE at horizon 10, per coordinate:
 | Never held, fresh, dev families | 1.161 mm | 0.799 mm | 0.416 mm |
 | Never held, fresh, train families | 0.371 mm | 0.461 mm | 0.840 mm |
 
-Seed 0 is shown. Seeds 1 and 2 are within 0.04 mm.
+Seed 0 is shown. Seeds 1 and 2 differ by up to 0.11 mm in the WO-004 column, and by less in the others.
 
-**The known gap.** Plain A is still worse than stays-put on free cubes: 0.03 mm worse at horizon 10 over the fresh set, and 0.38 mm on its dev families. Two things cause it: a grasp predicted a step early with the gripper beside the cube, and a grasp predicted where the gripper only pushes.
+**The known gap.** Plain A is still worse than stays-put on free cubes: 0.015 to 0.020 mm worse at horizon 10 over the fresh set, and 0.38 mm on its dev families. Two things cause it: a grasp predicted a step early with the gripper beside the cube, and a grasp predicted where the gripper only pushes.
 
 **Plain A's cost.** It drops a held cube whose gripper sits more than 15 mm away. That happens on `dev-grasp-offset`, whose grasps are about 12 mm off. On the fresh set's dev families, held-cube error at horizon 10 is 3.3 to 3.5 mm, against 0.68 to 0.76 mm for the WO-004 model.
 
-**The refinement.** It checks reach only when a grasp starts, and it is dev-informed. It cut held-cube error to the WO-004 model's level: 0.52 to 0.58 mm overall at horizon 10, against plain A's 2.2 to 2.35. But free-cube error rose by up to 0.03 mm at horizons 5 to 10. That fails "free-cube error does not get worse", so plain A stands (run `20261102T090745Z_686205f7`).
+**The refinement.** It checks reach only when a grasp starts, and it is dev-informed. It cut held-cube error to the WO-004 model's level: 0.52 to 0.58 mm overall at horizon 10, against plain A's 2.2 to 2.35. But free-cube error rose, from horizon 4 on seeds 0 and 2 and from horizon 5 on seed 1, by up to 0.041 mm. That fails "free-cube error does not get worse", so plain A stands (run `20261102T090745Z_686205f7`).
 
 ### Calibration, information only
 Fitted on one half of dev and measured on the other, both ways, calibrated coverage is **89.9% to 90.0%** on joints and cube, every seed and horizon pooled over both folds (runs `20261102T085011Z_27167da9` and `20261102T085542Z_4764e650`). ET-M1-3 stays as recorded, at 80.03% to 86.06% with train-family scales. WO-004's report carries this as an erratum.
@@ -133,11 +135,12 @@ All 60 states contribute a pair. Predicted progress correlates with simulated pr
 | Abstention | **37.7%**, over the frozen 20% cap |
 | AUROC on every chunk | 0.790 |
 | Nominal model's AUROC, every chunk | 0.551 |
+| Nominal model's AUROC, chunks kept | 0.764 |
 | Violating chunks abstained on | 28 of 44 |
 | Non-violating chunks abstained on | 275 of 760 |
 | Abstained, by chunk: recorded / offset 0.05 / offset 0.15 / gripper inverted | 9% / 42% / 43% / 56% |
 
-**What the failure means.** The calibration split holds scripted trajectories only. The branch chunks are deliberately unusual, so the model's spread is larger on exactly those, and that includes most violations. The abstention is doing what abstention should, but more often than the 20% cap I froze.
+**What the failure means.** On the chunks the test is decided on, with only 16 violations among them, the learned model is no better than the nominal: 0.766 against 0.764. Its advantage, 0.790 against 0.551, is on the chunks it abstains on. The calibration split holds scripted trajectories only. The branch chunks are deliberately unusual, so the model's spread is larger on exactly those, and that includes most violations. The abstention is doing what abstention should, but more often than the 20% cap I froze.
 
 ### ET-M1-4: model-predictive control on m1-suite-1
 200 episodes per planner on seeds 9100 to 9299, the same seeds for each, and at most 200 steps. Both model-based planners use identical frozen settings: 256 samples, 5 iterations and horizon 10.
@@ -152,7 +155,7 @@ All 60 states contribute a pair. Predicted progress correlates with simulated pr
 - **Paired comparison.** Learned minus nominal is **0.0 points**. Each wins 14 episodes the other loses. The paired 95% interval (Newcombe, hybrid score) is −5.5 to +5.5 points, and exact McNemar gives p = 1.0.
 - **Decision.** The frozen threshold is −5 points as a point estimate, so this **passes**. The interval's lower end reaches −5.5, so non-inferiority at a 5-point margin is not shown with 95% confidence. The frozen rule decides on the point estimate.
 - **Not degenerate.** Both planners succeed far above the 10% floor.
-- **Uncertainty penalty.** On the first 50 seeds, learned MPC succeeds 46 times with the penalty and 46 without (4 discordant each way). It changed no outcome, so no gain from it was measured.
+- **Uncertainty penalty.** On the first 50 seeds, learned MPC succeeds 46 times with the penalty and 46 without. It changed 8 outcomes, 4 each way, so its net effect was 0 and no gain from it was measured.
 - **Different failures.** Only 2 seeds fail for both model-based planners, and none for all three. The scripted controller's 17 failures fall on other seeds. Each planner's failures are its own.
 
 ## 5. Failure analysis
@@ -169,7 +172,7 @@ $0: the owner's Mac, no paid compute, nothing in `ledgers/costs.jsonl`. **Measur
 - Scoring: 6 seconds.
 - Suite: about 70 minutes, with the four planners in parallel on CPU (the scripted run took 1 minute).
 
-Median decision time per control step is 103 ms for the learned model and 90 ms for the nominal model, at most 199 ms, on CPU with 3 threads while four processes ran. That is under the 50 ms control period by no margin: these planners do not run in real time at 20 Hz on this machine.
+Median decision time per control step is 103 ms for the learned model and 90 ms for the nominal model, at most 199 ms, on CPU with 3 threads while four processes ran. That is about twice the 50 ms control period, so these planners do not run in real time at 20 Hz on this machine. Without contention, in the ledgered tuning runs, the medians were 96 and 83 ms.
 
 ## 7. Sealed access
 None.
@@ -183,20 +186,30 @@ None.
 
 With WO-004's ET-M1-1 and ET-M1-3, phase M1 has run all five exit tests and passed four. **M1 is not passed, because ET-M1-5 failed.** What happens next is the owner's call (section 10).
 
-**Review.** `AGENTS.md §13.8` requires a full independent review, because this work order closes exit tests. A focused review of the ET-M1-2 and ET-M1-5 scorer ran before its one scoring and found no defect. The full review follows in the PR.
+**Review.** `AGENTS.md §13.8` requires a full independent review, because this work order closes exit tests. A focused review of the ET-M1-2 and ET-M1-5 scorer ran before its one scoring and found no defect. The full review, on a clean clone at `3dfb09c`, reproduced all three verdicts from the artifacts. It found the grasp-flag issue, the hidden kept-chunk comparison, a resume defect and several number errors, all fixed or disclosed above.
 
 ## 9. Limits
 - **Simulation only.** A simulated SO-100 under scripted and planned controllers. No claim about a physical arm, VLA policies or full-episode success from chunk scores.
 - **Hand-built, staged cost.** The planner's cost comes from known geometry. Its success is that cost's success as much as the model's.
 - **Dev has been used more than once.** Stage 0's information-only looks and the branch states both use dev. ET-M1-2 and ET-M1-5 were each scored once.
 - **Physics is not always repeatable.** 3 of 144 extension states reproduced their recording only to 0.0011 to 0.005, and were excluded. 12 states had chunk starts up to 0.9 mm apart (measured by the review).
+- **The grasp flag.** The planners and the model read `object_grasped`, declared `reference_only`; see section 1.
+- **ET-M1-2's cost** uses the 3D distance to the goal site, which sits 16 to 91 mm above the table in these states. The rubric uses its xy on the table. Simulation and prediction use the same function, so the accuracy is unbiased, but this is not the rubric's task cost.
+- **Reached-state deviation.** The branch data records only chunk 0's deviation, which is 0.0 for every state. Up to 0.897 mm occurs on other chunks of 12 states (measured by the review). The code now records the largest over all chunks.
+- **Changed after the runs.** These changes alter no recorded result. The planner reseeds per episode, so a resumed suite equals an unbroken one; a test covers it, and the recorded runs used one stream per process and resumed nothing. The suite checks the settings file's hash, and every recorded run carried the frozen one.
 - **Tuning was not ledgered.** The scratch runs on train seeds 5000 to 5007 were not ledgered. The ledgered run on the same seeds records the frozen settings.
 
 ## 10. Next bounded work order
-ET-M1-5 needs an owner decision. Three options:
+**Two owner decisions.**
+
+**1. The grasp flag** (section 1). Accept `object_grasped` as a simulation-only input for M1's predictor and planners, recorded as a protocol note. Or require WO-004 and WO-005 to be redone without it, deriving held from the gripper joint and the cube's height. I recommend accepting it for M1, labelled as privileged simulation state, and excluding it from M2a onward. Redoing it costs the most and claims nothing new in simulation.
+
+**2. ET-M1-5.** Three options:
 - **(a)** Accept the failure and close M1 with a recorded negative.
 - **(b)** A new work order with a calibration split that includes perturbed chunks, frozen before any score and on fresh states. Branch block 9 has room, from seed 9300.
 - **(c)** Revisit the 20% abstention cap. It was mine, frozen before results and not owner-set, so changing it now would be a change after seeing the result.
+
+For reference: on ET-M1-2's 60 states alone, as `evals/M1-exit-tests.json` first said, ET-M1-5 is not decidable, with 8 violations. Without the agent's cap, 0.766 and 0.790 would both clear 0.75. The extension (amendment 3) and the cap were both mine, and both made the result stricter.
 
 **Recommendation: (b).** It tests the scorer properly, at about an hour of Mac time and $0.
 
