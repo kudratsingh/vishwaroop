@@ -134,6 +134,26 @@ def test_carry_step_is_finite_for_a_single_step_episode() -> None:
     assert math.isfinite(table["phases"]["held"]["carry_rms_mm"])
 
 
+def test_torch_metrics_keep_each_stream_in_its_own_units() -> None:
+    torch = pytest.importorskip("torch")
+    from vishwaroop.models.cube_study import HORIZON, _metrics
+
+    truth = torch.zeros(1, HORIZON, 13)
+    prediction = truth.clone()
+    prediction[..., 4] = 0.01  # a small error on a joint with a tiny spread
+    scale = torch.ones(13)
+    scale[4] = 0.01
+    metrics = _metrics(prediction, truth, scale, {"all": torch.tensor([True])})
+    assert metrics["streams_normalized"]["joint_position"][0] == pytest.approx(
+        math.sqrt(1 / 6), rel=1e-5
+    )
+    assert metrics["streams_own_units"]["joint_position"][0] == pytest.approx(
+        0.01 / math.sqrt(6), rel=1e-5
+    )
+    assert metrics["joint_rad_by_joint"][4][0] == pytest.approx(0.01, rel=1e-5)
+    assert metrics["joint_rad_by_joint"][0][0] == 0.0
+
+
 def test_torch_carry_moves_the_cube_only_when_the_flag_is_on() -> None:
     torch = pytest.importorskip("torch")
     from vishwaroop.models.cube_study import Variant, _Kinematics, _step, largest_gap_m

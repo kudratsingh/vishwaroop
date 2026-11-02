@@ -36,6 +36,11 @@ The first run gave `carry-contact-beta` a far larger gain than the question pred
 - **Whole families held out.** The chosen variant at 30 epochs, seeds 0 and 1, holding out each of `m0-scripted-noisy-actions`, `m0-scripted-wrong-place`, `m0-scripted-missed-grasp` and `m0-scripted-early-release`. The seed holdout shares families with the fit data, while ET-M1-1's dev set holds out whole families, so the seed holdout may flatter a model.
 - **Uncertainty, a first look.** Rank correlation of predicted standard deviation against absolute error, and 90% interval coverage, by stream, because a changed loss can damage what ET-M1-3 measures. ET-M1-3's streams are not frozen, and this is not ET-M1-3 evidence.
 
+### Added after the family holdouts, on 2026-11-01
+The runs so far recorded `joint_position` only in stream standard deviations, while ET-M1-1 (`evals/M1-definitions.json`) measures each stream in its own units. Those differ here: joint 4's standard deviation is 0.009 rad and the others' are 0.13 to 0.36 rad, so that one joint dominates the normalized number. Holding out `m0-scripted-missed-grasp` gave a normalized joint reduction of -805%, and a metric artefact has to be ruled out before that is reported. These were added after seeing it, and change neither the decision rule nor the frozen variants.
+- **Own units.** `_metrics` also records each stream in its own units, and each joint's RMSE in radians.
+- **Rerun in radians, at a clean commit.** `hold`, `hold-beta`, `carry-beta` and `carry-contact-beta` at 30 epochs, seeds 0, 1 and 2; `carry-contact-beta` at 30 epochs, seeds 0 and 1, for each of the four family holdouts; `hold` and `carry-contact-beta` at 100 epochs, seeds 0, 1 and 2. About 70 minutes in total (**estimated**, from the measured runs), in separate runs of at most 30 minutes.
+
 ### Decision rule
 - **Q1, does the nominal carry?** Answered by the code and the step table.
 - **Q2, does error differ by phase?** Answered by the per-phase table, in millimetres.

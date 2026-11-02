@@ -266,13 +266,18 @@ def _train(
 def _metrics(
     prediction: Any, truth: Any, scale: Any, mask_by_phase: dict[str, Any]
 ) -> dict[str, Any]:
-    """Per-stream error in stream standard deviations, and the cube by phase in millimetres."""
-    error = (prediction - truth) / scale
+    """Per-stream error in standard deviations and own units, and the cube by phase in mm."""
+    raw = prediction - truth
+    error = raw / scale
     streams = {
         name: [math.sqrt(error[:, h, a:b].pow(2).mean().item()) for h in range(HORIZON)]
         for name, (a, b) in STREAM_SLICES.items()
     }
-    squared = (prediction - truth)[..., CUBE_FIRST:CUBE_LAST].pow(2).sum(-1)
+    own_units = {
+        name: [math.sqrt(raw[:, h, a:b].pow(2).mean().item()) for h in range(HORIZON)]
+        for name, (a, b) in STREAM_SLICES.items()
+    }
+    squared = raw[..., CUBE_FIRST:CUBE_LAST].pow(2).sum(-1)
     phases = {
         phase: [1000.0 * math.sqrt(squared[mask, h].mean().item()) for h in range(HORIZON)]
         for phase, mask in mask_by_phase.items()
@@ -280,6 +285,11 @@ def _metrics(
     }
     return {
         "streams_normalized": streams,
+        "streams_own_units": own_units,
+        "joint_rad_by_joint": [
+            [math.sqrt(raw[:, h, joint].pow(2).mean().item()) for h in range(HORIZON)]
+            for joint in range(JOINTS)
+        ],
         "cube_mm_all": [1000.0 * math.sqrt(squared[:, h].mean().item()) for h in range(HORIZON)],
         "cube_mm_by_phase": phases,
         "share_of_cube_squared_error_at_h10": {
