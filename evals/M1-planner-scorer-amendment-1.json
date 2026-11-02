@@ -1,0 +1,9 @@
+{
+  "amends": "evals/M1-planner-scorer.json, ET-M1-2 'states'",
+  "frozen_on": "2026-11-02",
+  "frozen_before": "any branch, scorer or planner result. The only attempt so far, runs/20261102T091549Z_3f46594f, stopped at its first state and wrote nothing.",
+  "changes_a_threshold": false,
+  "why": "The frozen text says a state is reached by resetting to the episode's seed and executing the recorded actions, with no state restored. M0 episodes are recorded from a saved initial state, and evals/M0-protocol.md's replay restores that state before executing the recorded actions. A fresh reset differs from it, by 0.078 at seed 8000, step 150.",
+  "states_now": "A state is reached by restoring the episode's saved initial state, exactly as M0's replay does, then executing its recorded actions up to step t through physics, for every chunk. Nothing else is restored or forced, and a reached state that differs from the recorded one by more than 1e-6 is refused.",
+  "everything_else": "unchanged"
+}

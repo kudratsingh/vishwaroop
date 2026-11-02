@@ -3,9 +3,10 @@
     python -m vishwaroop.sim.branches
 
 Run it from the repository root, in the robotics environment. The states, chunks and costs are
-frozen in ``evals/M1-planner-scorer.json``. Every chunk starts from a fresh reset to its
-episode's seed, followed by the recorded actions up to the state, through physics. No state is
-restored or forced, and a reached state that differs from the recorded one is refused. The run
+frozen in ``evals/M1-planner-scorer.json`` and its first amendment. Every chunk starts from the
+episode's saved initial state, restored as M0's replay does, followed by the recorded actions up
+to the state, through physics. Nothing else is restored or forced, and a reached state that
+differs from the recorded one is refused. The run
 takes about a minute, so a stopped run is simply repeated. Results go to ``branches.json`` in a
 new run directory. Exit codes: 0 done, 2 refused, 3 simulator not run.
 """
@@ -24,10 +25,13 @@ from typing import Any
 from ..models.pilot_data import EpisodeArrays, read_episode, state_vector
 from ..scoring.violations import margins, task_cost, violated
 from .env import ManiSkillPickCube, Packet, SimulatorUnavailableError
+from .replay import _load_episode
 from .runlog import ledgered_run, require_code_root
 
 PLAN_PATH = Path("evals/M1-planner-scorer.json")
 PLAN_SHA256 = "88c952ed4ee1ca91db359e5ff964a913f460e6cfc67ef6fdeee79e7a420453bf"
+AMENDMENT_PATH = Path("evals/M1-planner-scorer-amendment-1.json")
+AMENDMENT_SHA256 = "2025f7c2c701b3f44841f39dea908816e424def0fee08fb6f2272ada8e9fd81c"
 DEV_MANIFESTS = (
     Path("artifacts/manifests/m0-dataset-v1.json"),
     Path("artifacts/manifests/m1-dev-topup-v1.json"),
@@ -104,10 +108,14 @@ def _state(packet: Packet) -> list[float]:
 
 
 def run_chunk(
-    env: Any, episode: EpisodeArrays, step: int, chunk: Sequence[Sequence[float]]
+    env: Any,
+    episode: EpisodeArrays,
+    step: int,
+    chunk: Sequence[Sequence[float]],
+    initial_state: bytes,
 ) -> list[list[float]]:
-    """Reset, execute the recorded prefix, check the reached state, then execute the chunk."""
-    packet = env.reset(episode.seed)
+    """Restore the initial state, run the recorded prefix, check it, then execute the chunk."""
+    packet = env.restore_state(initial_state)
     for action in episode.actions[:step]:
         packet = env.step(list(action))
     reached: list[float] = _state(packet)
@@ -132,6 +140,7 @@ def _branches(env: Any) -> dict[str, Any]:
         for entry in entries
     }
     lengths = {name: len(item.actions) for name, item in episodes.items()}
+    paths = {entry["episode_id"]: Path(entry["path"]) for entry in entries}
     family = {entry["episode_id"]: entry["family"] for entry in entries}
     lower, upper = env.action_spec.lower, env.action_spec.upper
     results = []
@@ -139,9 +148,10 @@ def _branches(env: Any) -> dict[str, Any]:
         episode = episodes[name]
         print(f"state {index} {name} step {step}", file=sys.stderr, flush=True)
         chunks = make_chunks(episode.actions[step : step + CHUNK], episode.seed, step, lower, upper)
+        _, _, initial_state = _load_episode(paths[name])
         executed = []
         for number, chunk in enumerate(chunks):
-            states = run_chunk(env, episode, step, chunk)
+            states = run_chunk(env, episode, step, chunk, initial_state)
             scaled = margins(states)
             executed.append(
                 {
@@ -177,13 +187,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.parse_args(argv)
     try:
         require_code_root()
-        actual = hashlib.sha256(PLAN_PATH.read_bytes()).hexdigest()
-        if actual != PLAN_SHA256:
-            raise ValueError(f"{PLAN_PATH} has sha256 {actual}, not the frozen {PLAN_SHA256}")
+        for path, expected in ((PLAN_PATH, PLAN_SHA256), (AMENDMENT_PATH, AMENDMENT_SHA256)):
+            actual = hashlib.sha256(path.read_bytes()).hexdigest()
+            if actual != expected:
+                raise ValueError(f"{path} has sha256 {actual}, not the frozen {expected}")
         env = ManiSkillPickCube()
         with ledgered_run(
             purpose="WO-005: simulator branches on dev states, for ET-M1-2 and ET-M1-5",
-            config={"plan_sha256": PLAN_SHA256},
+            config={"plan_sha256": PLAN_SHA256, "amendment_sha256": AMENDMENT_SHA256},
             seeds={"chunks": 100},
             env_lock={"stack": env.stack_identity()},
         ) as run:

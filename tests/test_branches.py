@@ -102,7 +102,7 @@ class _FakeEnv:
             "object_grasped": [0.0],
         }
 
-    def reset(self, seed: int) -> dict[str, list[float]]:
+    def restore_state(self, state: bytes) -> dict[str, list[float]]:
         self.joints = [v + self.offset for v in JOINTS]
         return self._packet()
 
@@ -116,6 +116,6 @@ def test_a_reached_state_that_differs_from_the_recording_is_refused() -> None:
 
     states = [_state([0.1, 0.0, 0.0125], 0.0)] * 5
     episode = EpisodeArrays(seed=8000, states=states, actions=[list(JOINTS)] * 4)
-    assert len(run_chunk(_FakeEnv(), episode, 0, [list(JOINTS)] * 2)) == 3
+    assert len(run_chunk(_FakeEnv(), episode, 0, [list(JOINTS)] * 2, b"{}")) == 3
     with pytest.raises(ValueError, match="differs"):
-        run_chunk(_FakeEnv(offset=0.01), episode, 0, [list(JOINTS)] * 2)
+        run_chunk(_FakeEnv(offset=0.01), episode, 0, [list(JOINTS)] * 2, b"{}")
