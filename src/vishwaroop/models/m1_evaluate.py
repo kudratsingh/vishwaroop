@@ -1,15 +1,13 @@
 """Score WO-004's frozen predictors on dev, once, for ET-M1-1 and ET-M1-3.
 
-    python -m vishwaroop.models.m1_evaluate \\
-        --train-manifest artifacts/manifests/m0-dataset-v1.json \\
-        --dev-manifests artifacts/manifests/m0-dataset-v1.json,artifacts/manifests/m1-dev-v1.json \\
-        --ensemble-run runs/<id> --latent-run runs/<id> --epochs <frozen>
+    python -m vishwaroop.models.m1_evaluate
 
 Run it from the repository root, in the robotics environment. It is the only code that reads a dev
-episode for a predictor. It refuses a plan other than the frozen one, too few dev episodes, a model
-that did not finish its frozen epochs or no longer reproduces its train-side numbers, and a second
-scoring once one has completed. Results go to ``m1_dev_evaluation.json`` in a new run directory.
-Exit codes: 0 scored, whether or not the tests passed; 2 refused.
+episode for a predictor. What it scores is fixed below, not chosen on the command line: the models
+the frozen rules chose, and the dev set by hash. It refuses a plan or manifest other than the frozen
+ones, a model that did not finish its frozen epochs or no longer reproduces its train-side numbers,
+and a second scoring once a result exists. Results go to ``m1_dev_evaluation.json`` in a new run
+directory. Exit codes: 0 scored, whether or not the tests passed; 2 refused.
 """
 
 from __future__ import annotations
@@ -18,11 +16,12 @@ import argparse
 import copy
 import hashlib
 import json
+import os
 import sys
 import time
 from collections import Counter
-from collections.abc import Sequence
-from dataclasses import replace
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -65,6 +64,30 @@ PLAN_PATH = Path("evals/M1-stage-b.json")
 PLAN_SHA256 = "41a64cb136bd683ba840aee6e7ddb5d2bb3cfe025a6f746dd1619505074f7339"
 PURPOSE = "WO-004: the one dev scoring of the frozen predictors"
 REPRODUCE_TOLERANCE = 1e-5
+RESULT = "m1_dev_evaluation.json"
+TRAIN_MANIFEST = Path("artifacts/manifests/m0-dataset-v1.json")
+FROZEN_DEV_MANIFESTS = {
+    TRAIN_MANIFEST: "267d77ead98119715350f0fc82987e715f7ce41a4d0337401b7469206711b9c7",
+    Path("artifacts/manifests/m1-dev-topup-v1.json"): (
+        "0e3a19e8bb365fa8673b97b9b3e84c04122e3a36231c61c82edb2e8612b736e9"
+    ),
+}
+# The plan's epochs rule gives 30: at 100, the worst value falls on missed-grasp (report section 4).
+FROZEN_EPOCHS = 30
+ENSEMBLE_RUN = Path("runs/20261102T035805Z_ddb5d0d0")
+LATENT_RUN = Path("runs/20261102T051845Z_06b8d0e0")
+
+
+@dataclass(frozen=True)
+class Inputs:
+    """What gets scored. ``main`` only ever builds the frozen one."""
+
+    train_manifest: Path
+    dev_manifests: tuple[Path, ...]
+    ensemble_run: Path
+    latent_run: Path
+    epochs: int
+    device: str
 
 
 def check_plan(path: Path, expected: str = PLAN_SHA256) -> dict[str, Any]:
@@ -77,8 +100,19 @@ def check_plan(path: Path, expected: str = PLAN_SHA256) -> dict[str, Any]:
     return plan
 
 
-def check_not_scored(runs_ledger: Path, purpose: str = PURPOSE) -> None:
-    """Dev is scored once. A run that crashed before writing a result may be repeated."""
+def check_manifests(frozen: Mapping[Path, str]) -> None:
+    """The dev set is the frozen one, byte for byte."""
+    for path, expected in frozen.items():
+        actual = hashlib.sha256(path.read_bytes()).hexdigest()
+        if actual != expected:
+            raise ValueError(f"{path} has sha256 {actual}, and the frozen manifest is {expected}")
+
+
+def check_not_scored(runs_ledger: Path, runs_root: Path, purpose: str = PURPOSE) -> None:
+    """Dev is scored once. A run that stopped before writing any result may be repeated."""
+    found = sorted(runs_root.glob(f"*/{RESULT}*"))
+    if found:
+        raise ValueError(f"dev was already scored in {found[0]}; another scoring needs a new WO")
     records = [json.loads(line) for line in runs_ledger.read_text(encoding="utf-8").splitlines()]
     mine = {
         record["run_id"]
@@ -89,6 +123,14 @@ def check_not_scored(runs_ledger: Path, purpose: str = PURPOSE) -> None:
         if record.get("status") == "completed" and record.get("run_id") in mine:
             run_id = record["run_id"]
             raise ValueError(f"dev was already scored by {run_id}; another scoring needs a new WO")
+
+
+def write_result(directory: Path, report: dict[str, Any]) -> None:
+    """Write the whole result or nothing, so no partial dev numbers can sit beside a refusal."""
+    text = json.dumps(report, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    partial_file = directory / f"{RESULT}.partial"
+    partial_file.write_text(text, encoding="utf-8")
+    os.replace(partial_file, directory / RESULT)
 
 
 def load_dev(paths: Sequence[Path], root: Path) -> list[EpisodeArrays]:
@@ -161,6 +203,19 @@ def _stream_rmse(mean: Any, truth: Any) -> dict[str, list[float]]:
         "streams_own_units"
     ]
     return streams
+
+
+def _phase_rmse(mean: Any, truth: Any, masks: dict[str, Any]) -> dict[str, dict[str, list[float]]]:
+    """Each required stream by phase, own units. No reduction: a resting baseline can be 0."""
+    return {
+        phase: {
+            stream: values
+            for stream, values in _stream_rmse(mean[mask], truth[mask]).items()
+            if stream in CALIBRATED_STREAMS
+        }
+        for phase, mask in masks.items()
+        if bool(mask.any())
+    }
 
 
 def _check_reproduces(mean: Any, truth: Any, recorded: dict[str, Any], label: str) -> None:
@@ -303,19 +358,18 @@ def _score(
         "reductions_by_family_report_only": by_family,
         "uncertainty": _uncertainty(mean, std, truth, scales),
         "scales_from_train_holdout": scales,
+        "phases_own_units": _phase_rmse(mean, truth, masks),
         "cube_mm_by_phase": metrics["cube_mm_by_phase"],
         "joint_rad_by_joint": metrics["joint_rad_by_joint"],
     }
 
 
-def _evaluate(
-    args: argparse.Namespace, plan: dict[str, Any], machine: dict[str, Any]
-) -> dict[str, Any]:
+def _evaluate(inputs: Inputs, plan: dict[str, Any], machine: dict[str, Any]) -> dict[str, Any]:
     torch = _torch_module()
-    device = args.device
-    data = _Data(args.train_manifest, device, split_holdout)
+    device = inputs.device
+    data = _Data(inputs.train_manifest, device, split_holdout)
     stats = {**_stats_of(data), "kinematics": _Kinematics(device)}
-    episodes = load_dev([Path(item) for item in args.dev_manifests.split(",")], Path())
+    episodes = load_dev(inputs.dev_manifests, Path())
     windows = _Windows(episodes, device)
     dev_view = copy.copy(data)
     dev_view.holdout_s, dev_view.holdout_a = windows.states, windows.actions
@@ -333,20 +387,20 @@ def _evaluate(
     seeds = [int(item) for item in plan["seeds"]]
     variant_name = plan["final_variant"]
     variant = VARIANTS[variant_name]
-    epochs = int(args.epochs)
+    epochs = int(inputs.epochs)
     ensemble: dict[str, Any] = {}
     latent: dict[str, Any] = {}
-    sweep = json.loads((args.ensemble_run / "family_sweep.json").read_text(encoding="utf-8"))
+    sweep = json.loads((inputs.ensemble_run / "family_sweep.json").read_text(encoding="utf-8"))
     if sweep["epochs"] != epochs:
-        raise ValueError(f"{args.ensemble_run} trained {sweep['epochs']} epochs, not {epochs}")
+        raise ValueError(f"{inputs.ensemble_run} trained {sweep['epochs']} epochs, not {epochs}")
     recorded = sweep["holdouts"][SEED_HOLDOUT]["variants"][variant_name]
     latent_report = json.loads(
-        (args.latent_run / "latent_predictor.json").read_text(encoding="utf-8")
+        (inputs.latent_run / "latent_predictor.json").read_text(encoding="utf-8")
     )
     for seed in seeds:
         print(f"seed {seed}", file=sys.stderr, flush=True)
         path = (
-            args.ensemble_run
+            inputs.ensemble_run
             / "work"
             / SEED_HOLDOUT
             / variant_name
@@ -375,7 +429,7 @@ def _evaluate(
             seed,
         )
         modules = latent_predictor.load(
-            args.latent_run / "work" / f"seed-{seed}" / latent_predictor.CHECKPOINT,
+            inputs.latent_run / "work" / f"seed-{seed}" / latent_predictor.CHECKPOINT,
             device,
             int(plan["latent"]["epochs"]),
         )
@@ -409,10 +463,13 @@ def _evaluate(
         "windows_by_phase": {name: int(mask.sum().item()) for name, mask in masks.items()},
         "final_variant": variant_name,
         "epochs": epochs,
-        "ensemble_run": str(args.ensemble_run),
-        "latent_run": str(args.latent_run),
+        "ensemble_run": str(inputs.ensemble_run),
+        "latent_run": str(inputs.latent_run),
         "baselines_in_best": list(BASELINES),
         "baselines_own_units": baseline_rmse,
+        "baselines_phases_own_units": {
+            name: _phase_rmse(value, truth, masks) for name, value in baselines.items()
+        },
         "lowest_baseline": {
             stream: lowest_baseline({name: baseline_rmse[name][stream] for name in BASELINES})
             for stream in CALIBRATED_STREAMS
@@ -432,29 +489,32 @@ def _evaluate(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--train-manifest", type=Path, required=True)
-    parser.add_argument("--dev-manifests", required=True)
-    parser.add_argument("--ensemble-run", type=Path, required=True)
-    parser.add_argument("--latent-run", type=Path, required=True)
-    parser.add_argument("--epochs", type=int, required=True)
     parser.add_argument("--device", choices=("mps", "cpu"), default="mps")
-    parser.add_argument("--runs-ledger", type=Path, default=Path("ledgers/runs.jsonl"))
     args = parser.parse_args(argv)
+    inputs = Inputs(
+        train_manifest=TRAIN_MANIFEST,
+        dev_manifests=tuple(FROZEN_DEV_MANIFESTS),
+        ensemble_run=ENSEMBLE_RUN,
+        latent_run=LATENT_RUN,
+        epochs=FROZEN_EPOCHS,
+        device=args.device,
+    )
     try:
         require_code_root()
         plan = check_plan(PLAN_PATH)
-        if args.epochs not in plan["allowed_epochs"]:
-            raise ValueError(f"{args.epochs} epochs is not in the frozen plan")
-        check_not_scored(args.runs_ledger)
+        if inputs.epochs not in plan["allowed_epochs"]:
+            raise ValueError(f"{inputs.epochs} epochs is not in the frozen plan")
+        check_manifests(FROZEN_DEV_MANIFESTS)
+        check_not_scored(Path("ledgers/runs.jsonl"), Path("runs"))
         machine = _machine()
         with ledgered_run(
             purpose=PURPOSE,
             config={
                 "plan_sha256": PLAN_SHA256,
-                "ensemble_run": str(args.ensemble_run),
-                "latent_run": str(args.latent_run),
-                "dev_manifests": args.dev_manifests,
-                "epochs": args.epochs,
+                "ensemble_run": str(inputs.ensemble_run),
+                "latent_run": str(inputs.latent_run),
+                "dev_manifests": {str(path): sha for path, sha in FROZEN_DEV_MANIFESTS.items()},
+                "epochs": inputs.epochs,
             },
             seeds={"bootstrap": 0},
             env_lock={"machine": machine},
@@ -465,12 +525,10 @@ def main(argv: list[str] | None = None) -> int:
             report = {
                 "run": run.directory.name,
                 "code": run.code_note,
-                **_evaluate(args, plan, machine),
+                **_evaluate(inputs, plan, machine),
             }
             report["seconds"] = time.perf_counter() - started
-            with (run.directory / "m1_dev_evaluation.json").open("x", encoding="utf-8") as stream:
-                json.dump(report, stream, indent=2, sort_keys=True, allow_nan=False)
-                stream.write("\n")
+            write_result(run.directory, report)
             run.note = f"verdicts {report['verdicts']}"
             print(run.directory)
     except (ValueError, OSError, KeyError) as exc:

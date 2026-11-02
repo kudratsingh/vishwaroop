@@ -7,7 +7,7 @@
 > Four words with fixed meanings throughout this report: **measured** (ran here, evidence attached), **estimated** (arithmetic from stated assumptions), **mocked/fixture** (fabricated for tests), **not run**.
 
 ## 1. Claim and scope
-Stage A only so far. Stage A is **measured**, in simulation, on the train partition, and is report-only under `evals/M1-family-holdouts.json`. None of it is exit-test evidence. Stage B is **not run**.
+Stage A and Stage B's train-side steps so far. They are **measured**, in simulation, on the train partition, and none of it is exit-test evidence. Family results are report-only under `evals/M1-family-holdouts.json`. Dev scoring is **not run**.
 
 ## 4. Results
 
@@ -21,7 +21,7 @@ Each rule was frozen in `evals/M1-family-holdouts.json` before its result. Own u
 
 **Contact.** Contact is not the missing signal on `missed-grasp`. `carry-contact-beta` already had it and missed, and removing it does not make things worse: the worst values are -16.8% to -18.7% on the joints and -146.7% to -184.8% on the cube without it, against -36.0% to -48.8% and -199.0% to -249.1% with it. The rule still keeps contact, narrowly, and I applied it as frozen.
 
-**Free fall.** The term is what `early-release` lacked. At horizon 10 on that holdout, cube error goes from 4.9 to 2.9 mm, and in the `moved_after_grasp` phase from about 21.5 to 5.2 mm. The worst reduction goes from -143.9% to 12.1%. That -143.9% is against the new fall baseline: it was 4.2% in WO-014 against the old baselines, and the model's error did not change. The baseline alone beats the model at short horizons there, which is why it counts. On the seed holdout the term is what lifts the worst cube value above 50%, from 30.9% to 56.5%.
+**Free fall.** The term is what `early-release` lacked. At horizon 10 on that holdout, cube RMSE per coordinate goes from 4.9 to 2.9 mm, and 3D cube error in the `moved_after_grasp` phase goes from about 21.5 to 5.2 mm. The worst reduction goes from -143.9% to 12.1%. That -143.9% is against the new fall baseline: it was 4.2% in WO-014 against the old baselines, and the model's error did not change. The baseline alone beats the model at short horizons there, which is why it counts. On the seed holdout the term is what lifts the worst cube value above 50%, from 30.9% to 56.5%.
 
 ### Stage A: every family, worst seed, percent reduction
 
@@ -68,3 +68,24 @@ Each rule was frozen in `evals/M1-family-holdouts.json` before its result. Own u
 **M3 link, for later, with no M3 work here.** These out-of-family failures motivate M3, synthetic failure data: `docs/PHASES.md`, `docs/SYNTHETIC_DATA_M3.md`. A predictor that has not seen a failure type does much worse than a baseline on it.
 
 **Resume, measured.** The first sweep was stopped by `kill -9` after 420 s, with 2 cells finished and a third at epoch 5. It resumed at `20261102T024157Z_3d1d1d32`, reused those 2 cells, and continued the third from epoch 5. Seeds 0 and 1 on the four families WO-014 ran reproduce their RMSE with a difference of exactly 0.0, on both streams. The killed run `20261102T023457Z_62dee862` stays in the ledger as `started` with no finish, on purpose.
+
+### Stage B, train side, before any dev metric
+Frozen in `evals/M1-stage-b.json`, sha256 `41a64cb136bd683ba840aee6e7ddb5d2bb3cfe025a6f746dd1619505074f7339`, at `a0efb2a`, before these runs. Numbers: `artifacts/manifests/m1-stage-b-train-v1.json`.
+
+**Epochs: 30, by the frozen rule.** Worst value, taking the worst seed, horizon and required stream:
+
+| Holdout | 30 epochs | 100 epochs | Higher at 100? |
+|---|---|---|---|
+| Seed holdout | 40.90% | 42.03% | yes |
+| `early-release` | 12.09% | 13.08% | yes |
+| `missed-grasp` | -237.11% | -470.44% | **no** |
+
+100 epochs needed to be higher on all three. It gains about a point on two and makes the unseen failure family's cube about twice as bad, so WO-014's finding stands: more epochs is not the lever, and on an unseen family it does harm. The models to score are the 30-epoch seed-holdout ensembles of `20261102T035805Z_ddb5d0d0`.
+
+**Resume on MPS.** An unbroken run of the cell the kill stopped (`early-release`, seed 2, run `20261102T051607Z_15ed0a5e`) equals the resumed one with a difference of exactly 0.0 on both streams.
+
+**Latent model, seed holdout, 30 epochs, report-only.** Worst reduction against the same baselines: joints 40.5% to 40.9% and cube 54.2% to 55.6% across seeds (run `20261102T051845Z_06b8d0e0`, 179,226 parameters, about 6 s per epoch). It keeps the nominal structure underneath, so this is mostly that structure's result.
+
+**Dev top-up.** 150 episodes, seeds 8020 to 8069 of the three dev families, run `20261102T065334Z_e91733c1`, in about 1 minute, 56 MB, 9 sampled replays valid with maximum deviation 0.0. Manifest `artifacts/manifests/m1-dev-topup-v1.json`, sha256 `0e3a19e8bb365fa8673b97b9b3e84c04122e3a36231c61c82edb2e8612b736e9`. Its labels were seen, as a collection check, and no predictor metric was. The registry reports `et_m0_6_counts_met: false` for this set alone, because 150 is under M0's 200. This set claims nothing under M0.
+
+**Review before scoring.** Because dev is scored once, the full independent review ran before scoring, on a clean clone at `1d79a00`. It found no fault in the metric or verdict arithmetic, which it checked end to end on fabricated data against a separate calculation. It did find that the command line could have scored the 100-epoch models the rule rejects, that a result file on disk did not stop a second scoring, that phase tables had no baselines, and four smaller things. All were fixed before scoring.

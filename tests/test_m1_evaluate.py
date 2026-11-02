@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import random
 from pathlib import Path
 
 import pytest
@@ -135,13 +136,72 @@ def test_a_changed_plan_is_refused(tmp_path: Path) -> None:
 def test_dev_is_scored_once(tmp_path: Path) -> None:
     from vishwaroop.models.m1_evaluate import PURPOSE, check_not_scored
 
+    runs = tmp_path / "runs"
     crashed = {"status": "started", "purpose": PURPOSE, "run_id": "a"}
-    check_not_scored(_ledger(tmp_path / "one.jsonl", [crashed]))
+    check_not_scored(_ledger(tmp_path / "one.jsonl", [crashed]), runs)
     other = {"status": "completed", "run_id": "b"}
-    check_not_scored(_ledger(tmp_path / "two.jsonl", [crashed, other]))
+    check_not_scored(_ledger(tmp_path / "two.jsonl", [crashed, other]), runs)
     finished = {"status": "completed", "run_id": "a"}
     with pytest.raises(ValueError, match="already scored"):
-        check_not_scored(_ledger(tmp_path / "three.jsonl", [crashed, finished]))
+        check_not_scored(_ledger(tmp_path / "three.jsonl", [crashed, finished]), runs)
+
+
+@pytest.mark.parametrize("name", ["m1_dev_evaluation.json", "m1_dev_evaluation.json.partial"])
+def test_a_result_on_disk_stops_a_second_scoring_whatever_the_ledger_says(
+    tmp_path: Path, name: str
+) -> None:
+    from vishwaroop.models.m1_evaluate import PURPOSE, check_not_scored
+
+    run = tmp_path / "runs" / "killed"
+    run.mkdir(parents=True)
+    (run / name).write_text("{}", encoding="utf-8")
+    ledger = _ledger(
+        tmp_path / "l.jsonl", [{"status": "started", "purpose": PURPOSE, "run_id": "killed"}]
+    )
+    with pytest.raises(ValueError, match="already scored"):
+        check_not_scored(ledger, tmp_path / "runs")
+
+
+def test_a_non_finite_result_writes_nothing(tmp_path: Path) -> None:
+    from vishwaroop.models.m1_evaluate import write_result
+
+    with pytest.raises(ValueError, match="JSON"):
+        write_result(tmp_path, {"a": 1.0, "z": float("nan")})
+    assert list(tmp_path.iterdir()) == []
+    write_result(tmp_path, {"a": 1.0})
+    assert [item.name for item in tmp_path.iterdir()] == ["m1_dev_evaluation.json"]
+
+
+def test_a_changed_dev_manifest_is_refused(tmp_path: Path) -> None:
+    from vishwaroop.models.m1_evaluate import check_manifests
+
+    path = tmp_path / "m.json"
+    path.write_text("{}", encoding="utf-8")
+    good = hashlib.sha256(path.read_bytes()).hexdigest()
+    check_manifests({path: good})
+    path.write_text('{"episodes": []}', encoding="utf-8")
+    with pytest.raises(ValueError, match="frozen manifest"):
+        check_manifests({path: good})
+
+
+def test_the_scorer_has_no_way_to_choose_what_it_scores(root: Path) -> None:
+    from vishwaroop.models.m1_evaluate import (
+        ENSEMBLE_RUN,
+        FROZEN_DEV_MANIFESTS,
+        FROZEN_EPOCHS,
+        PLAN_PATH,
+        check_manifests,
+        check_plan,
+        main,
+    )
+
+    assert FROZEN_EPOCHS in check_plan(root / PLAN_PATH)["allowed_epochs"]
+    assert ENSEMBLE_RUN.name == "20261102T035805Z_ddb5d0d0"
+    check_manifests({root / path: sha for path, sha in FROZEN_DEV_MANIFESTS.items()})
+    with pytest.raises(SystemExit):
+        main(["--epochs", "100"])
+    with pytest.raises(SystemExit):
+        main(["--ensemble-run", "runs/other"])
 
 
 def _episode(root: Path, name: str, seed: int) -> dict[str, object]:
@@ -321,3 +381,180 @@ def test_the_top_up_reaches_the_exit_tests_minimum_on_new_dev_seeds(root: Path) 
     assert not earlier & added
     assert {variant for variant, _ in added} == {variant for variant, _ in earlier}
     assert len(earlier) + len(added) >= MIN_DEV_EPISODES
+
+
+def _moving_episode(
+    root: Path, name: str, seed: int, partition: str, family: str
+) -> dict[str, object]:
+    chooser = random.Random(seed)
+    joints = [chooser.uniform(-0.3, 0.3) for _ in range(6)]
+    cube = [0.2, 0.05, 0.0125]
+    flag = 0.0
+    lines = []
+
+    def packets() -> list[dict[str, object]]:
+        return [
+            {"stream": "joint_position", "value": list(joints)},
+            {"stream": "object_position", "value": list(cube)},
+            {"stream": "target_position", "value": [0.1, 0.1, 0.05]},
+            {"stream": "object_grasped", "value": [flag]},
+        ]
+
+    for step in range(40):
+        before = packets()
+        action = [value + chooser.gauss(0.0, 0.02) for value in joints]
+        joints = [a + 0.5 * (b - a) for a, b in zip(joints, action, strict=True)]
+        flag = 1.0 if 10 <= step < 20 else 0.0
+        if flag:
+            cube = [value + chooser.gauss(0.0, 0.002) for value in cube]
+        lines.append(
+            json.dumps(
+                {
+                    "observations": before,
+                    "next_observations": packets(),
+                    "action": {"requested": action},
+                }
+            )
+        )
+    directory = root / name
+    directory.mkdir()
+    raw = ("\n".join(lines) + "\n").encode("utf-8")
+    (directory / "transitions.jsonl").write_bytes(raw)
+    return {
+        "episode_id": name,
+        "partition": partition,
+        "family": family,
+        "seed": seed,
+        "path": name,
+        "transitions_sha256": hashlib.sha256(raw).hexdigest(),
+    }
+
+
+def _fabricated_scoring(
+    torch: object, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> tuple[object, dict[str, object], object]:
+    """Fabricated episodes, and untrained models recorded as if trained, in a scratch directory."""
+    from functools import partial
+
+    from vishwaroop.models import latent_predictor, m1_evaluate
+    from vishwaroop.models.compute_pilot import _Data, _new_ensemble, _stats_of
+    from vishwaroop.models.cube_study import (
+        VARIANTS,
+        _evaluate,
+        _Kinematics,
+        _metrics,
+        phase_masks,
+    )
+    from vishwaroop.models.pilot_data import load_train, split_holdout
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        m1_evaluate, "bootstrap_interval", partial(bootstrap_interval, resamples=20)
+    )
+    train = [
+        _moving_episode(tmp_path, f"train-{seed}", seed, "train", f"m0-f{seed % 2}")
+        for seed in range(1000, 1020)
+    ]
+    dev = [
+        _moving_episode(tmp_path, f"dev-{seed}", seed, "dev", f"m0-d{seed % 3}")
+        for seed in range(8000 + MIN_DEV_EPISODES - 1, 7999, -1)
+    ]
+    train_path = _manifest(tmp_path, "train.json", train)
+    dev_path = _manifest(tmp_path, "dev.json", [*dev, train[0]])
+    name = "carry-contact-beta-fall"
+    data = _Data(train_path, "cpu", split_holdout)
+    stats = {**_stats_of(data), "kinematics": _Kinematics("cpu")}
+    _, held = split_holdout(load_train(train_path, Path()))
+    masks = phase_masks(held, len(data.holdout_s), "cpu")
+    torch.manual_seed(0)  # type: ignore[attr-defined]
+    layers = [(w.detach(), b.detach()) for w, b in _new_ensemble([19 + 3 * 19 + 3, 16, 16, 16, 26])]
+    directory = tmp_path / "ens" / "work" / "seed" / name / "seed-0"
+    directory.mkdir(parents=True)
+    torch.save(  # type: ignore[attr-defined]
+        {"epoch": 30, "layers": [list(layer) for layer in layers]}, directory / "checkpoint.pt"
+    )
+    recorded = {"predicted_flag": _evaluate(data, stats, VARIANTS[name], layers, masks, False)}
+    (tmp_path / "ens" / "family_sweep.json").write_text(
+        json.dumps({"epochs": 30, "holdouts": {"seed": {"variants": {name: {"0": recorded}}}}}),
+        encoding="utf-8",
+    )
+    modules = latent_predictor.new_modules("cpu")
+    modules.eval()
+    directory = tmp_path / "lat" / "work" / "seed-0"
+    directory.mkdir(parents=True)
+    torch.save(  # type: ignore[attr-defined]
+        {"epoch": 30, "modules": modules.state_dict()}, directory / latent_predictor.CHECKPOINT
+    )
+    with torch.no_grad():  # type: ignore[attr-defined]
+        means, _ = latent_predictor.predict(modules, stats, data.holdout_s, data.holdout_a)
+    metrics = _metrics(means, data.holdout_s[:, 4:], data.state_std, masks)
+    (tmp_path / "lat" / "latent_predictor.json").write_text(
+        json.dumps({"seeds_trained": {"0": {"predicted_flag": metrics}}}), encoding="utf-8"
+    )
+    plan = {"seeds": [0], "final_variant": name, "latent": {"epochs": 30}}
+    inputs = m1_evaluate.Inputs(
+        train_manifest=train_path,
+        dev_manifests=(dev_path,),
+        ensemble_run=tmp_path / "ens",
+        latent_run=tmp_path / "lat",
+        epochs=30,
+        device="cpu",
+    )
+    return inputs, plan, m1_evaluate
+
+
+def test_torch_the_scorer_runs_end_to_end_and_matches_a_separate_sum(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    torch = pytest.importorskip("torch")
+    inputs, plan, m1_evaluate = _fabricated_scoring(torch, tmp_path, monkeypatch)
+    report = m1_evaluate._evaluate(inputs, plan, {})  # type: ignore[attr-defined]
+    assert report["dev_episodes"] == MIN_DEV_EPISODES
+    assert sum(report["episodes_by_family"].values()) == MIN_DEV_EPISODES
+    assert set(report["verdicts"]) == {"ET-M1-1", "ET-M1-3"}
+    json.dumps(report, allow_nan=False)
+    cell = report["ensemble"]["0"]
+    assert set(cell["phases_own_units"]) <= set(report["baselines_phases_own_units"]["constant"])
+    # the constant baseline, summed by hand from the fabricated files, in another order
+    squares = [0.0] * HORIZONS
+    count = 0
+    for line_file in sorted(tmp_path.glob("dev-*/transitions.jsonl")):
+        records = [json.loads(line) for line in line_file.read_text("utf-8").splitlines()]
+        cubes = [records[0]["observations"][1]["value"]]
+        cubes.extend(record["next_observations"][1]["value"] for record in records)
+        for start in range(len(cubes) - 14 + 1):
+            count += 1
+            for h in range(HORIZONS):
+                squares[h] += sum(
+                    (a - b) ** 2
+                    for a, b in zip(cubes[start + 4 + h], cubes[start + 3], strict=True)
+                )
+    expected = [(value / (3 * count)) ** 0.5 for value in squares]
+    got = report["baselines_own_units"]["constant"]["object_position"]
+    assert got == pytest.approx(expected, rel=1e-4)
+    assert report["dev_windows"] == count
+
+
+def test_torch_the_scorer_refuses_a_model_that_does_not_reproduce(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    torch = pytest.importorskip("torch")
+    inputs, plan, m1_evaluate = _fabricated_scoring(torch, tmp_path, monkeypatch)
+    path = inputs.ensemble_run / "family_sweep.json"  # type: ignore[attr-defined]
+    sweep = json.loads(path.read_text(encoding="utf-8"))
+    cell = sweep["holdouts"]["seed"]["variants"][plan["final_variant"]]["0"]  # type: ignore[index]
+    cell["predicted_flag"]["streams_own_units"]["joint_position"][4] *= 1.01
+    path.write_text(json.dumps(sweep), encoding="utf-8")
+    with pytest.raises(ValueError, match="when trained"):
+        m1_evaluate._evaluate(inputs, plan, {})  # type: ignore[attr-defined]
+
+
+def test_torch_the_scorer_refuses_the_wrong_epochs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from dataclasses import replace
+
+    torch = pytest.importorskip("torch")
+    inputs, plan, m1_evaluate = _fabricated_scoring(torch, tmp_path, monkeypatch)
+    with pytest.raises(ValueError, match="epochs"):
+        m1_evaluate._evaluate(replace(inputs, epochs=100), plan, {})  # type: ignore[attr-defined,type-var]

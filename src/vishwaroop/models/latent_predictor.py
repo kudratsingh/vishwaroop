@@ -187,6 +187,8 @@ def train(
         modules.load_state_dict(saved["modules"])
         optimizer.load_state_dict(saved["optimizer"])
         torch.set_rng_state(saved["rng"].cpu())
+        if "mps_rng" in saved:
+            torch.mps.set_rng_state(saved["mps_rng"].cpu())
         first_epoch = saved["epoch"]
         times, losses = list(saved["times"]), list(saved["losses"])
     modules.train()
@@ -222,6 +224,7 @@ def train(
                     "modules": modules.state_dict(),
                     "optimizer": optimizer.state_dict(),
                     "rng": torch.get_rng_state(),
+                    **({"mps_rng": torch.mps.get_rng_state()} if device == "mps" else {}),
                     "times": times,
                     "losses": losses,
                 },
