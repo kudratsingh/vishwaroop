@@ -33,7 +33,7 @@ from .pilot_data import EpisodeArrays, read_episode, split_holdout
 RULE_PATH = Path("evals/M1-refinement-accept.json")
 RULE_SHA256 = "29c75e389e6b1924036c36bb37d42e0ee01748975d071242dba6f1e7d243ac01"
 MANIFEST = Path("artifacts/manifests/m1-confirmation-v1.json")
-MANIFEST_SHA256 = "FILL_AFTER_COLLECTION"
+MANIFEST_SHA256 = "5e6097320145f815c75494a6742228fd27c4346baf4d721cb5be4bd26627657d"
 ALLOWED_BLOCKS = (4, 9)
 RESULT = "m1_confirm.json"
 PURPOSE = "WO-005 stage 0: the refinement against plain A, once, on fresh data"
