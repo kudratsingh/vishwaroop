@@ -70,11 +70,11 @@ What an agent needs from the planning conversations (Sept–Oct 2026) to make th
 
 **M1's primary result.** The learned dynamics model matched the nominal model on planning success. On m1-suite-1 (200 seeds, same seeds per planner), learned-model MPC and nominal-model MPC each succeeded 184 times, and the scripted controller 183 (`reports/WO-005-m1-planner-and-chunk-scorer.md`). Owner's interpretation: learned dynamics show no advantage on this deterministic simulated task. M2 and M3 are where it must prove itself.
 
-On constraint prediction, the learned model also matched the nominal, except where a chunk changes the gripper command. On fresh states, for chunks kept:
+On constraint prediction, the learned model matched the nominal on fresh states, except where a chunk changes the gripper command. On fresh states, for chunks kept:
 - **Arm-offset chunks:** AUROC 0.882 learned against 0.890 nominal.
-- **Gripper-inverted chunks:** 0.944 learned against 0.405 nominal. The nominal model cannot predict a grasp or a release, so it cannot foresee a drop.
+- **Gripper-inverted chunks:** 0.944 learned against 0.405 nominal, which is below chance. The cause was not tested.
 
-That one kind is the whole of the learned model's pooled lead, 0.922 against 0.632 (`reports/WO-016-m1-et5-retest.md`). WO-005's chunks show the same pattern.
+That one kind accounts for the learned model's pooled lead, 0.922 against 0.632 (`reports/WO-016-m1-et5-retest.md`). In WO-005 the learned model was also ahead on arm offsets, 0.736 against 0.672, so the arm-offset tie rests on one set of 20 violations.
 
 **Owner decisions recorded, 2026-11-02:**
 - **Grasp flag.** `object_grasped` (declared `reference_only`) is accepted as a simulation-only input for M1's predictor and planners, and excluded from M2a onward. Disclosure in the WO-004 and WO-005 reports is sufficient, with no redo.
