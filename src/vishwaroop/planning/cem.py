@@ -51,15 +51,17 @@ class Settings:
         return asdict(self)
 
 
-def stage_of(state: list[float], tool: tuple[float, float, float], settings: Settings) -> int:
-    """The task stage, from the real state only."""
+def stage_of(
+    state: list[float], tool: tuple[float, float, float], settings: Settings, carried: bool
+) -> int:
+    """The task stage, from the real state and whether the cube has been held this episode."""
     cube = state[6:9]
     target = state[9:12]
     held = state[12] >= 0.5
     cube_to_target = math.hypot(cube[0] - target[0], cube[1] - target[1])
     if held:
         return CARRY if cube_to_target > settings.aligned_xy_m else PLACE
-    placed = cube_to_target <= TARGET_RADIUS_M and abs(cube[2] - REST_HEIGHT_M) < 0.004
+    placed = carried and cube_to_target <= TARGET_RADIUS_M and abs(cube[2] - REST_HEIGHT_M) < 0.004
     tool_to_cube_xy = math.hypot(tool[0] - cube[0], tool[1] - cube[1])
     if placed:
         return RISE
@@ -96,9 +98,11 @@ class Planner:
         self.device = device
         self.generator = torch.Generator(device="cpu").manual_seed(seed)
         self.plan: Any = None
+        self.carried = False
 
     def reset(self) -> None:
         self.plan = None
+        self.carried = False
 
     def decide(
         self,
@@ -109,7 +113,8 @@ class Planner:
         """``states`` are the last 4 real states, ``actions`` the 3 before the current one."""
         torch = _torch()
         settings = self.settings
-        stage = stage_of(states[-1], tool, settings)
+        self.carried = self.carried or states[-1][12] >= 0.5
+        stage = stage_of(states[-1], tool, settings, self.carried)
         current = torch.tensor(states[-1], device=self.device)
         if self.plan is None:
             self.plan = current[:JOINTS].expand(HORIZON, JOINTS).clone()
