@@ -11,9 +11,10 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import sys
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
@@ -56,6 +57,11 @@ CUBE_FIRST, CUBE_LAST = STREAM_SLICES["object_position"]
 FLAG_FIRST, FLAG_LAST = STREAM_SLICES["object_grasped"]
 CONTACT_SCALE_M = 0.05
 CONTACT_SIZE = 3
+REST_HEIGHT_M = 0.0125  # evals/M0-protocol.md
+AIRBORNE_MARGIN_M = 0.001
+CONTROL_PERIOD_S = 0.05
+GRAVITY_M_S2 = 9.81
+FALL_PER_STEP_M = GRAVITY_M_S2 * CONTROL_PERIOD_S * CONTROL_PERIOD_S
 EPOCHS = 30
 SEEDS = (0, 1, 2)
 
@@ -67,6 +73,7 @@ class Variant:
     carry: bool
     contact: bool
     beta: float
+    fall: bool = False
 
 
 VARIANTS = {
@@ -77,6 +84,8 @@ VARIANTS = {
     "carry-contact-beta": Variant(carry=True, contact=True, beta=0.5),
     "hold-beta": Variant(carry=False, contact=False, beta=0.5),
     "carry-beta": Variant(carry=True, contact=False, beta=0.5),
+    "carry-beta-fall": Variant(carry=True, contact=False, beta=0.5, fall=True),
+    "carry-contact-beta-fall": Variant(carry=True, contact=True, beta=0.5, fall=True),
 }
 FROZEN_VARIANTS = ("hold", "hold-contact", "carry", "carry-contact", "carry-contact-beta")
 Z_90 = 1.6449
@@ -163,6 +172,17 @@ def _with_cube_moved(prediction: Any, displacement: Any) -> Any:
     )
 
 
+def fall_displacement(state: Any, previous: Any, gate: Any) -> Any:
+    """Where a released, airborne cube goes next: its last step, plus gravity, down to the table."""
+    torch = _torch()
+    cube = state[..., CUBE_FIRST:CUBE_LAST]
+    last = cube - previous[..., CUBE_FIRST:CUBE_LAST]
+    height = cube[..., 2:] - REST_HEIGHT_M
+    airborne = (height > AIRBORNE_MARGIN_M).to(cube.dtype)
+    down = torch.maximum(last[..., 2:] - FALL_PER_STEP_M, -height)
+    return (1.0 - gate) * airborne * torch.cat([last[..., :2], down], dim=-1)
+
+
 def _step(
     stats: dict[str, Any],
     variant: Variant,
@@ -171,6 +191,7 @@ def _step(
     state: Any,
     action: Any,
     gate: Any = None,
+    previous: Any = None,
 ) -> tuple[Any, Any]:
     """One step of nominal plus residual. A carried cube follows the joints after their residual."""
     torch = _torch()
@@ -181,10 +202,12 @@ def _step(
     output = _ensemble_forward(layers, torch.cat(parts, dim=-1))
     residual, log_var = output[..., :STATE_SIZE], output[..., STATE_SIZE:]
     prediction = _nominal(stats, state, action) + residual * stats["delta_std"]
+    chosen = _gate_of(state) if gate is None else gate
     if variant.carry:
-        chosen = _gate_of(state) if gate is None else gate
         moved = stats["kinematics"](prediction[..., :JOINTS]) - tool
         prediction = _with_cube_moved(prediction, chosen * moved)
+    if variant.fall:
+        prediction = _with_cube_moved(prediction, fall_displacement(state, previous, chosen))
     return prediction, log_var.clamp(-10.0, 4.0)
 
 
@@ -200,22 +223,54 @@ def _rollout(
     torch = _torch()
     history = _rollout_history(stats, states, actions)
     state = states[..., HISTORY, :]
+    previous = states[..., HISTORY - 1, :]
     means, log_vars = [], []
     for step in range(HORIZON):
         action = actions[..., HISTORY + step, :]
         gate = _gate_of(states[..., HISTORY + step, :]) if true_gate else None
-        mean, log_var = _step(stats, variant, layers, history, state, action, gate)
+        mean, log_var = _step(stats, variant, layers, history, state, action, gate, previous)
         means.append(mean)
         log_vars.append(log_var)
         pair = _normalized_pair(stats, state, action)
         history = torch.cat([history[..., STATE_SIZE + ACTION_SIZE :], pair], dim=-1)
-        state = mean
+        previous, state = state, mean
     return means, log_vars
 
 
+def _save_checkpoint(
+    path: Path,
+    layers: list[Any],
+    optimizer: Any,
+    epoch: int,
+    times: list[float],
+    losses: list[float],
+) -> None:
+    """Replace the checkpoint in one step, so a crash leaves the last complete epoch."""
+    torch = _torch()
+    partial_file = path.with_suffix(".partial")
+    torch.save(
+        {
+            "epoch": epoch,
+            "layers": [[item.detach().cpu() for item in layer] for layer in layers],
+            "optimizer": optimizer.state_dict(),
+            "rng": torch.get_rng_state(),
+            "times": times,
+            "losses": losses,
+        },
+        partial_file,
+    )
+    os.replace(partial_file, path)
+
+
 def _train(
-    data: _Data, stats: dict[str, Any], variant: Variant, seed: int, epochs: int
+    data: _Data,
+    stats: dict[str, Any],
+    variant: Variant,
+    seed: int,
+    epochs: int,
+    checkpoint: Path | None = None,
 ) -> tuple[list[Any], dict[str, Any]]:
+    """Train one ensemble. With ``checkpoint``, every epoch is saved and a saved run continues."""
     torch = _torch()
     torch.manual_seed(seed)
     pair = STATE_SIZE + ACTION_SIZE
@@ -230,7 +285,18 @@ def _train(
     count = len(data.windows_s)
     times: list[float] = []
     losses: list[float] = []
-    for _ in range(epochs):
+    first_epoch = 0
+    if checkpoint is not None and checkpoint.exists():
+        saved = torch.load(checkpoint, map_location="cpu", weights_only=True)
+        with torch.no_grad():
+            for layer, stored in zip(layers, saved["layers"], strict=True):
+                for item, value in zip(layer, stored, strict=True):
+                    item.copy_(value.to(device))
+        optimizer.load_state_dict(saved["optimizer"])
+        torch.set_rng_state(saved["rng"])
+        first_epoch = saved["epoch"]
+        times, losses = list(saved["times"]), list(saved["losses"])
+    for epoch in range(first_epoch, epochs):
         start = time.perf_counter()
         order = torch.stack([torch.randperm(count) for _ in range(MEMBERS)], dim=0).to(device)
         total = 0.0
@@ -256,7 +322,10 @@ def _train(
         losses.append(total / batches)
         if not math.isfinite(losses[-1]):
             raise ValueError(f"loss became {losses[-1]}")
+        if checkpoint is not None:
+            _save_checkpoint(checkpoint, layers, optimizer, epoch + 1, times, losses)
     return layers, {
+        "resumed_at_epoch": first_epoch,
         "median_seconds_per_epoch": sorted(times)[len(times) // 2],
         "final_loss": losses[-1],
         "best_loss": min(losses),
@@ -331,9 +400,8 @@ def _uncertainty(means: Any, log_vars: Any, truth: Any, delta_std: Any) -> dict[
     return result
 
 
-def _baselines(
-    data: _Data, stats: dict[str, Any], masks: dict[str, Any]
-) -> dict[str, dict[str, Any]]:
+def _baseline_predictions(data: _Data, stats: dict[str, Any]) -> dict[str, Any]:
+    """Every baseline's prediction for each window in ``data.holdout_s``."""
     torch = _torch()
     states, actions = data.holdout_s, data.holdout_a
     start = states[:, HISTORY]
@@ -342,7 +410,10 @@ def _baselines(
     held: list[Any] = []
     carrying: list[Any] = []
     true_gate: list[Any] = []
-    hold_state = carry_state = oracle_state = start
+    falling: list[Any] = []
+    falling_true_gate: list[Any] = []
+    hold_state = carry_state = oracle_state = fall_state = fall_oracle_state = start
+    fall_previous = fall_oracle_previous = previous
     kinematics = stats["kinematics"]
 
     def carried(state: Any, action: Any, gate: Any) -> Any:
@@ -358,15 +429,37 @@ def _baselines(
         held.append(hold_state)
         carrying.append(carry_state)
         true_gate.append(oracle_state)
-    predictions = {
+        gate = _gate_of(fall_state)
+        moved_state = _with_cube_moved(
+            carried(fall_state, action, gate), fall_displacement(fall_state, fall_previous, gate)
+        )
+        fall_previous, fall_state = fall_state, moved_state
+        falling.append(fall_state)
+        gate = _gate_of(states[:, HISTORY + h])
+        moved_state = _with_cube_moved(
+            carried(fall_oracle_state, action, gate),
+            fall_displacement(fall_oracle_state, fall_oracle_previous, gate),
+        )
+        fall_oracle_previous, fall_oracle_state = fall_oracle_state, moved_state
+        falling_true_gate.append(fall_oracle_state)
+    return {
         "constant": start.unsqueeze(1).expand_as(truth),
         "linear": torch.stack([start + (start - previous) * (h + 1) for h in range(HORIZON)], 1),
         "nominal_hold": torch.stack(held, 1),
         "nominal_carry": torch.stack(carrying, 1),
         "nominal_carry_true_flag_diagnostic": torch.stack(true_gate, 1),
+        "nominal_carry_fall": torch.stack(falling, 1),
+        "nominal_carry_fall_true_flag_diagnostic": torch.stack(falling_true_gate, 1),
     }
+
+
+def _baselines(
+    data: _Data, stats: dict[str, Any], masks: dict[str, Any]
+) -> dict[str, dict[str, Any]]:
+    truth = data.holdout_s[:, HISTORY + 1 : HISTORY + 1 + HORIZON]
     return {
-        name: _metrics(value, truth, data.state_std, masks) for name, value in predictions.items()
+        name: _metrics(value, truth, data.state_std, masks)
+        for name, value in _baseline_predictions(data, stats).items()
     }
 
 
@@ -393,8 +486,21 @@ def _evaluate(
     }
 
 
-def _study(args: argparse.Namespace, machine: dict[str, Any]) -> dict[str, Any]:
+def phase_masks(holdout: Sequence[Any], count: int, device: str) -> dict[str, Any]:
+    """One boolean mask per window phase, checked against the number of holdout windows."""
     torch = _torch()
+    phases = [
+        phase for item in holdout for phase in episode_window_phases(item.states, HISTORY, HORIZON)
+    ]
+    if len(phases) != count:
+        raise ValueError("phase labels do not line up with the holdout windows")
+    return {
+        phase: torch.tensor([item == phase for item in phases], device=device)
+        for phase in WINDOW_PHASES
+    }
+
+
+def _study(args: argparse.Namespace, machine: dict[str, Any]) -> dict[str, Any]:
     episodes = load_train(args.manifest, Path())
     split: Callable[[Any], tuple[list[Any], list[Any]]] = split_holdout
     if args.holdout_family:
@@ -402,15 +508,7 @@ def _study(args: argparse.Namespace, machine: dict[str, Any]) -> dict[str, Any]:
     _, holdout = split(episodes)
     data = _Data(args.manifest, args.device, split)
     stats = {**_stats_of(data), "kinematics": _Kinematics(args.device)}
-    phases = [
-        phase for item in holdout for phase in episode_window_phases(item.states, HISTORY, HORIZON)
-    ]
-    if len(phases) != len(data.holdout_s):
-        raise ValueError("phase labels do not line up with the holdout windows")
-    masks = {
-        phase: torch.tensor([item == phase for item in phases], device=args.device)
-        for phase in WINDOW_PHASES
-    }
+    masks = phase_masks(holdout, len(data.holdout_s), args.device)
     cells: dict[str, dict[str, Any]] = {}
     for name in args.variants.split(","):
         variant = VARIANTS[name]

@@ -260,7 +260,9 @@ def _build_args(
 ) -> list[str]:
     plan = tmp_path / "plan.json"
     family = {"variant": "nominal", "partition": "train", "first_seed": 2012, "count": count}
-    plan.write_text(json.dumps({"families": [family]}), encoding="utf-8")
+    plan.write_text(
+        json.dumps({"dataset": "fabricated-set", "families": [family]}), encoding="utf-8"
+    )
     ledger = tmp_path / "runs.jsonl"
     ledger.write_text(json.dumps({"run_id": session, "status": "completed"}) + "\n", "utf-8")
     return [
