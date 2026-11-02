@@ -34,6 +34,8 @@ PLAN_SHA256 = "88c952ed4ee1ca91db359e5ff964a913f460e6cfc67ef6fdeee79e7a420453bf"
 AMENDMENT_PATH = Path("evals/M1-planner-scorer-amendment-1.json")
 AMENDMENT_SHA256 = "2025f7c2c701b3f44841f39dea908816e424def0fee08fb6f2272ada8e9fd81c"
 AMENDMENT_2_PATH = Path("evals/M1-planner-scorer-amendment-2.json")
+AMENDMENT_4_PATH = Path("evals/M1-planner-scorer-amendment-4.json")
+AMENDMENT_4_SHA256 = "dcff9acbf5997417da3f0e656614a0a87c7aed4360efd4a5a68476a8eaad8853"
 AMENDMENT_3_PATH = Path("evals/M1-planner-scorer-amendment-3.json")
 AMENDMENT_3_SHA256 = "4bf3c0e8f7630b5e36488e7cd9d97184b92192bca7c6041d472a6ff2e83bf729"
 EXTENSION_LAST = 70
@@ -118,6 +120,10 @@ def _state(packet: Packet) -> list[float]:
     return state_vector([{"stream": name, "value": value} for name, value in packet.items()])
 
 
+class NotReproducedError(ValueError):
+    """The recorded prefix did not reach the recorded state within M0's replay tolerance."""
+
+
 def run_chunk(
     env: Any,
     episode: EpisodeArrays,
@@ -133,7 +139,7 @@ def run_chunk(
     recorded = episode.states[step]
     gap = max(abs(a - b) for a, b in zip(reached[COMPARED], recorded[COMPARED], strict=True))
     if gap > REACHED_TOLERANCE or (reached[12] >= 0.5) != (recorded[12] >= 0.5):
-        raise ValueError(f"seed {episode.seed} step {step}: reached state differs by {gap}")
+        raise NotReproducedError(f"seed {episode.seed} step {step}: reached state differs by {gap}")
     states: list[list[float]] = [reached]
     for command in chunk:
         states.append(_state(env.step(list(command))))
@@ -156,6 +162,7 @@ def _branches(env: Any, extension: bool) -> dict[str, Any]:
     family = {entry["episode_id"]: entry["family"] for entry in entries}
     lower, upper = env.action_spec.lower, env.action_spec.upper
     results = []
+    excluded: list[dict[str, Any]] = []
     first, last = (STATES_PER_FAMILY, EXTENSION_LAST) if extension else (0, STATES_PER_FAMILY)
     for index, (name, step) in enumerate(select_states(entries, lengths, first, last)):
         episode = episodes[name]
@@ -164,8 +171,15 @@ def _branches(env: Any, extension: bool) -> dict[str, Any]:
         _, _, initial_state = _load_episode(paths[name])
         executed: list[dict[str, Any]] = []
         reached: list[float] = []
+        try:
+            first_states = run_chunk(env, episode, step, chunks[0], initial_state)
+        except NotReproducedError as exc:
+            excluded.append({"episode_id": name, "step": step, "reason": str(exc)})
+            continue
         for number, chunk in enumerate(chunks):
-            states = run_chunk(env, episode, step, chunk, initial_state)
+            states = (
+                first_states if number == 0 else run_chunk(env, episode, step, chunk, initial_state)
+            )
             reached = states[0]
             scaled = margins(states)
             executed.append(
@@ -198,6 +212,7 @@ def _branches(env: Any, extension: bool) -> dict[str, Any]:
         "states": len(results),
         "chunks": sum(len(item["chunks"]) for item in results),
         "violating_chunks": sum(c["violated"] for item in results for c in item["chunks"]),
+        "excluded_not_reproduced": excluded,
         "branches": results,
     }
 
@@ -213,6 +228,7 @@ def main(argv: list[str] | None = None) -> int:
             (AMENDMENT_PATH, AMENDMENT_SHA256),
             (AMENDMENT_2_PATH, AMENDMENT_2_SHA256),
             (AMENDMENT_3_PATH, AMENDMENT_3_SHA256),
+            (AMENDMENT_4_PATH, AMENDMENT_4_SHA256),
         ):
             actual = hashlib.sha256(path.read_bytes()).hexdigest()
             if actual != expected:
@@ -222,7 +238,12 @@ def main(argv: list[str] | None = None) -> int:
             purpose="WO-005: simulator branches on dev states, for ET-M1-2 and ET-M1-5",
             config={
                 "plan_sha256": PLAN_SHA256,
-                "amendments_sha256": [AMENDMENT_SHA256, AMENDMENT_2_SHA256, AMENDMENT_3_SHA256],
+                "amendments_sha256": [
+                    AMENDMENT_SHA256,
+                    AMENDMENT_2_SHA256,
+                    AMENDMENT_3_SHA256,
+                    AMENDMENT_4_SHA256,
+                ],
                 "extension": args.extension,
             },
             seeds={"chunks": 100},

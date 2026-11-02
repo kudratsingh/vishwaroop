@@ -120,6 +120,8 @@ def test_a_reached_state_that_differs_from_the_recording_is_refused() -> None:
     states = [_state([0.1, 0.0, 0.0125], 0.0)] * 5
     episode = EpisodeArrays(seed=8000, states=states, actions=[list(JOINTS)] * 4)
     assert len(run_chunk(_FakeEnv(), episode, 0, [list(JOINTS)] * 2, b"{}")) == 3
-    with pytest.raises(ValueError, match="differs"):
+    from vishwaroop.sim.branches import NotReproducedError
+
+    with pytest.raises(NotReproducedError, match="differs"):
         run_chunk(_FakeEnv(offset=0.002), episode, 0, [list(JOINTS)] * 2, b"{}")
     assert len(run_chunk(_FakeEnv(offset=0.0009), episode, 0, [list(JOINTS)] * 2, b"{}")) == 3
