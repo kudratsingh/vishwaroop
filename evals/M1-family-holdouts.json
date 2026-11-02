@@ -1,0 +1,43 @@
+{
+  "phase": "M1",
+  "work_order": "WO-004",
+  "decided_by": "owner, 2026-11-01: freeze how family-holdout results are used before the sweep; agent's choice of report-only over per-family thresholds",
+  "frozen_on": "2026-11-01",
+  "frozen_before": "any result for no-release, timeout or nominal held out; any free-fall result; any carry-beta result on a whole family",
+  "already_seen": "reports/WO-014-m1-cube-prediction-diagnosis.md: carry-contact-beta at 30 epochs, seeds 0 and 1, holding out noisy-actions, wrong-place, missed-grasp and early-release. Any threshold named now would be tuned to those results, which is why none is named.",
+  "use": "report_only",
+  "changes_a_threshold": false,
+  "exit_tests": {
+    "ET-M1-1": "unchanged and decided only by evals/M1-exit-tests.json and evals/M1-definitions.json on dev data. A family result cannot pass, fail, waive or retro-change it.",
+    "others": "A family result is not evidence for or against any exit test."
+  },
+  "data": "the train partition only; no dev or sealed data",
+  "metric": "each stream in its own units, against the lowest baseline at that horizon, with every nominal tested so far counted as a baseline",
+  "sweep": {
+    "families": [
+      "m0-scripted-early-release",
+      "m0-scripted-missed-grasp",
+      "m0-scripted-no-release",
+      "m0-scripted-noisy-actions",
+      "m0-scripted-nominal",
+      "m0-scripted-timeout",
+      "m0-scripted-wrong-place"
+    ],
+    "variant": "carry-contact-beta",
+    "seeds": [0, 1, 2],
+    "epochs": 30,
+    "must_report": "every family, joints and cube, at every horizon 1 to 10, with the worst seed, whatever the result"
+  },
+  "structure_decisions": {
+    "note": "These are the only decisions a family result may drive. They choose a model before any dev metric, using train data only.",
+    "contact": {
+      "comparison": "carry-contact-beta against carry-beta, holding out m0-scripted-missed-grasp, seeds 0, 1 and 2, 30 epochs",
+      "rule": "Pair by seed. One variant is better if its RMSE is lower on joint_position and on object_position at every horizon 1 to 10 on all three seeds. If carry-beta is better, it replaces carry-contact-beta. Otherwise carry-contact-beta stays, by WO-014's frozen rule."
+    },
+    "free_fall": {
+      "comparison": "the variant the contact rule keeps, with and without the free-fall term, holding out m0-scripted-early-release first, seeds 0, 1 and 2, 30 epochs",
+      "rule": "Adopt the term only if both hold. (a) Its object_position RMSE on that holdout is lower at every horizon 1 to 10 on all three seeds. (b) If (a) holds, the worst value on the seed holdout, at 30 epochs, taking the worst seed, horizon and required stream, falls by at most 2 points. Reaching 20% on the family is not required, because family results are report-only.",
+      "after_adoption": "Repeat the sweep with the adopted variant and report it the same way."
+    }
+  }
+}
