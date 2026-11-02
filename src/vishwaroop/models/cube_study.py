@@ -74,6 +74,7 @@ class Variant:
     contact: bool
     beta: float
     fall: bool = False
+    still: bool = False
 
 
 VARIANTS = {
@@ -86,6 +87,9 @@ VARIANTS = {
     "carry-beta": Variant(carry=True, contact=False, beta=0.5),
     "carry-beta-fall": Variant(carry=True, contact=False, beta=0.5, fall=True),
     "carry-contact-beta-fall": Variant(carry=True, contact=True, beta=0.5, fall=True),
+    "carry-contact-beta-fall-still": Variant(
+        carry=True, contact=True, beta=0.5, fall=True, still=True
+    ),
 }
 FROZEN_VARIANTS = ("hold", "hold-contact", "carry", "carry-contact", "carry-contact-beta")
 Z_90 = 1.6449
@@ -183,6 +187,18 @@ def fall_displacement(state: Any, previous: Any, gate: Any) -> Any:
     return (1.0 - gate) * airborne * torch.cat([last[..., :2], down], dim=-1)
 
 
+def hold_free_cube(prediction: Any, state: Any, gate: Any) -> Any:
+    """A cube that is neither held nor in the air stays exactly where it is (WO-005, owner).
+
+    Held means a gate of at least 0.5. Everything else the step predicted for the cube is dropped,
+    so in those states the cube matches the stays-put baseline step for step.
+    """
+    cube = state[..., CUBE_FIRST:CUBE_LAST]
+    airborne = cube[..., 2:] - REST_HEIGHT_M > AIRBORNE_MARGIN_M
+    free = ((gate < 0.5) & ~airborne).to(cube.dtype)
+    return _with_cube_moved(prediction, free * (cube - prediction[..., CUBE_FIRST:CUBE_LAST]))
+
+
 def _step(
     stats: dict[str, Any],
     variant: Variant,
@@ -208,6 +224,8 @@ def _step(
         prediction = _with_cube_moved(prediction, chosen * moved)
     if variant.fall:
         prediction = _with_cube_moved(prediction, fall_displacement(state, previous, chosen))
+    if variant.still:
+        prediction = hold_free_cube(prediction, state, chosen)
     return prediction, log_var.clamp(-10.0, 4.0)
 
 

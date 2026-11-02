@@ -1,0 +1,24 @@
+{
+  "phase": "M1",
+  "work_order": "WO-005, stage 0",
+  "decided_by": "owner, 2026-11-02, on accepting WO-004: (1) fit the interval scaling on a held-out calibration split, never on training data; keep ET-M1-3's frozen result as recorded; report calibrated coverage under the corrected method alongside it, for information only. (2) Before ET-M1-4's planner relies on the predictor, make sure it never does worse than 'cube stays put' when the cube is not held; gate the residual on contact or let the nominal model win, the agent's design call; show before and after on dev-grasp-offset.",
+  "frozen_on": "2026-11-02",
+  "frozen_before": "any result for the variant below, and any dev number under the split below",
+  "changes_a_threshold": false,
+  "exit_tests": "ET-M1-1 and ET-M1-3 stay exactly as recorded in reports/WO-004-m1-predictors-and-calibration.md. Nothing here passes, fails or changes them.",
+  "free_cube": {
+    "design": "Let the nominal model win. carry-contact-beta-fall-still: when the predicted grasp flag is below 0.5 and the cube is not more than 1 mm above its rest height, the cube's next position is its current one. Everything the step predicted for the cube is dropped, the residual and the carry alike. A held or airborne cube is predicted exactly as before.",
+    "why_not_contact_gating": "On dev, the learned cube was worse than stays-put in the resting and nudged phases, so keeping its residual where the gripper touches the cube would keep the part that did harm.",
+    "weights": "the WO-004 weights, unchanged and not retrained: runs/20261102T035805Z_ddb5d0d0 for the seed holdout and runs/20261102T041509Z_93dd348c for the families",
+    "check": "On train data: the seed holdout and each of the seven families held out, seeds 0, 1 and 2. In windows where the cube is never held (phases resting, moved_before_grasp and moved_after_grasp, each and pooled), the variant's cube RMSE, own units, is at most the stays-put baseline's at every horizon 1 to 10 on every seed. Whatever the result, it is reported, with the held phases and the overall reductions beside it.",
+    "dev_use": "information only, as the owner asked: before and after on m0-scripted-dev-grasp-offset by phase, and the whole dev set's reductions. No dev number changes the design above."
+  },
+  "calibration": {
+    "reading": "The recorded scales came from 26 train-partition episodes held out from fitting. They were not fitted on, but they are training-family data. The corrected method takes its calibration split from outside the train partition.",
+    "split": "the 210 dev episodes, in two folds: within each family, sorted by seed, alternating, first to fold A",
+    "method": "per seed, stream and horizon, the split-conformal 90% scale fitted on one fold and applied to the other, both ways; coverage per fold and over both",
+    "streams": ["joint_position", "object_position"],
+    "models": ["carry-contact-beta-fall, the recorded models", "carry-contact-beta-fall-still"],
+    "use": "information only, reported beside ET-M1-3's recorded result"
+  }
+}
