@@ -19,7 +19,7 @@
 1. **Coverage is on the floor, and calibrating made it worse.** The scales came from the 26 train-holdout episodes, where the intervals were too wide, so they shrank the intervals. Dev errors are larger, so calibrated joint coverage is 80.03% to 83.51%. Uncalibrated it would be 89.6% to 93.5%, closer to the 90% it claims. The frozen test uses calibrated coverage, so that is the result, and a 0.03-point margin is not a comfortable pass.
 2. **`dev-grasp-offset`'s cube misses 20% at horizon 1 and from horizon 5 on,** down to 3.2% at horizon 10 on the worst seed. It is report-only and does not change the verdict. It is also the family nearest a failed grasp, which is where ET-M1-4's planner will need the model most.
 3. **While a cube is resting or has just been pushed, the model is worse than a baseline on the cube.** A resting cube is 0.64 mm against 0.01 mm at horizon 10. The overall reduction comes from `held`, `release` and `grasp_onset`.
-4. **The Spearman pass leans on pooling joints.** Within single joints, pooled over horizons, it runs from 0.34 to 0.69, and four of six joints are under 0.5 on at least two seeds. Joints differ in scale, and pooling them raises the rank correlation. The frozen rule pools coordinates, so I applied it as frozen.
+4. **The Spearman pass leans on pooling joints.** Within single joints, pooled over horizons, it runs from 0.34 to 0.69, and four of six joints are under 0.5 on at least two seeds. Joints differ in scale, which probably raises the pooled rank correlation; I did not test that. The frozen rule pools coordinates, so I applied it as frozen.
 
 **Not done by this work order:** ET-M1-2, ET-M1-4 and ET-M1-5, which belong to WO-005. Phase M1 is still open.
 
@@ -169,7 +169,7 @@ A recurrent state-space model on state observations, 179,226 parameters, with ob
 | Calibrated coverage, range | 82.1% to 86.6% | 81.6% to 87.9% |
 | Uncalibrated coverage, range | 78.8% to 87.6% | 78.4% to 91.7% |
 
-It would clear ET-M1-1's threshold, and its worst value is higher than the ensemble's. Its rank would not clear ET-M1-3: 0.480 on the joints at horizon 1, seed 1. It is a single model per seed, so its uncertainty has no disagreement between members. Its nominal structure is the same as the ensemble's, which is probably much of why it does well.
+It would clear ET-M1-1's threshold, and its worst value is higher than the ensemble's. Its rank would not clear ET-M1-3: 0.480 on the joints at horizon 1, seed 1. It is a single model per seed, so its uncertainty has no disagreement between members. Its calibrated coverage is also further from the floor, 81.6% to 87.9%, and its `dev-grasp-offset` cube is less weak, 13.1% at horizon 10 against the ensemble's 3.2%. None of this changes which model was scored, because dev does not choose. Its nominal structure is the same as the ensemble's, which is probably much of why it does well.
 
 | Dev family | Stream | h1 | h2 | h3 | h4 | h5 | h6 | h7 | h8 | h9 | h10 |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -261,7 +261,7 @@ Frozen in `evals/M1-stage-b.json`, sha256 `41a64cb136bd683ba840aee6e7ddb5d2bb3cf
 
 ## 5. Failure analysis
 - **Where the model is weakest on dev.** `dev-grasp-offset`'s cube: 17.9% at horizon 1, 30.2% at horizon 2, then down to 3.2% at horizon 10. 43 of its 70 dev episodes ended with the cube never lifted, so the cube often stays down where a nearby trajectory would have carried it. I did not test that explanation.
-- **Where it is worse than a baseline.** `resting`, `moved_before_grasp` and `moved_after_grasp` on the cube at horizon 10, and `moved_before_grasp` on the joints. They are 62% of windows, so the overall pass does not mean every state is predicted better.
+- **Where it is worse than a baseline.** At horizon 10: `resting`, `moved_before_grasp` and `moved_after_grasp` on the cube, and `moved_before_grasp` on the joints. At horizon 1: `moved_before_grasp` on the cube, 0.44 against 0.34 mm. They are 62% of windows, so the overall pass does not mean every state is predicted better.
 - **Why coverage came out low.** Scales from 26 in-family episodes are below 1.645 at every joint horizon on all three seeds, so they narrow the interval. Dev is out of family, and errors are larger there. Scales from a family holdout might suit dev better. That is a hypothesis for later and was not tried, because any trial would use dev evidence.
 - **Out of family, on train.** See Stage A: `missed-grasp` held out is far below baselines. That is the M3 link above.
 
