@@ -32,6 +32,8 @@ PLAN_PATH = Path("evals/M1-planner-scorer.json")
 PLAN_SHA256 = "88c952ed4ee1ca91db359e5ff964a913f460e6cfc67ef6fdeee79e7a420453bf"
 AMENDMENT_PATH = Path("evals/M1-planner-scorer-amendment-1.json")
 AMENDMENT_SHA256 = "2025f7c2c701b3f44841f39dea908816e424def0fee08fb6f2272ada8e9fd81c"
+AMENDMENT_2_PATH = Path("evals/M1-planner-scorer-amendment-2.json")
+AMENDMENT_2_SHA256 = "eac5449dfb3aba44ed0a293f31821e5908b397910860cdaf1130ce19b5b6158b"
 DEV_MANIFESTS = (
     Path("artifacts/manifests/m0-dataset-v1.json"),
     Path("artifacts/manifests/m1-dev-topup-v1.json"),
@@ -44,7 +46,8 @@ OFFSETS_RAD = (0.05, 0.15)
 ARM_JOINTS = 5
 GRIPPER_OPEN_RAD = -0.3
 GRIPPER_CLOSED_RAD = -0.8
-REACHED_TOLERANCE = 1e-6
+REACHED_TOLERANCE = 0.001  # evals/M0-exit-tests.json, replay max_state_deviation
+COMPARED = slice(0, 12)  # joints, cube and target; the flag must match exactly
 
 
 def select_states(
@@ -119,8 +122,9 @@ def run_chunk(
     for action in episode.actions[:step]:
         packet = env.step(list(action))
     reached: list[float] = _state(packet)
-    gap = max(abs(a - b) for a, b in zip(reached, episode.states[step], strict=True))
-    if gap > REACHED_TOLERANCE:
+    recorded = episode.states[step]
+    gap = max(abs(a - b) for a, b in zip(reached[COMPARED], recorded[COMPARED], strict=True))
+    if gap > REACHED_TOLERANCE or (reached[12] >= 0.5) != (recorded[12] >= 0.5):
         raise ValueError(f"seed {episode.seed} step {step}: reached state differs by {gap}")
     states: list[list[float]] = [reached]
     for command in chunk:
@@ -163,8 +167,13 @@ def _branches(env: Any) -> dict[str, Any]:
                     "violated": violated(scaled),
                 }
             )
+        reached = executed[0]["states"][0]
         results.append(
             {
+                "reached_deviation": max(
+                    abs(a - b)
+                    for a, b in zip(reached[COMPARED], episode.states[step][COMPARED], strict=True)
+                ),
                 "episode_id": name,
                 "family": family[name],
                 "seed": episode.seed,
@@ -187,14 +196,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.parse_args(argv)
     try:
         require_code_root()
-        for path, expected in ((PLAN_PATH, PLAN_SHA256), (AMENDMENT_PATH, AMENDMENT_SHA256)):
+        for path, expected in (
+            (PLAN_PATH, PLAN_SHA256),
+            (AMENDMENT_PATH, AMENDMENT_SHA256),
+            (AMENDMENT_2_PATH, AMENDMENT_2_SHA256),
+        ):
             actual = hashlib.sha256(path.read_bytes()).hexdigest()
             if actual != expected:
                 raise ValueError(f"{path} has sha256 {actual}, not the frozen {expected}")
         env = ManiSkillPickCube()
         with ledgered_run(
             purpose="WO-005: simulator branches on dev states, for ET-M1-2 and ET-M1-5",
-            config={"plan_sha256": PLAN_SHA256, "amendment_sha256": AMENDMENT_SHA256},
+            config={
+                "plan_sha256": PLAN_SHA256,
+                "amendments_sha256": [AMENDMENT_SHA256, AMENDMENT_2_SHA256],
+            },
             seeds={"chunks": 100},
             env_lock={"stack": env.stack_identity()},
         ) as run:

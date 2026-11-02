@@ -118,4 +118,5 @@ def test_a_reached_state_that_differs_from_the_recording_is_refused() -> None:
     episode = EpisodeArrays(seed=8000, states=states, actions=[list(JOINTS)] * 4)
     assert len(run_chunk(_FakeEnv(), episode, 0, [list(JOINTS)] * 2, b"{}")) == 3
     with pytest.raises(ValueError, match="differs"):
-        run_chunk(_FakeEnv(offset=0.01), episode, 0, [list(JOINTS)] * 2, b"{}")
+        run_chunk(_FakeEnv(offset=0.002), episode, 0, [list(JOINTS)] * 2, b"{}")
+    assert len(run_chunk(_FakeEnv(offset=0.0009), episode, 0, [list(JOINTS)] * 2, b"{}")) == 3
