@@ -14,17 +14,19 @@
 
 All of it is **measured**, in simulation, and scored once. With WO-004 and WO-005, all five M1 exit tests now pass.
 
-**M1's primary result, as the owner asked, and corrected by this result.** The learned model matched the nominal model on planning success: 184 of 200 each, with the scripted controller at 183 (WO-005). On this deterministic simulated task, learned dynamics showed no planning advantage. M2 and M3 are where it must prove itself.
+**M1's primary result, as the owner asked, with one exception the data shows.** The learned model matched the nominal model on planning success: 184 of 200 each, with the scripted controller at 183 (WO-005). On this deterministic simulated task, learned dynamics showed no planning advantage. M2 and M3 are where it must prove itself.
 
-On constraint prediction, the measurements do not support "matched":
-- In WO-005, the two tied only on the chunks that test kept: 0.766 against 0.764.
-- In WO-005 on every chunk, the learned model led: 0.790 against 0.551.
-- Here, on fresh states, it leads clearly: 0.922 against 0.632 kept, 0.912 against 0.661 on every chunk.
+On constraint prediction, the learned model also matched the nominal, with one exception: chunks that change the gripper command. Split by chunk kind, on the fresh states, chunks kept:
 
-So the learned model predicts constraint violations better than the nominal, but not planning success. The owner is asked to confirm that wording (section 10).
+| Chunks | Kept | Violations | Learned AUROC | Nominal AUROC |
+|---|---|---|---|---|
+| Arm offset (0.05 and 0.15 rad) | 310 | 20 | 0.882 | 0.890 |
+| Gripper inverted | 191 | 26 | 0.944 | 0.405 |
+
+In WO-005, over every chunk, the same split gives 0.736 against 0.672 for arm offsets and 0.888 against 0.347 for the inverted gripper. The nominal model cannot predict a grasp or a release, so it cannot foresee a drop. The learned model can, and that is the whole of its pooled lead (0.922 against 0.632). Pooling across kinds also rewards telling the kinds apart, not only telling violating chunks from safe ones. Where the arm simply moves differently, learned dynamics add nothing measurable here.
 
 ## 2. Frozen method
-`evals/M1-et5-retest.json` was committed before the fresh episodes existed and before any branch of either set. Everything else is WO-005's unchanged: the model (plain A, WO-004 seed-0 ensemble), the four chunks per state, the branch protocol and its four amendments, the violation definition and score, AUROC with ties as half, the bootstrap over states, the 10-violation minimum and the rule.
+`evals/M1-et5-retest.json` was committed before the fresh episodes existed and before any branch of either set. Everything else is WO-005's unchanged, with one addition in the scorer. It also returns "not decidable" when the kept chunks lack a violating or a safe chunk, where AUROC is undefined. That did not apply: 46 of the 692 kept chunks violate. The scorer itself (`score_et5_retest.py`, at `e9aa100`) was written after both branch runs and before any score. It reuses WO-005's reviewed functions. The rest is unchanged: the model (plain A, WO-004 seed-0 ensemble), the four chunks per state, the branch protocol and its four amendments, the violation definition and score, AUROC with ties as half, the bootstrap over states, the 10-violation minimum and the rule.
 - **Calibration.** 116 states of the calibration split (block 9, seeds 9050 to 9089), branched into 464 chunks of all four kinds. Scales are split-conformal at 90%, per stream and horizon. The threshold is the 90th percentile of calibrated cube std at the last step: 34.78 mm.
 - **Evaluation.** 191 states from 210 fresh episodes (block 9, seeds 9300 to 9369, never simulated before), 764 chunks. 12 episodes were too short and 7 were excluded because their recording did not reproduce (0.0010 to 0.0059).
 
@@ -51,7 +53,7 @@ The registry exits 1 because 210 episodes do not claim M0's minimum. That is exp
 | Measure | WO-016, fresh states | WO-005 |
 |---|---|---|
 | States, chunks | 191, 764 | 201, 804 |
-| Violating chunks (knock / drop) | 49 (42 / 8) | 44 (37 / 13) |
+| Violating chunks (knock / drop) | 49 (42 / 8; one chunk is both) | 44 (37 / 13; some are both) |
 | Abstention | **9.4%** | 37.7% |
 | Violating chunks kept | 46 of 49 | 16 of 44 |
 | AUROC on chunks kept | **0.922** (0.887 to 0.952) | 0.766 |
@@ -66,6 +68,7 @@ The registry exits 1 because 210 episodes do not claim M0's minimum. That is exp
 ## 5. Failure analysis
 - **Different state samples, different AUROC.** The scorer is identical, but its AUROC on every chunk differs between WO-005's states and these fresh ones: 0.790 against 0.912. Part of the gain is the sample, not the calibration. Calibration changes only which chunks are kept.
 - **Abstained violations.** 3 of 49 violating chunks were abstained on.
+- **Abstention near 10% is close to guaranteed by construction.** The threshold is the calibration chunks' 90th percentile, and the evaluation chunks have the same kinds. Passing the cap mostly confirms there is no shift between the two sets.
 - **Repeatability.** 7 of 198 eligible states did not reproduce their recording within tolerance and were excluded, as in WO-005.
 
 ## 6. Cost and latency
@@ -92,7 +95,7 @@ None.
 - **The grasp flag.** The model and the planners read the simulator's grasp flag. The owner accepted it as a simulation-only input for M1, to be excluded from M2a onward.
 
 ## 10. Next bounded work order
-- **Owner, the headline.** Confirm the M1 headline as written in section 1 and in `docs/CONTEXT_AND_DECISIONS.md`. The planning result is recorded as instructed. The constraint-prediction result is recorded as measured, which differs from the instruction's "matched".
+- **Owner, the headline.** Confirm the M1 headline in section 1 and in `docs/CONTEXT_AND_DECISIONS.md`. Your "matched" holds for planning, and for constraint prediction except where the gripper command changes.
 - **WO-017.** The 30-minute Mac pilot for M2a's observation model, as instructed. No rental until it gives a number.
 - **Rollback.** Reverting this PR removes the retest code and evals. Runs and data stay.
 
