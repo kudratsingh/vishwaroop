@@ -78,6 +78,7 @@ class Variant:
     still: bool = False
     reach: bool = False
     onset_reach: bool = False
+    nominal_only: bool = False
 
 
 VARIANTS = {
@@ -98,6 +99,9 @@ VARIANTS = {
     ),
     "carry-contact-beta-fall-still-onset": Variant(
         carry=True, contact=True, beta=0.5, fall=True, still=True, onset_reach=True
+    ),
+    "nominal-still-reach": Variant(
+        carry=True, contact=True, beta=0.5, fall=True, still=True, reach=True, nominal_only=True
     ),
 }
 FROZEN_VARIANTS = ("hold", "hold-contact", "carry", "carry-contact", "carry-contact-beta")
@@ -253,6 +257,8 @@ def _step(
     if variant.contact:
         parts.append((state[..., CUBE_FIRST:CUBE_LAST] - tool) / CONTACT_SCALE_M)
     output = _ensemble_forward(layers, torch.cat(parts, dim=-1))
+    if variant.nominal_only:
+        output = torch.zeros_like(output)
     residual, log_var = output[..., :STATE_SIZE], output[..., STATE_SIZE:]
     prediction = _nominal(stats, state, action) + residual * stats["delta_std"]
     chosen = _gate_of(state) if gate is None else gate
