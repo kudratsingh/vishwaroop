@@ -125,3 +125,36 @@ def test_torch_worse_windows_counts_only_never_held_ones_beyond_stays_put() -> N
         "worse_at_last_horizon": 1,
         "of_which_began_within_reach": 1,
     }
+
+
+def _predicted(torch: object, tool_gap: float, flag: float) -> tuple[object, object]:
+    """A prediction whose cube sits ``tool_gap`` from the predicted tool point."""
+    from vishwaroop.models.cube_study import _Kinematics
+
+    kinematics = _Kinematics("cpu")
+    prediction = torch.zeros(1, 13)  # type: ignore[attr-defined]
+    prediction[0, :6] = torch.tensor([0.0, 0.4, 0.2, 1.0, 1.57, -0.8])  # type: ignore[attr-defined]
+    tool = kinematics(prediction[:, :6])
+    prediction[0, 6:9] = tool[0] + torch.tensor([tool_gap, 0.0, 0.0])  # type: ignore[attr-defined]
+    prediction[0, 12] = flag
+    return prediction, kinematics
+
+
+def test_torch_a_grasp_may_start_only_within_reach() -> None:
+    torch = pytest.importorskip("torch")
+    from vishwaroop.models.cube_study import GRASP_REACH_M, grasp_starts_within_reach
+
+    free = torch.zeros(1, 1)
+    far, kinematics = _predicted(torch, GRASP_REACH_M + 0.002, 0.9)
+    assert grasp_starts_within_reach(far, free, kinematics)[0, 12].item() == 0.0
+    near, _ = _predicted(torch, GRASP_REACH_M - 0.002, 0.9)
+    assert grasp_starts_within_reach(near, free, kinematics)[0, 12].item() == pytest.approx(0.9)
+
+
+def test_torch_a_held_cube_stays_held_beyond_reach() -> None:
+    torch = pytest.importorskip("torch")
+    from vishwaroop.models.cube_study import GRASP_REACH_M, grasp_starts_within_reach
+
+    far, kinematics = _predicted(torch, GRASP_REACH_M + 0.01, 0.9)
+    kept = grasp_starts_within_reach(far, torch.ones(1, 1), kinematics)
+    assert torch.equal(kept, far)

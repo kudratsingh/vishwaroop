@@ -1,0 +1,20 @@
+{
+  "dataset": "m1-confirmation-v1",
+  "protocol_version": "m0-protocol-2",
+  "note": "Fresh confirmation data for one predictor decision (evals/M1-refinement-accept.json), owner, 2026-11-02. Seed blocks no run has simulated: block 4 for the train families (block 3 was used by WO-012's pilot) and block 9 for the dev families. No model is trained on any of it, and it is scored once. Outcomes come only from the frozen rubric.",
+  "replay_sample_per_family": 3,
+  "min_free_disk_gb": 5,
+  "max_seconds_per_run": 1800,
+  "families": [
+    {"variant": "nominal", "partition": "train", "first_seed": 4000, "count": 15},
+    {"variant": "missed-grasp", "partition": "train", "first_seed": 4000, "count": 15},
+    {"variant": "no-release", "partition": "train", "first_seed": 4000, "count": 15},
+    {"variant": "wrong-place", "partition": "train", "first_seed": 4000, "count": 15},
+    {"variant": "noisy-actions", "partition": "train", "first_seed": 4000, "count": 15},
+    {"variant": "early-release", "partition": "train", "first_seed": 4000, "count": 15},
+    {"variant": "timeout", "partition": "train", "first_seed": 4000, "count": 15},
+    {"variant": "dev-grasp-offset", "partition": "dev", "first_seed": 9000, "count": 50},
+    {"variant": "dev-place-offset", "partition": "dev", "first_seed": 9000, "count": 25},
+    {"variant": "dev-noisy-actions", "partition": "dev", "first_seed": 9000, "count": 25}
+  ]
+}

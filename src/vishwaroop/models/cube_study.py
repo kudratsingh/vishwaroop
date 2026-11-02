@@ -77,6 +77,7 @@ class Variant:
     fall: bool = False
     still: bool = False
     reach: bool = False
+    onset_reach: bool = False
 
 
 VARIANTS = {
@@ -94,6 +95,9 @@ VARIANTS = {
     ),
     "carry-contact-beta-fall-still-reach": Variant(
         carry=True, contact=True, beta=0.5, fall=True, still=True, reach=True
+    ),
+    "carry-contact-beta-fall-still-onset": Variant(
+        carry=True, contact=True, beta=0.5, fall=True, still=True, onset_reach=True
     ),
 }
 FROZEN_VARIANTS = ("hold", "hold-contact", "carry", "carry-contact", "carry-contact-beta")
@@ -198,6 +202,28 @@ def within_reach(gate: Any, state: Any, tool: Any) -> Any:
     return gate * (distance <= GRASP_REACH_M).to(gate.dtype)
 
 
+def grasp_starts_within_reach(prediction: Any, gate: Any, kinematics: Any) -> Any:
+    """A grasp may start only within reach; once started, it holds at any distance.
+
+    Where the cube is not held now and the step predicts it held next, but the predicted tool
+    point is beyond reach, the predicted flag is set to 0, so the next step treats the cube as
+    free. Dev-informed (WO-005, owner, 2026-11-02).
+    """
+    torch = _torch()
+    flag = prediction[..., FLAG_FIRST:FLAG_LAST]
+    tool = kinematics(prediction[..., :JOINTS])
+    far = (prediction[..., CUBE_FIRST:CUBE_LAST] - tool).norm(dim=-1, keepdim=True) > GRASP_REACH_M
+    refused = (gate < 0.5) & (flag >= 0.5) & far
+    return torch.cat(
+        [
+            prediction[..., :FLAG_FIRST],
+            torch.where(refused, torch.zeros_like(flag), flag),
+            prediction[..., FLAG_LAST:],
+        ],
+        dim=-1,
+    )
+
+
 def hold_free_cube(prediction: Any, state: Any, gate: Any) -> Any:
     """A cube that is neither held nor in the air stays exactly where it is (WO-005, owner).
 
@@ -239,6 +265,8 @@ def _step(
         prediction = _with_cube_moved(prediction, fall_displacement(state, previous, chosen))
     if variant.still:
         prediction = hold_free_cube(prediction, state, chosen)
+    if variant.onset_reach:
+        prediction = grasp_starts_within_reach(prediction, chosen, stats["kinematics"])
     return prediction, log_var.clamp(-10.0, 4.0)
 
 

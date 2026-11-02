@@ -1,0 +1,21 @@
+{
+  "phase": "M1",
+  "work_order": "WO-005, stage 0",
+  "decided_by": "owner, 2026-11-02: adopt design A (a grasp counted only within 15 mm), with the strict stays-put miss recorded as a known gap; the strict requirement is withdrawn and the criterion is 'not materially worse in absolute terms'. Build the refinement, labelled dev-informed. Generate a fresh confirmation set from seed blocks never simulated. Freeze the accept rule before running: the refinement is kept only if held-cube error improves and free-cube error does not get worse, at every horizon on all seeds. Score it once. If it fails, keep plain A.",
+  "frozen_on": "2026-11-02",
+  "frozen_before": "the confirmation set exists; any result for the refinement",
+  "changes_a_threshold": false,
+  "plain_a": "carry-contact-beta-fall-still-reach",
+  "refinement": {
+    "variant": "carry-contact-beta-fall-still-onset",
+    "label": "dev-informed: the loss on held cubes it addresses was seen on dev (runs/20261102T085542Z_4764e650)",
+    "rule": "The reach check applies only when a grasp starts. Where the cube is not held now and the step predicts it held next with the predicted tool point beyond 15 mm, the predicted flag is set to 0, so the next step treats the cube as free. A cube already held stays held at any distance. The flag is rewritten because otherwise the next step would read the raw flag as held and never apply the check."
+  },
+  "weights": "the WO-004 models, unchanged: runs/20261102T035805Z_ddb5d0d0, seeds 0, 1 and 2",
+  "data": "evals/M1-confirmation-plan.json, all 205 episodes pooled; nothing trained on it",
+  "metric": "cube RMSE, own units, per coordinate, at each horizon 1 to 10, on held windows (phase held) and on free windows (phases resting, moved_before_grasp and moved_after_grasp, pooled)",
+  "accept_rule": "Keep the refinement only if, on every seed: (a) its held-cube RMSE is lower than plain A's at every horizon, and (b) its free-cube RMSE is not higher than plain A's at any horizon. Otherwise keep plain A.",
+  "ties": "The agent's reading, made before any result: if at some horizon the two give the same held-cube RMSE within 1 nm, which happens when neither design changes a held prediction there, that horizon is not an improvement and (a) fails. 'Not higher' in (b) allows a difference up to 1 nm, as float rounding.",
+  "also_reported": "both designs and the stays-put baseline by phase, per seed, for the whole set and for each family group, and the WO-004 model beside them; the known gap of plain A in millimetres on this fresh data",
+  "scored_once": "src/vishwaroop/models/m1_confirm.py refuses a second run once a result exists"
+}
