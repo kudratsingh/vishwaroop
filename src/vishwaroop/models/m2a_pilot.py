@@ -1,6 +1,8 @@
 """M2a observation-model pilot on the Mac: does training at the target resolution fit here? (WO-017)
 
-    python -m vishwaroop.models.m2a_pilot
+    python -m vishwaroop.models.m2a_pilot                                  # WO-017, the Mac
+    python -m vishwaroop.models.m2a_pilot --save-frames frames.pt           # WO-018, on the Mac
+    python -m vishwaroop.models.m2a_pilot --frames frames.pt --device cuda  # WO-018, on the GPU
 
 Run it from the repository root, in the robotics environment. It renders real simulator frames
 from scripted episodes on train seeds 6000 to 6019 (block 6, never simulated), then trains a
@@ -19,6 +21,7 @@ import math
 import statistics
 import sys
 import time
+from pathlib import Path
 from typing import Any
 
 from ..sim.baseline import ScriptedPickPlace
@@ -105,8 +108,13 @@ class Tokenizer:
         return patches.permute(0, 3, 1, 4, 2, 5).reshape(batch, 3, RESOLUTION, RESOLUTION)
 
 
-def train(frames: Any, device: str, seconds: float) -> dict[str, Any]:
-    """Train for a fixed wall-clock budget and measure throughput and loss."""
+def train(
+    frames: Any, device: str, seconds: float, batch_size: int = BATCH, bf16: bool = False
+) -> dict[str, Any]:
+    """Train for a fixed wall-clock budget and measure throughput and loss.
+
+    ``bf16`` runs the forward pass under bfloat16 autocast, as a GPU run would in practice.
+    """
     torch = _torch()
     torch.manual_seed(0)
     model = Tokenizer(device)
@@ -120,10 +128,12 @@ def train(frames: Any, device: str, seconds: float) -> dict[str, Any]:
     step_times: list[float] = []
     started = time.perf_counter()
     while time.perf_counter() - started < seconds:
-        index = torch.randint(0, count, (BATCH,))
+        index = torch.randint(0, count, (batch_size,))
         batch = frames[index].to(device).float() / 255.0
         mark = time.perf_counter()
-        loss = torch.nn.functional.mse_loss(model(batch), batch)
+        with torch.autocast(device_type=device, dtype=torch.bfloat16, enabled=bf16):
+            output = model(batch)
+        loss = torch.nn.functional.mse_loss(output.float(), batch)
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
         optimizer.step()
@@ -132,13 +142,15 @@ def train(frames: Any, device: str, seconds: float) -> dict[str, Any]:
             losses.append((time.perf_counter() - started, float(loss.item())))
             peak()
         step_times.append(time.perf_counter() - mark)
-        images += BATCH
+        images += batch_size
         steps += 1
     _sync(device)
     elapsed = time.perf_counter() - started
     settled = step_times[len(step_times) // 10 :]
-    per_second = BATCH / statistics.median(settled)
+    per_second = batch_size / statistics.median(settled)
     return {
+        "batch": batch_size,
+        "bf16": bf16,
         "parameters": sum(int(item.numel()) for item in parameters),
         "steps": steps,
         "images": images,
@@ -163,30 +175,93 @@ def extrapolate(images_per_second: float) -> dict[str, Any]:
     }
 
 
+def _device_identity(device: str) -> dict[str, Any]:
+    torch = _torch()
+    if device == "cuda":
+        properties = torch.cuda.get_device_properties(0)
+        return {
+            "name": properties.name,
+            "memory_bytes": int(properties.total_memory),
+            "cuda": torch.version.cuda,
+            "torch": torch.__version__,
+        }
+    return {"name": device, "torch": torch.__version__}
+
+
+def load_frames(path: Path, expected_sha256: str | None) -> Any:
+    """Frames saved by ``--save-frames``, checked against their hash when one is given."""
+    import hashlib
+
+    torch = _torch()
+    raw = path.read_bytes()
+    actual = hashlib.sha256(raw).hexdigest()
+    if expected_sha256 is not None and actual != expected_sha256:
+        raise ValueError(f"{path} has sha256 {actual}, not {expected_sha256}")
+    frames = torch.load(path, weights_only=True)
+    if frames.dtype != torch.uint8 or tuple(frames.shape[1:]) != (3, RESOLUTION, RESOLUTION):
+        raise ValueError(f"{path} does not hold uint8 frames of 3 x {RESOLUTION} x {RESOLUTION}")
+    return frames
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--device", choices=("mps", "cpu"), default="mps")
+    parser.add_argument("--device", choices=("mps", "cpu", "cuda"), default="mps")
+    parser.add_argument("--seconds", type=float, default=TRAIN_SECONDS)
+    parser.add_argument("--batch", type=int, default=BATCH)
+    parser.add_argument("--bf16", action="store_true")
+    parser.add_argument("--save-frames", type=Path, default=None)
+    parser.add_argument("--frames", type=Path, default=None)
+    parser.add_argument("--frames-sha256", default=None)
     args = parser.parse_args(argv)
+    if args.seconds > TRAIN_SECONDS:
+        print(
+            f"refused: at most {TRAIN_SECONDS} s, so a run stays under 30 minutes", file=sys.stderr
+        )
+        return 2
     try:
         require_code_root()
-        machine = _machine()
-        env = ManiSkillPickCube(render=True)
+        machine = _machine() if args.device != "cuda" else {"host": "gpu vm"}
+        env = None if args.frames else ManiSkillPickCube(render=True)
         with ledgered_run(
-            purpose="WO-017: M2a observation-model pilot on the Mac, a measurement for an estimate",
-            config={"resolution": RESOLUTION, "batch": BATCH, "train_seconds": TRAIN_SECONDS},
+            purpose="M2a observation-model pilot, a measurement for an estimate (WO-017, WO-018)",
+            config={
+                "resolution": RESOLUTION,
+                "batch": args.batch,
+                "train_seconds": args.seconds,
+                "bf16": args.bf16,
+                "device": args.device,
+                "frames": str(args.frames) if args.frames else None,
+            },
             seeds={"torch": 0, "first_episode": SEEDS.start},
-            env_lock={"machine": machine, "stack": env.stack_identity()},
+            env_lock={
+                "machine": machine,
+                "device": _device_identity(args.device),
+                **({"stack": env.stack_identity()} if env else {}),
+            },
         ) as run:
             if run.dirty:
                 raise ValueError("commit first, so the code note stays true")
-            frames, rendering = render_frames(env, SEEDS, RENDER_LIMIT_SECONDS)
-            print(f"rendered {len(frames)} frames", file=sys.stderr, flush=True)
-            training = train(frames, args.device, TRAIN_SECONDS)
+            if args.frames:
+                frames = load_frames(args.frames, args.frames_sha256)
+                rendering: dict[str, Any] = {"loaded_from": str(args.frames), "frames": len(frames)}
+            else:
+                frames, rendering = render_frames(env, SEEDS, RENDER_LIMIT_SECONDS)
+            print(f"{len(frames)} frames", file=sys.stderr, flush=True)
+            if args.save_frames:
+                _torch().save(frames, args.save_frames)
+                import hashlib
+
+                rendering["saved_to"] = str(args.save_frames)
+                rendering["saved_sha256"] = hashlib.sha256(
+                    args.save_frames.read_bytes()
+                ).hexdigest()
+            training = train(frames, args.device, args.seconds, args.batch, args.bf16)
             report = {
                 "run": run.directory.name,
                 "code": run.code_note,
                 "machine": machine,
                 "device": args.device,
+                "device_identity": _device_identity(args.device),
                 "rendering": rendering,
                 "training": training,
                 "extrapolation": extrapolate(training["images_per_second_median_step"]),

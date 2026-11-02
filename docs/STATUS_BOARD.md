@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-02 12:55 UTC · ledger records: 116
+Generated: 2026-11-02 13:08 UTC · ledger records: 118
 
 ## Phases
 
@@ -10,7 +10,7 @@ Generated: 2026-11-02 12:55 UTC · ledger records: 116
 |---|---|---|---|---|---|
 | M0 | Grounded development environment | **passed** | 6 / 6 / 6 | — | WO-001, WO-002, WO-003, WO-007, WO-008, WO-009, WO-010, WO-011 |
 | M1 | Compact predictor, latent planner, action-chunk scorer | **passed** | 5 / 5 / 5 | M0 | WO-004, WO-005, WO-006, WO-012, WO-013, WO-014, WO-015, WO-016 |
-| M2a | Closed-loop policy evaluator (simulation) | **not_started** | 0 / 0 / 5 | M1 | WO-017 |
+| M2a | Closed-loop policy evaluator (simulation) | **not_started** | 0 / 0 / 5 | M1 | WO-017, WO-018 |
 | M2b | Real-arm evaluator validation | **not_started** | 0 / 0 / 4 | M2a | — |
 | M3 | Synthetic-data engine (SFT route) | **not_started** | 0 / 0 / 5 | M0 | — |
 | M4 | Drone dynamics adaptation (offline and shadow only) | **not_started** | 0 / 0 / 4 | M1 | — |
@@ -80,4 +80,5 @@ Generated: 2026-11-02 12:55 UTC · ledger records: 116
 | WO-015 | Bump the ironclad pin to v1.2.0 | M1 | **accepted** | 2026-11-01T23:09:05.286326Z | reports/WO-015-ironclad-v1.2.0.md |
 | WO-016 | Retest ET-M1-5 with a calibration split that includes perturbed chunks | M1 | **accepted** | 2026-11-02T12:22:18.309434Z | reports/WO-016-m1-et5-retest.md |
 | WO-017 | M2a observation model: a 30-minute Mac pilot to check the GPU estimate | M2a | **accepted** | 2026-11-02T12:55:18.599343Z | reports/WO-017-m2a-mac-pilot.md |
+| WO-018 | M2a: a GPU pilot to measure the speedup over the Mac, then one full run if it fits | M2a | **ready** | 2026-11-02T13:08:19.541210Z | — |
 
