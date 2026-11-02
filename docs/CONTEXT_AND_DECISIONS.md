@@ -65,3 +65,17 @@ What an agent needs from the planning conversations (Sept–Oct 2026) to make th
 | Reference kit: `WO-002` numbering used twice (budget and D1 in the drone kit) | Renumbered; numbering is global and never reused |
 | Reference kit CLAUDE.md held the whole policy and was identical across projects including world-model-only rules | Policy moved to `AGENTS.md` with a shared core and a project addendum; `CLAUDE.md` is a pointer |
 | Reference kit README implied evidence could be added by editing an episode manifest | Append-only validation ledger added to the contract; manifests are write-once |
+
+## 7. M1 results and owner decisions (2026-11-02)
+
+**M1's primary result.** The learned dynamics model matched the nominal model on planning success. On m1-suite-1 (200 seeds, same seeds per planner), learned-model MPC and nominal-model MPC each succeeded 184 times, and the scripted controller 183 (`reports/WO-005-m1-planner-and-chunk-scorer.md`). Owner's interpretation: learned dynamics show no advantage on this deterministic simulated task. M2 and M3 are where it must prove itself.
+
+On constraint prediction, the measurements differ from "matched", so they are recorded as measured, for the owner to confirm:
+- **WO-005.** Equal only on the chunks its test kept (AUROC 0.766 against 0.764). The learned model led on every chunk (0.790 against 0.551).
+- **WO-016, fresh states.** The learned model led clearly (0.922 against 0.632 on chunks kept) (`reports/WO-016-m1-et5-retest.md`).
+
+**Owner decisions recorded, 2026-11-02:**
+- **Grasp flag.** `object_grasped` (declared `reference_only`) is accepted as a simulation-only input for M1's predictor and planners, and excluded from M2a onward. Disclosure in the WO-004 and WO-005 reports is sufficient, with no redo.
+- **ET-M1-5.** Retested under option (b) in WO-016, with the 20% abstention cap kept. It passed. Had it failed, M1 would have closed with the negative recorded.
+- **Real time, before M4's shadow mode.** The M1 planner takes about 100 ms per decision against a 50 ms control period (WO-005). This must be closed before M4's shadow mode. No work now.
+- **M2a GPU.** A 30-minute Mac pilot confirms the estimate in WO-005's plan first. No rental until that pilot gives a number.
