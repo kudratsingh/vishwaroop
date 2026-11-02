@@ -105,3 +105,4 @@
 {"note":"learned: 7 of 8 succeeded","record_id":"runs-20261102T094106248747Z-48df3828","run_dir":"runs/20261102T093827Z_427f7114","run_id":"20261102T093827Z_427f7114","status":"completed","ts":"2026-11-02T09:41:06.248788Z"}
 {"purpose":"WO-005: tuning, nominal","record_id":"runs-20261102T094108548237Z-04e3605e","run_dir":"runs/20261102T094108Z_8a03e26b","run_id":"20261102T094108Z_8a03e26b","status":"started","ts":"2026-11-02T09:41:08.548295Z"}
 {"note":"nominal: 7 of 8 succeeded","record_id":"runs-20261102T094326494128Z-137070ef","run_dir":"runs/20261102T094108Z_8a03e26b","run_id":"20261102T094108Z_8a03e26b","status":"completed","ts":"2026-11-02T09:43:26.494185Z"}
+{"purpose":"WO-005: m1-suite-1, ET-M1-4, learned","record_id":"runs-20261102T094328901140Z-3596ca74","run_dir":"runs/20261102T094328Z_ea6e1a6d","run_id":"20261102T094328Z_ea6e1a6d","status":"started","ts":"2026-11-02T09:43:28.901209Z"}
