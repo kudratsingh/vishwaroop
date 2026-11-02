@@ -37,6 +37,7 @@ The next action is WO-001's simulator steps. Merge on green checks, with a full 
 3. Outcome code, export, replay and negative tests are done, and tested on a fabricated fake.
 4. The simulator runs on the Mac with MoltenVK (`docs/ENVIRONMENT.md §4`). The real episodes, replay and negative tests are done: `reports/WO-001-m0-grounded-environment.md`.
 5. WO-002's dataset is done: `reports/WO-002-m0-dataset-successes-and-failures.md`. `reports/WO-012-m1-compute-split.md` found that no M1 exit test needs a GPU.
-6. WO-004's predictors are done: `reports/WO-004-m1-predictors-and-calibration.md`, ET-M1-1 and ET-M1-3 passed on dev, in simulation. Next is WO-005, planner and action-chunk scorer, for the rest of M1.
+6. WO-004's predictors are done: `reports/WO-004-m1-predictors-and-calibration.md`, ET-M1-1 and ET-M1-3 passed on dev, in simulation. Next was WO-005, planner and action-chunk scorer, for the rest of M1.
+7. WO-005 is done: `reports/WO-005-m1-planner-and-chunk-scorer.md`. ET-M1-2 and ET-M1-4 passed and ET-M1-5 failed, on its abstention cap, so M1 is not passed. The next step is the owner's decision on ET-M1-5.
 
 The first-session prompt the owner pastes into a fresh agent is `prompts/FIRST_SESSION.md`.

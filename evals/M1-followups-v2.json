@@ -1,0 +1,19 @@
+{
+  "phase": "M1",
+  "work_order": "WO-005, stage 0, second design",
+  "adds_to": "evals/M1-followups.json, which stays as frozen",
+  "frozen_on": "2026-11-02",
+  "frozen_before": "any result for the variant below",
+  "changes_a_threshold": false,
+  "already_seen": "The first design, carry-contact-beta-fall-still, failed its frozen check (runs/20261102T085011Z_27167da9): it was worse than stays-put in the resting or moved_before_grasp phase on every train holdout. A diagnosis on train data only found two causes. In-family, a few windows where the gripper is 6 to 8 mm from the cube and the model predicts the grasp a step or two early. Out of family (missed-grasp held out), grasps predicted with the gripper a median 41 mm from the cube, all of the excess there. That run's dev numbers, information only, were also seen.",
+  "free_cube": {
+    "design": "carry-contact-beta-fall-still-reach: the first design, and a grasp counts only within reach. The predicted flag gates carrying, falling and staying put only when the tool point is within 15 mm of the cube; beyond that the cube is treated as not held.",
+    "reach": "15 mm. On all 260 train episodes the tool point is at most 11.83 mm from the cube while the true flag is on, and at most 6.89 mm one step before it turns on.",
+    "limit_stated_before_the_result": "A grasp predicted a step early with the gripper beside the cube still moves a cube that stays put in truth. Removing that would mean never predicting a grasp, which the planner needs, so this design keeps it.",
+    "weights": "unchanged, as in the first design",
+    "check": "the first design's check, unchanged",
+    "also_reported": "for each holdout, the windows worse than stays-put at horizon 10 in never-held phases, how many, and how many began with the gripper within reach",
+    "dev_use": "information only, as the owner asked: before and after on m0-scripted-dev-grasp-offset by phase, and the whole dev set's reductions"
+  },
+  "calibration": "reported once, under evals/M1-followups.json; also computed here for this variant, information only"
+}

@@ -1,0 +1,9 @@
+{
+  "amends": "evals/M1-planner-scorer-amendment-1.json, its 1e-6 check on the reached state",
+  "frozen_on": "2026-11-02",
+  "frozen_before": "any branch, scorer or planner result. The second attempt stopped at seed 8007, step 115, and wrote nothing.",
+  "changes_a_threshold": false,
+  "why": "1e-6 was the agent's own number, stricter than M0's frozen replay tolerance. The reached state at seed 8007, step 115 differs from the recording by 2.46e-5.",
+  "check_now": "The reached state must be within M0's frozen replay tolerance (evals/M0-exit-tests.json: largest absolute deviation at most 0.001 on joint_position in rad and on object_position and target_position in m), with the same grasp flag. The largest deviation for each state is reported.",
+  "everything_else": "unchanged"
+}

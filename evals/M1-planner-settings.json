@@ -1,0 +1,29 @@
+{
+  "phase": "M1",
+  "work_order": "WO-005",
+  "frozen_on": "2026-11-02",
+  "frozen_before": "any m1-suite-1 episode (seeds 9100 to 9299)",
+  "changes_a_threshold": false,
+  "tuning_done": "Scratch runs, not ledgered, on train seeds 5000 to 5007 only: the defaults below with one code fix, that the planner rises only after it has carried the cube, because seed 5000's cube started on the target. Nominal planner 7 of 8, learned planner without the penalty 8 of 8. The ledgered run on the same seeds records the frozen settings. No setting was searched.",
+  "matched_budget": "both model-based planners: these settings, one CEM decision per control step, horizon 10, at most 200 steps",
+  "uncertainty_penalty": "learned planner only: uncertainty_weight times the calibrated cube std (calibration split scales) summed over the horizon; the nominal model has no spread",
+  "settings": {
+    "samples": 256,
+    "iterations": 5,
+    "elite_fraction": 0.125,
+    "arm_spread_rad": 0.08,
+    "gripper_spread_rad": 0.2,
+    "approach_height_m": 0.05,
+    "carry_height_m": 0.05,
+    "aligned_xy_m": 0.008,
+    "grasp_height_m": 0.012,
+    "at_cube_m": 0.012,
+    "open_rad": -0.3,
+    "closed_rad": -0.8,
+    "gripper_weight": 0.02,
+    "roll_weight": 0.01,
+    "flag_weight": 0.05,
+    "smooth_weight": 0.01,
+    "uncertainty_weight": 1.0
+  }
+}

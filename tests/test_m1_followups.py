@@ -1,0 +1,160 @@
+"""The free-cube rule and the dev calibration split. All data here is FABRICATED."""
+
+from __future__ import annotations
+
+import hashlib
+from pathlib import Path
+
+import pytest
+
+from vishwaroop.models.cube_study import VARIANTS
+from vishwaroop.models.m1_followups import (
+    DESIGNS,
+    PLAN_PATH,
+    PLAN_SHA256,
+    check_not_run,
+    check_plan,
+    folds,
+    never_worse,
+)
+from vishwaroop.models.pilot_data import EpisodeArrays
+
+
+def test_the_frozen_follow_up_plans_are_the_ones_the_code_requires(root: Path) -> None:
+    plan = check_plan(root / PLAN_PATH)
+    assert plan["changes_a_threshold"] is False
+    assert hashlib.sha256((root / PLAN_PATH).read_bytes()).hexdigest() == PLAN_SHA256
+    for path, digest, _, variant in DESIGNS.values():
+        assert check_plan(root / path, digest)["changes_a_threshold"] is False
+        assert variant in VARIANTS
+
+
+def test_a_second_run_is_refused(tmp_path: Path) -> None:
+    check_not_run(tmp_path)
+    (tmp_path / "x").mkdir()
+    (tmp_path / "x" / "m1_followups.json.partial").write_text("{}", encoding="utf-8")
+    with pytest.raises(ValueError, match="already run"):
+        check_not_run(tmp_path)
+
+
+def _episode(family: str, seed: int) -> EpisodeArrays:
+    return EpisodeArrays(seed=seed, states=[], actions=[], family=family)
+
+
+def test_folds_alternate_by_seed_within_each_family() -> None:
+    episodes = [_episode("b", 5), _episode("a", 9), _episode("a", 3), _episode("b", 1)]
+    assert folds(episodes) == [1, 1, 0, 0]
+
+
+def test_never_worse_allows_equal_and_refuses_one_horizon_above() -> None:
+    assert never_worse([1.0, 2.0], [1.0, 2.0])
+    assert not never_worse([1.0, 2.0001], [1.0, 2.0])
+    with pytest.raises(ValueError, match="horizons"):
+        never_worse([1.0], [1.0, 2.0])
+
+
+def _state(torch: object, height: float, flag: float) -> object:
+    state = torch.zeros(1, 13)  # type: ignore[attr-defined]
+    state[0, 6:9] = torch.tensor([0.1, 0.1, 0.0125 + height])  # type: ignore[attr-defined]
+    state[0, 12] = flag
+    return state
+
+
+def test_torch_a_free_cube_on_the_table_stays_exactly_put() -> None:
+    torch = pytest.importorskip("torch")
+    from vishwaroop.models.cube_study import hold_free_cube
+
+    state = _state(torch, 0.0, 0.0)
+    prediction = state.clone()
+    prediction[0, 6:9] += torch.tensor([0.003, -0.002, 0.001])
+    prediction[0, :6] += 0.01
+    kept = hold_free_cube(prediction, state, state[..., 12:13])
+    assert torch.equal(kept[0, 6:9], state[0, 6:9])
+    assert torch.equal(kept[0, :6], prediction[0, :6])  # the joints are untouched
+
+
+def test_torch_a_held_or_falling_cube_is_left_to_the_model() -> None:
+    torch = pytest.importorskip("torch")
+    from vishwaroop.models.cube_study import hold_free_cube
+
+    for height, flag in ((0.0, 1.0), (0.0, 0.5), (0.03, 0.0)):
+        state = _state(torch, height, flag)
+        prediction = state.clone()
+        prediction[0, 6:9] += 0.004
+        kept = hold_free_cube(prediction, state, state[..., 12:13])
+        assert torch.equal(kept, prediction), (height, flag)
+
+
+def test_torch_a_cube_just_inside_the_margin_counts_as_resting() -> None:
+    torch = pytest.importorskip("torch")
+    from vishwaroop.models.cube_study import hold_free_cube
+
+    state = _state(torch, 0.0009, 0.4)
+    prediction = state.clone()
+    prediction[0, 6:9] += 0.004
+    kept = hold_free_cube(prediction, state, state[..., 12:13])
+    assert torch.equal(kept[0, 6:9], state[0, 6:9])
+
+
+def test_torch_a_grasp_counts_only_within_reach() -> None:
+    torch = pytest.importorskip("torch")
+    from vishwaroop.models.cube_study import GRASP_REACH_M, within_reach
+
+    state = _state(torch, 0.0, 1.0)
+    cube = state[0, 6:9]
+    gate = torch.ones(1, 1)
+    near = cube + torch.tensor([GRASP_REACH_M - 1e-4, 0.0, 0.0])
+    far = cube + torch.tensor([GRASP_REACH_M + 1e-4, 0.0, 0.0])
+    assert within_reach(gate, state, near.unsqueeze(0)).item() == 1.0
+    assert within_reach(gate, state, far.unsqueeze(0)).item() == 0.0
+
+
+def test_torch_worse_windows_counts_only_never_held_ones_beyond_stays_put() -> None:
+    torch = pytest.importorskip("torch")
+    from vishwaroop.models.m1_followups import worse_windows
+
+    start = torch.zeros(3, 13)
+    truth = torch.zeros(3, 10, 13)
+    after = torch.zeros(3, 10, 13)
+    after[0, -1, 6] = 0.002  # worse, and never held, tool beside it
+    after[1, -1, 6] = 0.002  # worse, but held
+    tool = torch.tensor([[0.001, 0.0, 0.0], [0.0, 0.0, 0.0], [0.5, 0.0, 0.0]])
+    counts = worse_windows(after, truth, start, torch.tensor([True, False, True]), tool)
+    assert counts == {
+        "never_held_windows": 2,
+        "worse_at_last_horizon": 1,
+        "of_which_began_within_reach": 1,
+    }
+
+
+def _predicted(torch: object, tool_gap: float, flag: float) -> tuple[object, object]:
+    """A prediction whose cube sits ``tool_gap`` from the predicted tool point."""
+    from vishwaroop.models.cube_study import _Kinematics
+
+    kinematics = _Kinematics("cpu")
+    prediction = torch.zeros(1, 13)  # type: ignore[attr-defined]
+    prediction[0, :6] = torch.tensor([0.0, 0.4, 0.2, 1.0, 1.57, -0.8])  # type: ignore[attr-defined]
+    tool = kinematics(prediction[:, :6])
+    prediction[0, 6:9] = tool[0] + torch.tensor([tool_gap, 0.0, 0.0])  # type: ignore[attr-defined]
+    prediction[0, 12] = flag
+    return prediction, kinematics
+
+
+def test_torch_a_grasp_may_start_only_within_reach() -> None:
+    torch = pytest.importorskip("torch")
+    from vishwaroop.models.cube_study import GRASP_REACH_M, grasp_starts_within_reach
+
+    free = torch.zeros(1, 1)
+    far, kinematics = _predicted(torch, GRASP_REACH_M + 0.002, 0.9)
+    assert grasp_starts_within_reach(far, free, kinematics)[0, 12].item() == 0.0
+    near, _ = _predicted(torch, GRASP_REACH_M - 0.002, 0.9)
+    assert grasp_starts_within_reach(near, free, kinematics)[0, 12].item() == pytest.approx(0.9)
+
+
+def test_torch_a_held_cube_stays_held_beyond_reach() -> None:
+    torch = pytest.importorskip("torch")
+    from vishwaroop.models.cube_study import GRASP_REACH_M, grasp_starts_within_reach
+
+    far, kinematics = _predicted(torch, GRASP_REACH_M + 0.01, 0.9)
+    kept = grasp_starts_within_reach(far, torch.ones(1, 1), kinematics)
+    assert torch.equal(kept, far)

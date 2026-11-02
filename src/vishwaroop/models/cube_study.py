@@ -62,6 +62,7 @@ AIRBORNE_MARGIN_M = 0.001
 CONTROL_PERIOD_S = 0.05
 GRAVITY_M_S2 = 9.81
 FALL_PER_STEP_M = GRAVITY_M_S2 * CONTROL_PERIOD_S * CONTROL_PERIOD_S
+GRASP_REACH_M = 0.015  # evals/M1-followups-v2.json: train data never holds a cube beyond 11.83 mm
 EPOCHS = 30
 SEEDS = (0, 1, 2)
 
@@ -74,6 +75,10 @@ class Variant:
     contact: bool
     beta: float
     fall: bool = False
+    still: bool = False
+    reach: bool = False
+    onset_reach: bool = False
+    nominal_only: bool = False
 
 
 VARIANTS = {
@@ -86,6 +91,18 @@ VARIANTS = {
     "carry-beta": Variant(carry=True, contact=False, beta=0.5),
     "carry-beta-fall": Variant(carry=True, contact=False, beta=0.5, fall=True),
     "carry-contact-beta-fall": Variant(carry=True, contact=True, beta=0.5, fall=True),
+    "carry-contact-beta-fall-still": Variant(
+        carry=True, contact=True, beta=0.5, fall=True, still=True
+    ),
+    "carry-contact-beta-fall-still-reach": Variant(
+        carry=True, contact=True, beta=0.5, fall=True, still=True, reach=True
+    ),
+    "carry-contact-beta-fall-still-onset": Variant(
+        carry=True, contact=True, beta=0.5, fall=True, still=True, onset_reach=True
+    ),
+    "nominal-still-reach": Variant(
+        carry=True, contact=True, beta=0.5, fall=True, still=True, reach=True, nominal_only=True
+    ),
 }
 FROZEN_VARIANTS = ("hold", "hold-contact", "carry", "carry-contact", "carry-contact-beta")
 Z_90 = 1.6449
@@ -183,6 +200,46 @@ def fall_displacement(state: Any, previous: Any, gate: Any) -> Any:
     return (1.0 - gate) * airborne * torch.cat([last[..., :2], down], dim=-1)
 
 
+def within_reach(gate: Any, state: Any, tool: Any) -> Any:
+    """The grasp gate, or 0 where the tool point is beyond reach of the cube."""
+    distance = (state[..., CUBE_FIRST:CUBE_LAST] - tool).norm(dim=-1, keepdim=True)
+    return gate * (distance <= GRASP_REACH_M).to(gate.dtype)
+
+
+def grasp_starts_within_reach(prediction: Any, gate: Any, kinematics: Any) -> Any:
+    """A grasp may start only within reach; once started, it holds at any distance.
+
+    Where the cube is not held now and the step predicts it held next, but the predicted tool
+    point is beyond reach, the predicted flag is set to 0, so the next step treats the cube as
+    free. Dev-informed (WO-005, owner, 2026-11-02).
+    """
+    torch = _torch()
+    flag = prediction[..., FLAG_FIRST:FLAG_LAST]
+    tool = kinematics(prediction[..., :JOINTS])
+    far = (prediction[..., CUBE_FIRST:CUBE_LAST] - tool).norm(dim=-1, keepdim=True) > GRASP_REACH_M
+    refused = (gate < 0.5) & (flag >= 0.5) & far
+    return torch.cat(
+        [
+            prediction[..., :FLAG_FIRST],
+            torch.where(refused, torch.zeros_like(flag), flag),
+            prediction[..., FLAG_LAST:],
+        ],
+        dim=-1,
+    )
+
+
+def hold_free_cube(prediction: Any, state: Any, gate: Any) -> Any:
+    """A cube that is neither held nor in the air stays exactly where it is (WO-005, owner).
+
+    Held means a gate of at least 0.5. Everything else the step predicted for the cube is dropped,
+    so in those states the cube matches the stays-put baseline step for step.
+    """
+    cube = state[..., CUBE_FIRST:CUBE_LAST]
+    airborne = cube[..., 2:] - REST_HEIGHT_M > AIRBORNE_MARGIN_M
+    free = ((gate < 0.5) & ~airborne).to(cube.dtype)
+    return _with_cube_moved(prediction, free * (cube - prediction[..., CUBE_FIRST:CUBE_LAST]))
+
+
 def _step(
     stats: dict[str, Any],
     variant: Variant,
@@ -200,14 +257,22 @@ def _step(
     if variant.contact:
         parts.append((state[..., CUBE_FIRST:CUBE_LAST] - tool) / CONTACT_SCALE_M)
     output = _ensemble_forward(layers, torch.cat(parts, dim=-1))
+    if variant.nominal_only:
+        output = torch.zeros_like(output)
     residual, log_var = output[..., :STATE_SIZE], output[..., STATE_SIZE:]
     prediction = _nominal(stats, state, action) + residual * stats["delta_std"]
     chosen = _gate_of(state) if gate is None else gate
+    if variant.reach:
+        chosen = within_reach(chosen, state, tool)
     if variant.carry:
         moved = stats["kinematics"](prediction[..., :JOINTS]) - tool
         prediction = _with_cube_moved(prediction, chosen * moved)
     if variant.fall:
         prediction = _with_cube_moved(prediction, fall_displacement(state, previous, chosen))
+    if variant.still:
+        prediction = hold_free_cube(prediction, state, chosen)
+    if variant.onset_reach:
+        prediction = grasp_starts_within_reach(prediction, chosen, stats["kinematics"])
     return prediction, log_var.clamp(-10.0, 4.0)
 
 

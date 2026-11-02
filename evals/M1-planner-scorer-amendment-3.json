@@ -1,0 +1,9 @@
+{
+  "amends": "evals/M1-planner-scorer.json, ET-M1-5's data",
+  "frozen_on": "2026-11-02",
+  "frozen_before": "any scorer or ranking score. The only thing seen is the branch data of runs/20261102T091817Z_47852f39: 60 states, 240 chunks, 8 of them violating, which the frozen rule calls not decidable.",
+  "changes_a_threshold": false,
+  "ET-M1-2": "unchanged: decided on those 60 states",
+  "ET-M1-5_data_now": "Those 60 states plus an extension: for each dev family, its episodes ranked 21st to 70th by seed among those with at least 25 steps, all that remain, one state each, chosen and branched by exactly the same rules. ET-M1-5 is decided on all of them together, by its frozen rule, including the 10-violation minimum. The extension is chosen by rank, not by looking at any chunk.",
+  "everything_else": "unchanged"
+}

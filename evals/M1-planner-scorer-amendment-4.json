@@ -1,0 +1,8 @@
+{
+  "amends": "evals/M1-planner-scorer-amendment-2.json, what happens when a reached state is out of tolerance",
+  "frozen_on": "2026-11-02",
+  "frozen_before": "any scorer or ranking score. The extension's first attempt stopped at seed 8030, step 122, where the recorded prefix reproduced only to 0.0039, beyond M0's 0.001, and wrote nothing.",
+  "changes_a_threshold": false,
+  "rule_now": "A state whose recorded prefix does not reproduce within M0's frozen replay tolerance cannot be a branch state, because its chunks would not share a start that matches the data. It is excluded and listed with its deviation, and no replacement is drawn. This applies to both parts. ET-M1-2's 60 states all reproduced exactly (runs/20261102T091817Z_47852f39), so its data is unchanged.",
+  "everything_else": "unchanged"
+}
