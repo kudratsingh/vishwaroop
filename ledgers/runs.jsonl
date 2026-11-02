@@ -103,3 +103,5 @@
 {"note":"verdicts {'ET-M1-2': True, 'ET-M1-5': False}","record_id":"runs-20261102T093259881092Z-480a02a4","run_dir":"runs/20261102T093253Z_10e98c31","run_id":"20261102T093253Z_10e98c31","status":"completed","ts":"2026-11-02T09:32:59.881136Z"}
 {"purpose":"WO-005: tuning, learned","record_id":"runs-20261102T093827084040Z-e33609fb","run_dir":"runs/20261102T093827Z_427f7114","run_id":"20261102T093827Z_427f7114","status":"started","ts":"2026-11-02T09:38:27.084095Z"}
 {"note":"learned: 7 of 8 succeeded","record_id":"runs-20261102T094106248747Z-48df3828","run_dir":"runs/20261102T093827Z_427f7114","run_id":"20261102T093827Z_427f7114","status":"completed","ts":"2026-11-02T09:41:06.248788Z"}
+{"purpose":"WO-005: tuning, nominal","record_id":"runs-20261102T094108548237Z-04e3605e","run_dir":"runs/20261102T094108Z_8a03e26b","run_id":"20261102T094108Z_8a03e26b","status":"started","ts":"2026-11-02T09:41:08.548295Z"}
+{"note":"nominal: 7 of 8 succeeded","record_id":"runs-20261102T094326494128Z-137070ef","run_dir":"runs/20261102T094108Z_8a03e26b","run_id":"20261102T094108Z_8a03e26b","status":"completed","ts":"2026-11-02T09:43:26.494185Z"}
