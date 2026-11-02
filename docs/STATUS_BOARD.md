@@ -2,14 +2,14 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-02 12:05 UTC · ledger records: 102
+Generated: 2026-11-02 12:23 UTC · ledger records: 112
 
 ## Phases
 
 | Phase | Name | State | Exit tests (passed / frozen / total) | Prerequisites | Work orders |
 |---|---|---|---|---|---|
 | M0 | Grounded development environment | **passed** | 6 / 6 / 6 | — | WO-001, WO-002, WO-003, WO-007, WO-008, WO-009, WO-010, WO-011 |
-| M1 | Compact predictor, latent planner, action-chunk scorer | **not_started** | 0 / 5 / 5 | M0 | WO-004, WO-005, WO-006, WO-012, WO-013, WO-014, WO-015, WO-016 |
+| M1 | Compact predictor, latent planner, action-chunk scorer | **passed** | 5 / 5 / 5 | M0 | WO-004, WO-005, WO-006, WO-012, WO-013, WO-014, WO-015, WO-016 |
 | M2a | Closed-loop policy evaluator (simulation) | **not_started** | 0 / 0 / 5 | M1 | — |
 | M2b | Real-arm evaluator validation | **not_started** | 0 / 0 / 4 | M2a | — |
 | M3 | Synthetic-data engine (SFT route) | **not_started** | 0 / 0 / 5 | M0 | — |
@@ -29,11 +29,11 @@ Generated: 2026-11-02 12:05 UTC · ledger records: 102
 | ET-M0-4 | M0 | The task outcome is computed independently from simulator state by code that shares nothing with the policy or any reward model, agrees with inspection on one success and one failure episode, and every negative test is rejected. | 5/5 negative tests fail validation or invalidate the replay claim; 2/2 inspected outcomes agree | passed | reports/WO-001-m0-grounded-environment.md |
 | ET-M0-5 | M0 | The evaluation specification is frozen and hashed before any neural training: task rubric, split specification, group ids, policy-holdout plan (by training run/family), sealed opening budget, baselines. | all listed files present and hashed; policy-holdout plan names run/family grouping | passed | reports/WO-001-m0-grounded-environment.md |
 | ET-M0-6 | M0 | A dataset of scripted and perturbed-policy episodes containing both successes and failures is collected, validated, and split-audited. | frozen: >= 200 episodes, >= 30% failures across >= 3 distinct failure modes, audit passes (evals/M0-exit-tests.json) | passed | reports/WO-002-m0-dataset-successes-and-failures.md |
-| ET-M1-1 | M1 | Multi-step prediction error versus horizon is reported for the learned predictors against constant/linear and nominal baselines on held-out dev episodes. | frozen: learned predictor RMSE at least 20% below the best baseline at every horizon 1..10 steps (evals/M1-exit-tests.json) | frozen | — |
-| ET-M1-2 | M1 | Action sensitivity is validated against physics: from each restored initial state at least two alternative action chunks are executed in the simulator and the predictor's ranking of their outcomes agrees with the simulator's. | frozen: >= 50 initial states; pairwise ordering accuracy >= 80% (evals/M1-exit-tests.json) | frozen | — |
-| ET-M1-3 | M1 | Predictive uncertainty is calibrated against actual error on held-out data. | frozen: Spearman(predicted std, |error|) >= 0.5 and 90% interval coverage within +/- 10 points (evals/M1-exit-tests.json) | frozen | — |
-| ET-M1-4 | M1 | Learned-model MPC is compared with nominal-model MPC and the scripted baseline on the frozen task suite with matched interaction budgets, reporting success with Wilson intervals, compute and latency. | frozen: learned-model MPC success non-inferior to nominal within 5 points on m1-suite-1, or a reported negative result (evals/M1-exit-tests.json) | frozen | — |
-| ET-M1-5 | M1 | The action-chunk scorer scores progress, clearance, constraint violations and uncertainty for logged prefixes plus candidate chunks, abstains when uncertain, and is validated against executed simulator branches. It makes no full-episode success claim. | frozen: AUROC >= 0.75 for predicting a constraint violation; abstention rate and coverage reported (evals/M1-exit-tests.json) | frozen | — |
+| ET-M1-1 | M1 | Multi-step prediction error versus horizon is reported for the learned predictors against constant/linear and nominal baselines on held-out dev episodes. | frozen: learned predictor RMSE at least 20% below the best baseline at every horizon 1..10 steps (evals/M1-exit-tests.json) | passed | reports/WO-004-m1-predictors-and-calibration.md |
+| ET-M1-2 | M1 | Action sensitivity is validated against physics: from each restored initial state at least two alternative action chunks are executed in the simulator and the predictor's ranking of their outcomes agrees with the simulator's. | frozen: >= 50 initial states; pairwise ordering accuracy >= 80% (evals/M1-exit-tests.json) | passed | reports/WO-005-m1-planner-and-chunk-scorer.md |
+| ET-M1-3 | M1 | Predictive uncertainty is calibrated against actual error on held-out data. | frozen: Spearman(predicted std, |error|) >= 0.5 and 90% interval coverage within +/- 10 points (evals/M1-exit-tests.json) | passed | reports/WO-004-m1-predictors-and-calibration.md |
+| ET-M1-4 | M1 | Learned-model MPC is compared with nominal-model MPC and the scripted baseline on the frozen task suite with matched interaction budgets, reporting success with Wilson intervals, compute and latency. | frozen: learned-model MPC success non-inferior to nominal within 5 points on m1-suite-1, or a reported negative result (evals/M1-exit-tests.json) | passed | reports/WO-005-m1-planner-and-chunk-scorer.md |
+| ET-M1-5 | M1 | The action-chunk scorer scores progress, clearance, constraint violations and uncertainty for logged prefixes plus candidate chunks, abstains when uncertain, and is validated against executed simulator branches. It makes no full-episode success claim. | frozen: AUROC >= 0.75 for predicting a constraint violation; abstention rate and coverage reported (evals/M1-exit-tests.json) | passed | reports/WO-016-m1-et5-retest.md |
 | ET-M2a-1 | M2a | Policy-compatibility suite: the evaluator supplies images (resolution, history), proprioception, instruction and timing exactly as the checkpoint expects. | 100% of compatibility tests pass for each supported checkpoint family | not_run | — |
 | ET-M2a-2 | M2a | Branch consistency: evaluator rollouts of a checkpoint from restored initial states agree with simulator rollouts in outcome. | proposed default: outcome agreement >= 85% on dev initial states | not_run | — |
 | ET-M2a-3 | M2a | Ranking reliability on held-out policy runs (holdout by training run/family, never adjacent checkpoints). | proposed default: Spearman >= 0.7; top-1 correct on >= 80% of pairs with a pre-declared visible gap | not_run | — |
@@ -67,7 +67,7 @@ Generated: 2026-11-02 12:05 UTC · ledger records: 102
 | WO-002 | M0 dataset: scripted and perturbed episodes with successes and failures | M0 | **accepted** | 2026-11-01T05:57:18.655278Z | reports/WO-002-m0-dataset-successes-and-failures.md |
 | WO-003 | Supervised resource and spend enforcement (local, no paid execution) | M0 | **superseded** | 2026-11-01T00:40:56.445935Z | — |
 | WO-004 | M1 predictors on the Mac: nominal + residual ensemble, state-based latent model, calibration | M1 | **accepted** | 2026-11-02T07:23:55.235946Z | reports/WO-004-m1-predictors-and-calibration.md |
-| WO-005 | M1 planner (CEM MPC) and action-chunk scorer with simulator-branch validation | M1 | **in_progress** | 2026-11-02T09:10:55.049106Z | — |
+| WO-005 | M1 planner (CEM MPC) and action-chunk scorer with simulator-branch validation | M1 | **accepted** | 2026-11-02T12:22:18.272597Z | reports/WO-005-m1-planner-and-chunk-scorer.md |
 | WO-006 | Read-only arm snapshot import and policy-holdout registry | M1 | **created** | 2026-10-31T07:51:48.074460Z | — |
 | WO-007 | Program-wide rename of this repository and package to vishwaroop | M0 | **accepted** | 2026-10-31T22:15:23.725834Z | reports/WO-007-program-rename-vishwaroop.md |
 | WO-008 | Fix three starter-kit tooling defects found during the rename review | M0 | **accepted** | 2026-10-31T22:15:23.768846Z | reports/WO-008-starter-kit-tooling-fixes.md |
@@ -78,5 +78,5 @@ Generated: 2026-11-02 12:05 UTC · ledger records: 102
 | WO-013 | M1 visual latent model, on the Mac first | M1 | **created** | 2026-11-01T07:48:28.393883Z | — |
 | WO-014 | Diagnose why the pilot predictor did not learn the cube | M1 | **accepted** | 2026-11-02T01:39:57.993547Z | reports/WO-014-m1-cube-prediction-diagnosis.md |
 | WO-015 | Bump the ironclad pin to v1.2.0 | M1 | **accepted** | 2026-11-01T23:09:05.286326Z | reports/WO-015-ironclad-v1.2.0.md |
-| WO-016 | Retest ET-M1-5 with a calibration split that includes perturbed chunks | M1 | **in_progress** | 2026-11-02T12:05:07.025491Z | — |
+| WO-016 | Retest ET-M1-5 with a calibration split that includes perturbed chunks | M1 | **accepted** | 2026-11-02T12:22:18.309434Z | reports/WO-016-m1-et5-retest.md |
 
