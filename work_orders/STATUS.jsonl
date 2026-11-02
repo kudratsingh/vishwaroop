@@ -113,3 +113,4 @@
 {"actor":"claude-code-vishwaroop","event":"created","note":"Owner, 2026-11-02: run the 30-minute Mac pilot to confirm the M2a estimate; no rental until it gives a number.","record_id":"status-20261102T123058440480Z-238c0a","ts":"2026-11-02T12:30:58.440480Z","wo":"WO-017"}
 {"actor":"claude-code-vishwaroop","event":"ready","note":"scoped","record_id":"status-20261102T123058475907Z-30bdce","ts":"2026-11-02T12:30:58.475907Z","wo":"WO-017"}
 {"actor":"claude-code-vishwaroop","event":"in_progress","note":"started","record_id":"status-20261102T123058509883Z-6063a9","ts":"2026-11-02T12:30:58.509883Z","wo":"WO-017"}
+{"actor":"claude-code-vishwaroop","commit":"9931054","event":"accepted","note":"62 images/s measured on the Mac; M2a needs a GPU; nothing rented. PR #22.","record_id":"status-20261102T125518599343Z-ddbf49","report":"reports/WO-017-m2a-mac-pilot.md","ts":"2026-11-02T12:55:18.599343Z","wo":"WO-017"}

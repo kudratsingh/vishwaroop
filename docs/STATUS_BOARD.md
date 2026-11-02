@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-02 12:30 UTC · ledger records: 115
+Generated: 2026-11-02 12:55 UTC · ledger records: 116
 
 ## Phases
 
@@ -79,5 +79,5 @@ Generated: 2026-11-02 12:30 UTC · ledger records: 115
 | WO-014 | Diagnose why the pilot predictor did not learn the cube | M1 | **accepted** | 2026-11-02T01:39:57.993547Z | reports/WO-014-m1-cube-prediction-diagnosis.md |
 | WO-015 | Bump the ironclad pin to v1.2.0 | M1 | **accepted** | 2026-11-01T23:09:05.286326Z | reports/WO-015-ironclad-v1.2.0.md |
 | WO-016 | Retest ET-M1-5 with a calibration split that includes perturbed chunks | M1 | **accepted** | 2026-11-02T12:22:18.309434Z | reports/WO-016-m1-et5-retest.md |
-| WO-017 | M2a observation model: a 30-minute Mac pilot to check the GPU estimate | M2a | **in_progress** | 2026-11-02T12:30:58.509883Z | — |
+| WO-017 | M2a observation model: a 30-minute Mac pilot to check the GPU estimate | M2a | **accepted** | 2026-11-02T12:55:18.599343Z | reports/WO-017-m2a-mac-pilot.md |
 
