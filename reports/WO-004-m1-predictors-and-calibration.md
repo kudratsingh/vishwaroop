@@ -295,3 +295,7 @@ WO-005, planner and action-chunk scorer, for ET-M1-2, ET-M1-4 and ET-M1-5. No ow
 Reviewing before the one scoring paid off: it found that the command line could have scored the rejected 100-epoch models. A new stronger baseline changed earlier reductions without the model changing, which would have been easy to misread without the 0.0-difference check. One mechanism I first wrote from intuition, that the predicted flag explained the `missed-grasp` error, was wrong when checked against the true-flag diagnostic. Size: L, as estimated; about 4 hours of machine time.
 
 ## Errata (append-only)
+- **2026-11-02, information only; nothing above is changed.**
+  - **Calibration.** On the owner's instruction, interval scales were refitted on a held-out calibration split that is not training data. Dev was split in two by seed within each family, and each half's scales were applied to the other. Calibrated coverage is then 89.9% to 90.0% on both streams and all seeds (run `20261102T085011Z_27167da9`). ET-M1-3 stays as recorded above, at 80.03% to 86.06%. The recorded scales came from 26 episodes held out from fitting, but from the train families, which is why they were too narrow for dev.
+  - **Resting or nudged cube.** WO-005 now uses a "free cube stays put" model, `carry-contact-beta-fall-still-reach`, in which a grasp counts only within 15 mm. Its known gap is reported in `reports/WO-005-m1-planner-and-chunk-scorer.md`.
+

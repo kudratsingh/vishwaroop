@@ -1,0 +1,13 @@
+{
+  "dataset": "m1-calibration-v1",
+  "protocol_version": "m0-protocol-2",
+  "note": "The calibration split the owner asked for on 2026-11-02: held out from training and from every evaluation, used only to fit interval scales (evals/M1-planner-scorer.json). Block 9 seeds 9050 to 9089, which no run has simulated. Outcomes come only from the frozen rubric.",
+  "replay_sample_per_family": 3,
+  "min_free_disk_gb": 5,
+  "max_seconds_per_run": 1800,
+  "families": [
+    {"variant": "dev-grasp-offset", "partition": "dev", "first_seed": 9050, "count": 40},
+    {"variant": "dev-place-offset", "partition": "dev", "first_seed": 9050, "count": 40},
+    {"variant": "dev-noisy-actions", "partition": "dev", "first_seed": 9050, "count": 40}
+  ]
+}

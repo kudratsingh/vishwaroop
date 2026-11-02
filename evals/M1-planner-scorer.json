@@ -1,0 +1,45 @@
+{
+  "phase": "M1",
+  "work_order": "WO-005",
+  "protocol_version": "m0-protocol-2",
+  "adds_to": "evals/M1-exit-tests.json, whose thresholds are unchanged",
+  "frozen_on": "2026-11-02",
+  "frozen_before": "any branch, scorer or planner result of WO-005; any planner tuning; the calibration split's collection",
+  "changes_a_threshold": false,
+  "model": {
+    "learned": "carry-contact-beta-fall-still-reach, plain A by the owner's decision (evals/M1-refinement-accept.json failed for the refinement), on the WO-004 seed-0 ensemble of runs/20261102T035805Z_ddb5d0d0. Seed 0 is the first frozen seed, not a choice among seeds.",
+    "nominal": "nominal_carry_fall with the same reach rule and stays-put rule and no residual: the learned model's own nominal"
+  },
+  "calibration_split": {
+    "decided_by": "owner, 2026-11-02: fit the interval scaling on a held-out calibration split, never on training data",
+    "data": "evals/M1-calibration-plan.json: the three dev families, block 9, seeds 9050 to 9089, 120 episodes, never trained on or evaluated on",
+    "method": "the split-conformal 90% scale per stream and horizon, as in WO-004, fitted on this split only"
+  },
+  "ET-M1-2": {
+    "threshold": "evals/M1-exit-tests.json: at least 50 initial states, at least 2 chunks each, pairwise ordering accuracy at least 0.8",
+    "states": "60 states from the dev set of WO-004 (artifacts/manifests/m0-dataset-v1.json and m1-dev-topup-v1.json): for each of the three dev families, its 20 lowest-seed episodes with at least 25 steps; in each, step t drawn uniformly from 3 to length minus 11 by random.Random(seed). A state is reached by resetting to the episode's seed and executing its recorded actions up to t, through physics, for every chunk. No state is forced or restored.",
+    "chunks": "4 chunks of 10 steps from each state: (0) the recorded next 10 actions; (1) and (2) the same with a constant offset on the five arm joints, drawn from a normal of 0.05 rad and 0.15 rad by random.Random(seed * 100 + t); (3) the recorded actions with the gripper command inverted between open (-0.3 rad) and closed (-0.8 rad). Every action is clipped to the action limits.",
+    "cost": "task cost at the chunk's last state: the tool point's distance to the cube plus the cube's distance to the target, in metres",
+    "rule": "For each state, every pair of chunks whose simulated costs differ by at least 5 mm is scored, and the predicted order is right when the predicted costs differ in the same direction. Accuracy is the share right over all scored pairs. The learned model passes if accuracy is at least 0.8 and at least 50 states contribute a scored pair.",
+    "reported_with_it": "the nominal model's accuracy on the same pairs; the number of pairs excluded as closer than 5 mm; a Wilson interval on accuracy"
+  },
+  "ET-M1-5": {
+    "threshold": "evals/M1-exit-tests.json: AUROC at least 0.75 for predicting a constraint violation; abstention rate and coverage reported; evaluated on the ET-M1-2 branch dataset",
+    "constraint_violation": "In the simulator's execution of a chunk, any of: (a) knock: the cube moves more than 10 mm horizontally over steps where the grasp flag is off; (b) drop: the flag goes from on to off with the cube more than 30 mm above its rest height and more than the frozen target radius (15.625 mm) from the target horizontally; (c) table: the tool point goes below 5 mm above the table.",
+    "scorer": "Model-based, with no trained heads: each ensemble member rolls the chunk out, and the violation score is the mean over members of the largest margin by which any of (a) to (c) is approached, each margin scaled by its own limit. Progress (cost reduction) and clearance (lowest tool height, closest free-cube approach) are reported beside it.",
+    "abstention": "Abstain when the calibrated predicted std of the cube position at the chunk's last step is above its 90th percentile on the calibration split. AUROC is decided on chunks not abstained on, and the abstention rate must be at most 20%; AUROC on every chunk is reported too.",
+    "rule": "Pass if AUROC on chunks not abstained on is at least 0.75 with abstention at most 20%. With fewer than 10 violating chunks the test is reported as not decidable.",
+    "reported_with_it": "the nominal model's AUROC; a bootstrap interval resampling states"
+  },
+  "ET-M1-4": {
+    "threshold": "evals/M1-exit-tests.json, unchanged: learned-model success minus nominal-model success at least -5 points as a point estimate, with its paired interval; an undecided episode counts as not successful",
+    "suite": "m1-suite-1, owner-frozen as blocks 8 and 9 with 200 episodes per planner and the same seeds: seeds 9100 to 9299 of block 9, which no run has simulated",
+    "planners": "CEM model-predictive control over the learned model, the same over the nominal model, and the scripted controller with nominal settings",
+    "matched_budget": "both model-based planners use identical settings, frozen in a second file after tuning: samples, iterations, horizon at most 10 steps (the validated horizon), cost and uncertainty penalty",
+    "tuning": "only on train-partition seeds 5000 to 5049 of block 5, which no run has simulated, at most about 2 hours of machine time, then frozen before any suite episode",
+    "success": "the frozen M0 rubric, at most 200 steps",
+    "resume": "every episode's result is saved as it finishes; a stopped run continues from the next episode",
+    "reported_with_it": "each planner's success with Wilson intervals, the paired difference with its interval, the scripted baseline, decision time per step, compute, and the uncertainty penalty's weight with a 50-episode run without it on the first 50 suite seeds",
+    "degenerate_case": "If both model-based planners succeed on under 10% of episodes, the comparison is reported as uninformative even if it passes."
+  }
+}

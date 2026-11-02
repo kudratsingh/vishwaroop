@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-02 07:23 UTC · ledger records: 97
+Generated: 2026-11-02 09:10 UTC · ledger records: 99
 
 ## Phases
 
@@ -67,7 +67,7 @@ Generated: 2026-11-02 07:23 UTC · ledger records: 97
 | WO-002 | M0 dataset: scripted and perturbed episodes with successes and failures | M0 | **accepted** | 2026-11-01T05:57:18.655278Z | reports/WO-002-m0-dataset-successes-and-failures.md |
 | WO-003 | Supervised resource and spend enforcement (local, no paid execution) | M0 | **superseded** | 2026-11-01T00:40:56.445935Z | — |
 | WO-004 | M1 predictors on the Mac: nominal + residual ensemble, state-based latent model, calibration | M1 | **accepted** | 2026-11-02T07:23:55.235946Z | reports/WO-004-m1-predictors-and-calibration.md |
-| WO-005 | M1 planner (CEM MPC) and action-chunk scorer with simulator-branch validation | M1 | **created** | 2026-10-31T07:51:48.038418Z | — |
+| WO-005 | M1 planner (CEM MPC) and action-chunk scorer with simulator-branch validation | M1 | **in_progress** | 2026-11-02T09:10:55.049106Z | — |
 | WO-006 | Read-only arm snapshot import and policy-holdout registry | M1 | **created** | 2026-10-31T07:51:48.074460Z | — |
 | WO-007 | Program-wide rename of this repository and package to vishwaroop | M0 | **accepted** | 2026-10-31T22:15:23.725834Z | reports/WO-007-program-rename-vishwaroop.md |
 | WO-008 | Fix three starter-kit tooling defects found during the rename review | M0 | **accepted** | 2026-10-31T22:15:23.768846Z | reports/WO-008-starter-kit-tooling-fixes.md |
