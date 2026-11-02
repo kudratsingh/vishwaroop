@@ -172,15 +172,12 @@ def _branches(env: Any, extension: bool) -> dict[str, Any]:
         executed: list[dict[str, Any]] = []
         reached: list[float] = []
         try:
-            first_states = run_chunk(env, episode, step, chunks[0], initial_state)
+            runs = [run_chunk(env, episode, step, chunk, initial_state) for chunk in chunks]
         except NotReproducedError as exc:
             excluded.append({"episode_id": name, "step": step, "reason": str(exc)})
             continue
-        for number, chunk in enumerate(chunks):
-            states = (
-                first_states if number == 0 else run_chunk(env, episode, step, chunk, initial_state)
-            )
-            reached = states[0]
+        reached = runs[0][0]
+        for number, (chunk, states) in enumerate(zip(chunks, runs, strict=True)):
             scaled = margins(states)
             executed.append(
                 {
