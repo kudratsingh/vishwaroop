@@ -7,7 +7,9 @@ from pathlib import Path
 
 import pytest
 
+from vishwaroop.models.cube_study import VARIANTS
 from vishwaroop.models.m1_followups import (
+    DESIGNS,
     PLAN_PATH,
     PLAN_SHA256,
     check_not_run,
@@ -18,10 +20,13 @@ from vishwaroop.models.m1_followups import (
 from vishwaroop.models.pilot_data import EpisodeArrays
 
 
-def test_the_frozen_follow_up_plan_is_the_one_the_code_requires(root: Path) -> None:
+def test_the_frozen_follow_up_plans_are_the_ones_the_code_requires(root: Path) -> None:
     plan = check_plan(root / PLAN_PATH)
     assert plan["changes_a_threshold"] is False
     assert hashlib.sha256((root / PLAN_PATH).read_bytes()).hexdigest() == PLAN_SHA256
+    for path, digest, _, variant in DESIGNS.values():
+        assert check_plan(root / path, digest)["changes_a_threshold"] is False
+        assert variant in VARIANTS
 
 
 def test_a_second_run_is_refused(tmp_path: Path) -> None:
@@ -89,3 +94,34 @@ def test_torch_a_cube_just_inside_the_margin_counts_as_resting() -> None:
     prediction[0, 6:9] += 0.004
     kept = hold_free_cube(prediction, state, state[..., 12:13])
     assert torch.equal(kept[0, 6:9], state[0, 6:9])
+
+
+def test_torch_a_grasp_counts_only_within_reach() -> None:
+    torch = pytest.importorskip("torch")
+    from vishwaroop.models.cube_study import GRASP_REACH_M, within_reach
+
+    state = _state(torch, 0.0, 1.0)
+    cube = state[0, 6:9]
+    gate = torch.ones(1, 1)
+    near = cube + torch.tensor([GRASP_REACH_M - 1e-4, 0.0, 0.0])
+    far = cube + torch.tensor([GRASP_REACH_M + 1e-4, 0.0, 0.0])
+    assert within_reach(gate, state, near.unsqueeze(0)).item() == 1.0
+    assert within_reach(gate, state, far.unsqueeze(0)).item() == 0.0
+
+
+def test_torch_worse_windows_counts_only_never_held_ones_beyond_stays_put() -> None:
+    torch = pytest.importorskip("torch")
+    from vishwaroop.models.m1_followups import worse_windows
+
+    start = torch.zeros(3, 13)
+    truth = torch.zeros(3, 10, 13)
+    after = torch.zeros(3, 10, 13)
+    after[0, -1, 6] = 0.002  # worse, and never held, tool beside it
+    after[1, -1, 6] = 0.002  # worse, but held
+    tool = torch.tensor([[0.001, 0.0, 0.0], [0.0, 0.0, 0.0], [0.5, 0.0, 0.0]])
+    counts = worse_windows(after, truth, start, torch.tensor([True, False, True]), tool)
+    assert counts == {
+        "never_held_windows": 2,
+        "worse_at_last_horizon": 1,
+        "of_which_began_within_reach": 1,
+    }

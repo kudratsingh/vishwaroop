@@ -27,6 +27,7 @@ from .compute_pilot import HISTORY, STREAM_SLICES, _Data, _machine, _stats_of, _
 from .cube_study import (
     CALIBRATED_STREAMS,
     EPOCHS,
+    GRASP_REACH_M,
     SEEDS,
     VARIANTS,
     _baseline_predictions,
@@ -58,6 +59,16 @@ PURPOSE = "WO-005 stage 0: free cube and calibration split, information only on 
 FAMILY_RUN = Path("runs/20261102T041509Z_93dd348c")
 BEFORE = "carry-contact-beta-fall"
 AFTER = "carry-contact-beta-fall-still"
+# Each frozen design: plan file, its hash, the result it writes, and the variant it checks.
+DESIGNS = {
+    "first": (PLAN_PATH, PLAN_SHA256, RESULT, AFTER),
+    "second": (
+        Path("evals/M1-followups-v2.json"),
+        "68640c492592cd7f678ec1121e169282b782c8e24184210b2cc5581416efc617",
+        "m1_followups_v2.json",
+        "carry-contact-beta-fall-still-reach",
+    ),
+}
 NEVER_HELD = ("resting", "moved_before_grasp", "moved_after_grasp")
 STAYS_PUT = "constant"  # holds the whole state, so its cube stays where it was
 CHECKED_FAMILY = "m0-scripted-dev-grasp-offset"
@@ -81,8 +92,8 @@ def check_plan(path: Path, expected: str = PLAN_SHA256) -> dict[str, Any]:
     return plan
 
 
-def check_not_run(runs_root: Path) -> None:
-    found = sorted(runs_root.glob(f"*/{RESULT}*"))
+def check_not_run(runs_root: Path, result: str = RESULT) -> None:
+    found = sorted(runs_root.glob(f"*/{result}*"))
     if found:
         raise ValueError(f"already run in {found[0]}; another run needs a new work order")
 
@@ -117,8 +128,28 @@ def _cube_by_phase(mean: Any, truth: Any, masks: dict[str, Any]) -> dict[str, li
     }
 
 
+def worse_windows(after: Any, truth: Any, start: Any, never_held: Any, tool: Any) -> dict[str, int]:
+    """Never-held windows worse than stays-put at the last horizon, and how many began in reach."""
+    cube = slice(*STREAM_SLICES["object_position"])
+    own = (after[:, -1, cube] - truth[:, -1, cube]).pow(2).sum(-1)
+    put = (start[:, cube] - truth[:, -1, cube]).pow(2).sum(-1)
+    worse = (own > put) & never_held
+    near = (start[:, cube] - tool).norm(dim=-1) <= GRASP_REACH_M
+    return {
+        "never_held_windows": int(never_held.sum().item()),
+        "worse_at_last_horizon": int(worse.sum().item()),
+        "of_which_began_within_reach": int((worse & near).sum().item()),
+    }
+
+
 def _compare(
-    before: Any, after: Any, truth: Any, baselines: dict[str, Any], masks: dict[str, Any]
+    before: Any,
+    after: Any,
+    truth: Any,
+    baselines: dict[str, Any],
+    masks: dict[str, Any],
+    start: Any = None,
+    tool: Any = None,
 ) -> dict[str, Any]:
     put = _cube_by_phase(baselines[STAYS_PUT], truth, masks)
     after_cube = _cube_by_phase(after, truth, masks)
@@ -151,10 +182,17 @@ def _compare(
         "never_worse_than_stays_put": {
             phase: never_worse(after_cube[phase], put[phase]) for phase in checked
         },
+        **(
+            {}
+            if start is None
+            else {
+                "worse_windows": worse_windows(after, truth, start, _never_held_mask(masks), tool)
+            }
+        ),
     }
 
 
-def _train_side(device: str) -> dict[str, Any]:
+def _train_side(device: str, after_name: str) -> dict[str, Any]:
     episodes = load_train(TRAIN_MANIFEST, Path())
     results: dict[str, Any] = {}
     for holdout in (SEED_HOLDOUT, *TRAIN_FAMILIES):
@@ -190,8 +228,12 @@ def _train_side(device: str) -> dict[str, Any]:
                 ],
                 f"{holdout} seed {seed}",
             )
-            after, _ = _ensemble_on(stats, VARIANTS[AFTER], layers, data.holdout_s, data.holdout_a)
-            cells[str(seed)] = _compare(before, after, truth, baselines, masks)
+            after, _ = _ensemble_on(
+                stats, VARIANTS[after_name], layers, data.holdout_s, data.holdout_a
+            )
+            start = data.holdout_s[:, HISTORY]
+            tool = stats["kinematics"](start[:, :6])
+            cells[str(seed)] = _compare(before, after, truth, baselines, masks, start, tool)
         results[holdout] = {
             "windows_by_phase": {name: int(mask.sum().item()) for name, mask in masks.items()},
             "seeds": cells,
@@ -241,7 +283,7 @@ def _cross_fitted(mean: Any, std: Any, truth: Any, fold: Any) -> dict[str, Any]:
     }
 
 
-def _dev_side(device: str) -> dict[str, Any]:
+def _dev_side(device: str, after_name: str) -> dict[str, Any]:
     torch = _torch()
     data = _Data(TRAIN_MANIFEST, device, split_holdout)
     stats = {**_stats_of(data), "kinematics": _Kinematics(device)}
@@ -271,10 +313,18 @@ def _dev_side(device: str) -> dict[str, Any]:
             stats, VARIANTS[BEFORE], layers, windows.states, windows.actions
         )
         after, after_std = _ensemble_on(
-            stats, VARIANTS[AFTER], layers, windows.states, windows.actions
+            stats, VARIANTS[after_name], layers, windows.states, windows.actions
         )
         cells[str(seed)] = {
-            "all_dev": _compare(before, after, truth, baselines, masks),
+            "all_dev": _compare(
+                before,
+                after,
+                truth,
+                baselines,
+                masks,
+                windows.states[:, HISTORY],
+                stats["kinematics"](windows.states[:, HISTORY, :6]),
+            ),
             CHECKED_FAMILY: _compare(
                 before[family],
                 after[family],
@@ -284,7 +334,7 @@ def _dev_side(device: str) -> dict[str, Any]:
             ),
             "calibration_split": {
                 BEFORE: _cross_fitted(before, before_std, truth, fold),
-                AFTER: _cross_fitted(after, after_std, truth, fold),
+                after_name: _cross_fitted(after, after_std, truth, fold),
             },
         }
     return {
@@ -299,16 +349,18 @@ def _dev_side(device: str) -> dict[str, Any]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--device", choices=("mps", "cpu"), default="mps")
+    parser.add_argument("--design", choices=tuple(DESIGNS), default="first")
     args = parser.parse_args(argv)
+    plan_path, plan_sha256, result, after_name = DESIGNS[args.design]
     try:
         require_code_root()
-        check_plan(PLAN_PATH)
+        check_plan(plan_path, plan_sha256)
         check_manifests(FROZEN_DEV_MANIFESTS)
-        check_not_run(Path("runs"))
+        check_not_run(Path("runs"), result)
         machine = _machine()
         with ledgered_run(
             purpose=PURPOSE,
-            config={"plan_sha256": PLAN_SHA256, "device": args.device},
+            config={"plan_sha256": plan_sha256, "device": args.device, "design": args.design},
             seeds={"none": 0},
             env_lock={"machine": machine},
         ) as run:
@@ -319,13 +371,15 @@ def main(argv: list[str] | None = None) -> int:
                 "run": run.directory.name,
                 "code": run.code_note,
                 "machine": machine,
-                "plan_sha256": PLAN_SHA256,
-                "train_side": _train_side(args.device),
-                "dev_information_only": _dev_side(args.device),
+                "design": args.design,
+                "variant": after_name,
+                "plan_sha256": plan_sha256,
+                "train_side": _train_side(args.device, after_name),
+                "dev_information_only": _dev_side(args.device, after_name),
             }
             report["seconds"] = time.perf_counter() - started
-            write_result_named(run.directory, report)
-            run.note = "free cube and calibration split"
+            write_result_named(run.directory, report, result)
+            run.note = f"free cube, {args.design} design, and calibration split"
             print(run.directory)
     except (ValueError, OSError, KeyError) as exc:
         print(f"refused: {exc}", file=sys.stderr)
@@ -333,12 +387,12 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-def write_result_named(directory: Path, report: dict[str, Any]) -> None:
-    """``write_result`` writes the scorer's name, so write whole here under this file's name."""
+def write_result_named(directory: Path, report: dict[str, Any], result: str) -> None:
+    """Write the whole result or nothing, under this design's file name."""
     text = json.dumps(report, indent=2, sort_keys=True, allow_nan=False) + "\n"
-    partial_file = directory / f"{RESULT}.partial"
+    partial_file = directory / f"{result}.partial"
     partial_file.write_text(text, encoding="utf-8")
-    partial_file.replace(directory / RESULT)
+    partial_file.replace(directory / result)
 
 
 if __name__ == "__main__":
