@@ -1,8 +1,8 @@
 # Vishwaroop — World Model & Planner
 
-Learn robot dynamics, plan action chunks, and check those predictions against executed simulator branches. Vishwaroop builds the learning and evaluation infrastructure around a robot policy: predictive models, uncertainty-aware planning, action scoring, and eventually closed-loop policy evaluation and synthetic demonstrations.
+A **world model and planner for robot learning**, built around action-conditioned dynamics, latent prediction, calibrated uncertainty and **cross-entropy method model-predictive control (CEM MPC)**. The project brings predictive simulation, action-chunk scoring, closed-loop VLA policy evaluation and physics-validated synthetic training data into one learning and planning architecture.
 
-The first environment is SO-100 pick-and-place in ManiSkill3. The current models use state observations; the vision-based evaluator is a later milestone.
+The SO-100 pick-and-place environment in **ManiSkill3** connects scripted and perturbed trajectories to learned residual ensembles, recurrent state-based predictors, counterfactual simulator branches and independent task-outcome checks. Matched-budget planning comparisons and uncertainty calibration make model behavior inspectable at the action and trajectory level.
 
 ## What works today
 
