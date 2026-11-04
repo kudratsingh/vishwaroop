@@ -1,46 +1,54 @@
-# vishwaroop (World Model & Planner)
+# Vishwaroop — World Model & Planner
 
-`vishwaroop` is the repository and Python package of World Model & Planner; the name is Sanskrit *viśvarūpa*, the universal form Krishna shows Arjuna — all of creation seen at once, which Arjuna asks him to stop showing; a world model sees everything and is trusted only as far as it has earned. Standalone learning, planning, evaluation and synthetic-data infrastructure for robot policies. First environment: the arm project's ManiSkill3 setup (`vla-rl-so101`), read-only; first evaluation subject: its VLA; later the drone's flight logs (M4) and a LEAP hand (M8). Part of the owner's physical-AI program — read `PROGRAM.md` first.
+Learn robot dynamics, plan action chunks, and check those predictions against executed simulator branches. Vishwaroop builds the learning and evaluation infrastructure around a robot policy: predictive models, uncertainty-aware planning, action scoring, and eventually closed-loop policy evaluation and synthetic demonstrations.
 
-## Three products, three bodies of evidence
-1. Compact predictive model, latent planner and **action-chunk scorer** (M1).
-2. Action-conditioned, policy-compatible **closed-loop evaluator** (M2a sim, M2b real arm).
-3. Filtered synthetic demonstrations for the **SFT route**, with matched-budget downstream evidence (M3).
-M4 adapts motion prediction to drone logs offline/shadow-only and branches from M0/M1.
+The first environment is SO-100 pick-and-place in ManiSkill3. The current models use state observations; the vision-based evaluator is a later milestone.
 
-## Read in order
-`PROGRAM.md` → `AGENTS.md` → `START_HERE.md` → `docs/PHASES.md` → `docs/ARCHITECTURE.md` → `docs/CONTEXT_AND_DECISIONS.md` → `docs/EVALUATION_PROTOCOL.md` → `docs/DATA_AND_SNAPSHOTS.md` → `work_orders/WO-001-m0-grounded-environment.md`.
+## What works today
 
-## CPU-tier checks (any machine)
+- **Reproducible episodes.** Scripted and perturbed controllers, independent task outcomes, trajectory export, replay from saved initial state, and audited train/dev splits.
+- **Predictive models.** Nominal dynamics, a learned residual ensemble, and a recurrent state-based latent predictor, compared on held-out episodes.
+- **Planning.** Cross-entropy method model-predictive control over the learned or nominal model, with matched interaction budgets and an uncertainty penalty.
+- **Action-chunk scoring.** Progress, clearance, constraint violations and calibrated uncertainty, with abstention outside the accepted range.
+- **Read-only imports.** Completed exports are accepted only after completion-marker and SHA-256 verification. The importer never modifies the producing project.
+
+## Results and limits
+
+**M0 and M1 have passed their recorded exit tests.** These are simulation results on the declared task and development suites, not real-robot validation.
+
+| Measurement | Recorded result | Evidence |
+|---|---|---|
+| Planning success, matched 200-episode suite | Learned MPC **184/200**; nominal MPC **184/200**; scripted controller **183/200** | [Planner comparison](reports/WO-005-m1-planner-and-chunk-scorer.md) |
+| Constraint prediction on fresh simulator branches | AUROC **0.922**, bootstrap interval **0.887–0.952**, on retained chunks; **9.4%** abstention | [Scorer retest](reports/WO-016-m1-et5-retest.md) |
+| Observation-model compute pilot | **62.3 images/s** on M3 Pro MPS for the tested image-tokenizer training workload | [Mac pilot](reports/WO-017-m2a-mac-pilot.md) |
+
+The learned dynamics produced **no planning-success advantage** over the nominal model. The scorer's pooled advantage over nominal comes mainly from chunks that change the gripper command; the two models were similar on arm-offset chunks. An action-chunk score is not a full-episode success estimate.
+
+The image pilot measures throughput, not evaluator quality. A policy-compatible closed-loop evaluator (M2), real-arm validation, synthetic-data benefits (M3), and drone adaptation (M4) remain unproven. See the [current status board](docs/STATUS_BOARD.md) for phase and exit-test evidence.
+
+## Inspect and run checks
+
+Python **3.12+**. The CPU tier uses the pinned `ironclad-kit` dependency, currently hosted in a **private repository**; installation requires access to `kudratsingh/ironclad`. The public checkout is not a standalone simulator or model-weight distribution.
+
 ```bash
-python3 -m venv .venv && . .venv/bin/activate
-python -m pip install -r requirements-dev.txt
-make check          # lint, types, tests, ironclad verify, secrets scan, link check
-make board          # regenerate docs/STATUS_BOARD.md
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -e . -r requirements-dev.txt
+make check
 ironclad contract-info
-ironclad-budget-preflight --budget config/budget.json --plan config/cpu-smoke-plan.json
 ```
-These commands do not run ManiSkill, train anything, read the arm repository, or constitute evidence of any milestone. The contract fixtures are fabricated.
 
-## Current status (2026-10-31)
-| Implemented and tested here | Specified, not implemented |
+`make check` runs lint, types, unit/contract tests, policy verification, secrets scanning and link checks. It does not repeat the recorded simulator experiments. For simulator setup, pinned environments, data and reproduction commands, follow the [environment guide](docs/ENVIRONMENT.md) and the reports above. Raw datasets and trained checkpoints are not bundled here.
+
+## Code and documentation
+
+| Area | Entry point |
 |---|---|
-| contract v1 (schemas, validator with append-only ledger merge, split audit, write-once reference writer, fixtures, 41 tests) | first real simulator episode, replay and negative tests (WO-001; the adapter has run, but no scripted baseline or exported episode exists yet) |
-| core record helpers: append-only ledgers, content-addressed artifacts, write-once run dirs, structured logs, strict config | dataset collection and registry (WO-002, WO-006) |
-| read-only export importer with completion-marker and hash verification; independent pick-and-place outcome; contract export, replay and negative-test logic, tested on a fabricated fake | predictors, planner, scorer (WO-004, WO-005) |
-| typed Protocol interfaces for every planned module | evaluator, synthetic engine, drone adaptation (M2–M4) |
-| tools: status ledger/board, append-only CI check, hash locks, secrets scan, link check, budget preflight | enforcing paid launcher and provider adapter (moved to `ironclad`) |
-| CI workflow (CPU tier), Makefile, pre-commit hooks | sealed-data storage, physical outcome sensing |
+| Episode collection, export and replay | [src/vishwaroop/sim](src/vishwaroop/sim/) |
+| Predictors and calibration | [src/vishwaroop/models](src/vishwaroop/models/) |
+| CEM planner and action scoring | [planning](src/vishwaroop/planning/), [scoring](src/vishwaroop/scoring/) |
+| Export verification | [importer.py](src/vishwaroop/importer.py) |
+| Evaluation design and phase boundaries | [Evaluation protocol](docs/EVALUATION_PROTOCOL.md), [phases](docs/PHASES.md) |
+| Design and recorded results | [Architecture](docs/ARCHITECTURE.md), [reports](reports/), [status](docs/STATUS_BOARD.md) |
 
-Phase M0 is `in_progress`, and every other phase is `not_started`; see `docs/STATUS_BOARD.md`. No paid compute or hardware is authorized by these files, and no remote other than the one in `config/repo.json` (`AGENTS.md §2`).
-
-## Layout
-```
-PROGRAM.md  AGENTS.md  CLAUDE.md  START_HERE.md  CHANGES.md  REQUIREMENTS_CHECKLIST.md  VERIFICATION.md
-config/      phases.json, budget.json, repo.json, locks, stack-lock.pending.json, sealed-access schema/policy
-docs/        PHASES, ARCHITECTURE, CONTEXT_AND_DECISIONS, EVALUATION_PROTOCOL, DATA_AND_SNAPSHOTS, SYNTHETIC_DATA_M3,
-             ENVIRONMENT, WORKFLOW, DATA_POLICY, BUDGET_AND_LAUNCHER, REPORT_TEMPLATE, ADR_TEMPLATE, SOURCES, STATUS_BOARD, adr/
-src/vishwaroop/    core/, importer.py, interfaces.py, outcome/, sim/   (data/, models/, planning/, scoring/, eval/, synth/ to come)
-work_orders/ WO-001..010 + STATUS.jsonl (append-only)      prompts/FIRST_SESSION.md
-data/ runs/ ledgers/ artifacts/ reports/ evals/   append-only record locations
-```
+The name comes from Sanskrit *viśvarūpa*, the universal form. Part of the [Physical AI Program](PROGRAM.md). Contributors should read [AGENTS.md](AGENTS.md) before making changes.
