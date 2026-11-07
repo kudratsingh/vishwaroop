@@ -68,12 +68,14 @@ def run_evaluate(
     manifest: dict[str, Any] | None = None,
     first: float = 0.0,
     tol: Tolerances | None = None,
+    size_frames: int | None = None,
 ) -> Any:
     tol = tol or tolerances()
     snap = snapshot_manifest()
     ref = reference(snap, CUBE, SHAPE, tol)
     candidate = manifest or {key: snap[key] for key in ref.manifest}
-    return evaluate(candidate, [SHAPE] * len(frames), first, frames, ref, tol)
+    size = len(frames) if size_frames is None else size_frames
+    return evaluate(candidate, [SHAPE] * len(frames), first, frames, ref, tol, size)
 
 
 def test_merged_area_counts_components_within_the_radius_of_the_largest() -> None:
@@ -135,8 +137,8 @@ def pilot(*ratios: float, merge: float = 10.0, green: int = 300, goal: float = 2
         for r in ratios
     ]
     return [
-        PilotCandidate(10900, snapshot, tuple(frames), 0.2),
-        PilotCandidate(10901, snapshot, tuple(frames[:1]), 0.4),
+        PilotCandidate(10900, snapshot, tuple(frames), 0.2, len(frames), (0.0,) * len(frames)),
+        PilotCandidate(10901, snapshot, tuple(frames), 0.4, len(frames), (0.0,) * len(frames)),
     ]
 
 
@@ -169,7 +171,7 @@ def test_the_pilot_just_inside_the_limits_is_kept() -> None:
 def test_the_pilot_stops_when_a_snapshot_shows_no_cube() -> None:
     empty = FrameStats((), 400, (150.0, 350.0))
     with pytest.raises(PilotStopError, match="no cube"):
-        pilot_tolerances([PilotCandidate(10900, empty, (CUBE,), 0.0)])
+        pilot_tolerances([PilotCandidate(10900, empty, (CUBE,) * 3, 0.0, 3, (0.0,) * 3)])
 
 
 def test_the_injection_credit_rule() -> None:
@@ -262,7 +264,8 @@ def test_tolerances_load_only_with_their_pinned_sha256(tmp_path: Path) -> None:
         ({"masks": {**MASK_RULES, "connectivity": 4}}, "mask rules"),
         ({"cube_area_band": [0.3, 1.2]}, "limits"),
         ({"cube_area_band": [0.7, 2.6]}, "limits"),
-        ({"protocol_version": "m3-protocol-2"}, "protocol"),
+        ({"protocol_version": "m3-protocol-1"}, "protocol"),
+        ({"sightline_clearance_m": 0.05}, "sightline"),
         ({"other_component_fraction": 0.3}, "0.25"),
     ],
 )
@@ -320,7 +323,7 @@ def test_a_frame_of_the_wrong_shape_fails_frame_shape() -> None:
     snap = snapshot_manifest()
     ref = reference(snap, CUBE, SHAPE, tol)
     candidate = {key: snap[key] for key in ref.manifest}
-    result = evaluate(candidate, [SHAPE, (256, 256, 3)], 0.0, [CUBE], ref, tol)
+    result = evaluate(candidate, [SHAPE, (256, 256, 3)], 0.0, [CUBE], ref, tol, 1)
     assert result.to_json()["failed_checks"] == ["frame_shape"]
     assert result.failed["frame_shape"]["frame"] == 1
 

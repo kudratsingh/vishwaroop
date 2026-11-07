@@ -158,7 +158,7 @@ def test_the_pilot_and_scoring_flow_end_to_end(
     assert result["injections_rejected"] == 8 and result["false_rejections"] == 0
     assert not result["passed"]  # 8 of the frozen 60: the shortened run cannot pass
     assert result["rejections_by_type"]["goal_or_task_changed"] == {"injected": 3, "rejected": 3}
-    assert (tmp_path / "score" / "snapshots" / "seed-010650" / "snapshot.json").exists()
+    assert (tmp_path / "score" / "snapshots" / "seed-010750" / "snapshot.json").exists()
     json.dumps(report, allow_nan=False)
     with pytest.raises(SnapshotError, match="written once"):
         et_m3_1.run_score(env, TASK, tmp_path / "score", tolerances)

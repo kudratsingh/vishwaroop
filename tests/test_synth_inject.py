@@ -32,6 +32,7 @@ from vishwaroop.synth.checker import (  # noqa: E402
 )
 from vishwaroop.synth.inject import (  # noqa: E402
     DUPLICATE_OFFSETS,
+    PER_TYPE,
     InjectionError,
     break_hash,
     choose_offset,
@@ -64,13 +65,15 @@ def source(seed: int, steps: int = 8) -> tuple[list[Any], dict[str, Any]]:
 def checked(frames: list[Any], candidate: dict[str, Any], seed: int) -> Any:
     snapshot_render = episode_frames()[0]
     ref = reference(manifest(seed), measure(snapshot_render), snapshot_render.shape, TOL)
-    return check_candidate(candidate, frames, ref, snapshot_render, TOL)
+    return check_candidate(candidate, frames, ref, snapshot_render, TOL, len(frames))
 
 
 def build(t: int, i: int) -> tuple[Any, list[Any]]:
     seed = injection_seed(t, i)
     frames, candidate = source(seed)
-    return inject(t, i, frames, candidate, projection=PROJECTION, other_render=OTHER), frames
+    return inject(
+        t, i, frames, candidate, projection=PROJECTION, other_render=OTHER, size_frames=len(frames)
+    ), frames
 
 
 def digest(frames: list[Any]) -> str:
@@ -78,11 +81,11 @@ def digest(frames: list[Any]) -> str:
 
 
 def test_the_injection_seeds_are_the_frozen_ones() -> None:
-    assert injection_seed(1, 0) == 10100
-    assert injection_seed(3, 4) == 10124
-    assert injection_seed(6, 9) == 10159
+    assert injection_seed(1, 0) == 10200
+    assert injection_seed(3, 4) == 10224
+    assert injection_seed(6, 9) == 10259
     plan = injection_plan()
-    assert [seed for _, _, seed in plan] == list(range(10100, 10160))
+    assert [seed for _, _, seed in plan] == list(range(10200, 10260))
     with pytest.raises(ValueError):
         injection_seed(7, 0)
     with pytest.raises(ValueError):
@@ -102,7 +105,15 @@ def test_every_injection_leaves_its_source_unmodified() -> None:
     for t, i, seed in injection_plan():
         frames, candidate = source(seed)
         before = (digest(frames), repr(candidate))
-        inject(t, i, frames, candidate, projection=PROJECTION, other_render=OTHER)
+        inject(
+            t,
+            i,
+            frames,
+            candidate,
+            projection=PROJECTION,
+            other_render=OTHER,
+            size_frames=len(frames),
+        )
         assert (digest(frames), repr(candidate)) == before
 
 
@@ -110,7 +121,15 @@ def test_every_injection_is_rejected_and_every_source_passes() -> None:
     for t, i, seed in injection_plan():
         frames, candidate = source(seed)
         original = checked(frames, candidate, seed)
-        injection = inject(t, i, frames, candidate, projection=PROJECTION, other_render=OTHER)
+        injection = inject(
+            t,
+            i,
+            frames,
+            candidate,
+            projection=PROJECTION,
+            other_render=OTHER,
+            size_frames=len(frames),
+        )
         result = checked(injection.frames, injection.manifest, seed)
         assert original.passed, (t, i, original.to_json())
         assert credited(original.passed, result.passed), (t, i, injection.detail)
@@ -312,3 +331,33 @@ def test_merge_radius_decides_between_area_and_extra_red() -> None:
     stats = measure(frame)
     assert cube_area(stats, 20.0) == (CUBE_AREA, CUBE_AREA)
     assert cube_area(stats, 50.0) == (2 * CUBE_AREA, 0)
+
+
+@pytest.mark.parametrize("size_frames", [2, 3, 5])
+def test_a_cube_resize_is_placed_in_a_size_checkable_frame(size_frames: int) -> None:
+    for i in range(PER_TYPE):
+        seed = injection_seed(3, i)
+        frames, candidate = source(seed)
+        injection = inject(3, i, frames, candidate, size_frames=size_frames)
+        checkable = list(range(1, min(size_frames, len(frames) - 1)))
+        assert injection.detail["step"] == random.Random(seed).choice(checkable)
+        assert 1 <= injection.detail["step"] < size_frames
+        result = check_candidate(
+            injection.manifest, injection.frames, *reference_and_render(seed), size_frames
+        )
+        assert "cube_area" in result.to_json()["failed_checks"]
+
+
+@pytest.mark.parametrize("size_frames", [0, 1])
+def test_a_cube_resize_without_a_checkable_frame_is_not_built(size_frames: int) -> None:
+    frames, candidate = source(injection_seed(3, 0))
+    with pytest.raises(InjectionError, match="no size-checkable frame"):
+        inject(3, 0, frames, candidate, size_frames=size_frames)
+    with pytest.raises(ValueError, match="size-checkable"):
+        inject(3, 0, frames, candidate)
+
+
+def reference_and_render(seed: int) -> tuple[Any, Any, Any]:
+    snapshot_render = episode_frames()[0]
+    ref = reference(manifest(seed), measure(snapshot_render), snapshot_render.shape, TOL)
+    return ref, snapshot_render, TOL

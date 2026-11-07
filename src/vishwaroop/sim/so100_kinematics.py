@@ -90,6 +90,62 @@ def fingertips(joints: Sequence[float]) -> tuple[Vector, Vector]:
     return fixed, moving
 
 
+def arm_segments(joints: Sequence[float]) -> list[tuple[Vector, Vector]]:
+    """The arm as line segments in the world frame, for all six joints: base to each joint origin
+    in chain order to the fixed jaw's frame, then that frame to the fixed jaw tip, and through the
+    moving jaw's origin to its tip. A skeleton, without the links' thickness."""
+    points = [BASE_POSITION]
+    position = BASE_POSITION
+    rotation = _rotation((0.0, 0.0, BASE_YAW))
+    for (origin, rpy, (axis, sign)), angle in zip(_CHAIN, joints[:5], strict=True):
+        position = _add(position, _apply(rotation, origin))
+        points.append(position)
+        rotation = _multiply(
+            _multiply(rotation, _rotation(rpy)), _axis_rotation(axis, sign * angle)
+        )
+    fixed, moving = fingertips(joints)
+    moving_origin = _add(position, _apply(rotation, _GRIPPER_ORIGIN[0]))
+    chain = [(points[i], points[i + 1]) for i in range(len(points) - 1)]
+    return [*chain, (position, fixed), (position, moving_origin), (moving_origin, moving)]
+
+
+def segment_distance(p1: Vector, q1: Vector, p2: Vector, q2: Vector) -> float:
+    """The shortest distance between segments p1-q1 and p2-q2 (Ericson, Real-Time Collision
+    Detection, section 5.1.9)."""
+    d1 = (q1[0] - p1[0], q1[1] - p1[1], q1[2] - p1[2])
+    d2 = (q2[0] - p2[0], q2[1] - p2[1], q2[2] - p2[2])
+    r = (p1[0] - p2[0], p1[1] - p2[1], p1[2] - p2[2])
+
+    def dot(u: Vector, v: Vector) -> float:
+        return u[0] * v[0] + u[1] * v[1] + u[2] * v[2]
+
+    def clamp(value: float) -> float:
+        return min(max(value, 0.0), 1.0)
+
+    a, e, f = dot(d1, d1), dot(d2, d2), dot(d2, r)
+    eps = 1e-15
+    if a <= eps and e <= eps:
+        s = t = 0.0
+    elif a <= eps:
+        s, t = 0.0, clamp(f / e)
+    else:
+        c = dot(d1, r)
+        if e <= eps:
+            s, t = clamp(-c / a), 0.0
+        else:
+            b = dot(d1, d2)
+            denominator = a * e - b * b
+            s = clamp((b * f - c * e) / denominator) if denominator > eps else 0.0
+            t = (b * s + f) / e
+            if t < 0.0:
+                s, t = clamp(-c / a), 0.0
+            elif t > 1.0:
+                s, t = clamp((b - c) / a), 1.0
+    closest1 = (p1[0] + d1[0] * s, p1[1] + d1[1] * s, p1[2] + d1[2] * s)
+    closest2 = (p2[0] + d2[0] * t, p2[1] + d2[1] * t, p2[2] + d2[2] * t)
+    return math.dist(closest1, closest2)
+
+
 def tool_point(joints: Sequence[float]) -> Vector:
     """The midpoint between the jaw tips, which ManiSkill calls the TCP."""
     fixed, moving = fingertips(joints)
