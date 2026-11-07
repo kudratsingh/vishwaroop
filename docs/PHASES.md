@@ -108,8 +108,8 @@ Details: `docs/SYNTHETIC_DATA_M3.md`.
 
 | Exit test | Statement | Threshold |
 |---|---|---|
-| ET-M4-1 | Drone episodes imported read-only and validated | 100% `contract_valid` |
-| ET-M4-2 | Residual model beats nominal on held-out flights, per condition | *proposed default:* ≥ 15% lower RMSE at the frozen horizon |
+| ET-M4-1 | Drone episodes imported read-only and validated | *frozen:* 100% `contract_valid` (`evals/M4-exit-tests.json`) |
+| ET-M4-2 | Residual model beats nominal on held-out flight families: 20-step (1 s) open-loop rollout from logged setpoints, step-20 position error, equal-weight family mean | *frozen (owner, 2026-11-06):* learned RMSE ≤ 0.85 × nominal RMSE (`evals/M4-exit-tests.json`); per-family scores reported, not gated |
 | ET-M4-3 | Uncertainty calibrated; gating rule evaluated offline; shadow logs only; no setpoint code path | code audit clean |
 | ET-M4-4 | Exported model manifest complete with validity limits; `command_authority` false | manifest hash |
 
