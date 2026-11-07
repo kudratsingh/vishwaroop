@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-07 12:05 UTC · ledger records: 139
+Generated: 2026-11-07 12:27 UTC · ledger records: 143
 
 ## Phases
 
@@ -13,7 +13,7 @@ Generated: 2026-11-07 12:05 UTC · ledger records: 139
 | M2a | Closed-loop policy evaluator (simulation) | **not_started** | 0 / 0 / 5 | M1 | WO-017, WO-018 |
 | M2b | Real-arm evaluator validation | **not_started** | 0 / 0 / 4 | M2a | — |
 | M3 | Synthetic-data engine (SFT route) | **not_started** | 0 / 2 / 6 | M0 | WO-020, WO-021 |
-| M4 | Drone dynamics adaptation (offline and shadow only) | **not_started** | 0 / 2 / 4 | M1 | WO-019 |
+| M4 | Drone dynamics adaptation (offline and shadow only) | **not_started** | 1 / 2 / 4 | M1 | WO-019 |
 | M5 | Future: verifier at test time (best-of-N action chunks) | **not_started** | 0 / 0 / 2 | M2b | — |
 | M6 | Future: verifier as reward for real-robot RL | **not_started** | 0 / 0 / 2 | M5 | — |
 | M7 | Future: data curation loop | **not_started** | 0 / 0 / 1 | M3, M5 | — |
@@ -49,7 +49,7 @@ Generated: 2026-11-07 12:05 UTC · ledger records: 139
 | ET-M3-4 | M3 | Total generation, filtering and training cost per accepted trajectory is reported including rejected generations. | reported; no threshold on the value | not_run | — |
 | ET-M3-5 | M3 | Generated demonstrations feed only the SFT route; GRPO uses on-policy samples only. | no code path routes IDM-labelled data into the GRPO objective | not_run | — |
 | ET-M3-6 | M3 | Targeted synthetic failure data improves prediction on a failure family held out from training (owner D2, 2026-11-06). | frozen: F3 beats F1 at every horizon 1 to 10, on both streams and all three seeds, and loses at most 2 points on the no-harm holdout (evals/M3-exit-tests.json) | frozen | — |
-| ET-M4-1 | M4 | Drone episodes are imported read-only through the contract and validate. | frozen: 100% of imported episodes contract_valid (evals/M4-exit-tests.json) | frozen | — |
+| ET-M4-1 | M4 | Drone episodes are imported read-only through the contract and validate. | frozen: 100% of imported episodes contract_valid (evals/M4-exit-tests.json) | passed | reports/WO-019-m4-import-banshee-d1.md |
 | ET-M4-2 | M4 | The residual model predicts 1 s of open-loop motion better than the nominal model on held-out flight families (evals/M4-exit-tests.json). | frozen (owner, 2026-11-06; seed ensemble per amendment 1, 2026-11-07, evals/M4-amendment-1.json): the 3-seed ensemble's RMSE <= 0.85 x nominal RMSE, each seed reported, where RMSE is the square root of the equal-weight mean over held-out families of each family's mean squared 3-D position error at step 20 of a 20-step open-loop rollout (evals/M4-exit-tests.json) | frozen | — |
 | ET-M4-3 | M4 | Uncertainty is calibrated and a gating rule (trust the learned model only when calibrated uncertainty is below a bound) is proposed and evaluated offline; shadow predictions are logged only. | no code path can emit a setpoint; gating rule documented with offline evidence | not_run | — |
 | ET-M4-4 | M4 | An exported model manifest (contracts/v1/model-manifest.template.json) records inputs, normalization, timestep, horizon, uncertainty outputs and validity limits; command_authority is false. | manifest complete; command_authority == false | not_run | — |
@@ -82,7 +82,7 @@ Generated: 2026-11-07 12:05 UTC · ledger records: 139
 | WO-016 | Retest ET-M1-5 with a calibration split that includes perturbed chunks | M1 | **accepted** | 2026-11-02T12:22:18.309434Z | reports/WO-016-m1-et5-retest.md |
 | WO-017 | M2a observation model: a 30-minute Mac pilot to check the GPU estimate | M2a | **accepted** | 2026-11-02T12:55:18.599343Z | reports/WO-017-m2a-mac-pilot.md |
 | WO-018 | M2a: a GPU pilot to measure the speedup over the Mac, then one full run if it fits | M2a | **in_progress** | 2026-11-07T07:23:55.659967Z | — |
-| WO-019 | M4: import banshee's D1 simulation episodes, read-only, and validate them | M4 | **created** | 2026-11-02T13:19:20.243311Z | — |
+| WO-019 | M4: import banshee's D1 simulation episodes, read-only, and validate them | M4 | **accepted** | 2026-11-07T12:27:12.479099Z | reports/WO-019-m4-import-banshee-d1.md |
 | WO-020 | M3: re-measure the family-holdout gaps under plain A, and pick M3's target family | M3 | **accepted** | 2026-11-07T07:13:29.084289Z | reports/WO-020-m3-remeasure-family-gaps.md |
 | WO-021 | M3: protocol, scene engine and the scene-consistency check (ET-M3-1) | M3 | **in_progress** | 2026-11-07T08:27:59.661473Z | — |
 
