@@ -27,7 +27,9 @@ def make_export(
     directory = root / export_id
     files = {}
     shared = dict.fromkeys(bi.SHARED_ENTRY_FIELDS)
-    shared.update(stack="jazzy", split="train", partition="train", success=True, run_id="r1")
+    shared.update(
+        stack="jazzy", split="train", partition="train", success=True, run_id="r1", family_id="f"
+    )
     if kind == "episodes":
         episode = {
             "episode_id": "e1",
@@ -201,13 +203,17 @@ def _episode(eid: str, family: str, split: str, triple: tuple[str, str, str], h:
         "wind_id": triple[1],
         "fault_family": triple[2],
         "split": split,
-        "partition": "dev",
+        "partition": "train" if split == "train" else "dev",
         "success": True,
         "stack": "jazzy",
     }
     episode = {
         "episode_id": eid,
-        "split": {"scene_group_id": family, "partition": "dev", "session_group_id": eid},
+        "split": {
+            "scene_group_id": family,
+            "partition": "train" if split == "train" else "dev",
+            "session_group_id": eid,
+        },
         "data": {"transitions_artifact": {"sha256": h}},
         "action_spec": {"labels": list(bi.ACTION_LABELS), "units": list(bi.ACTION_UNITS)},
         "streams": [{"name": "state", "frame_id": "enu_local", "shape": [7]}],
@@ -255,11 +261,62 @@ def test_the_m4_data_checks_catch_each_problem(edit: Any, match: str) -> None:
 
 def test_consistency_checks_outside_the_freeze_are_reported_not_gated() -> None:
     episodes = copy.deepcopy(_good())
-    episodes[2]["entry"]["family_id"] = "f3"
+    episodes[1]["episode"]["split"]["session_group_id"] = "c"
     result = bi.data_checks(episodes)
     assert result["passed"]
     assert not result["other_checks_passed"]
-    assert any("scene_group_id" in problem for problem in result["other_problems"])
+    assert any("session" in problem for problem in result["other_problems"])
+
+
+@pytest.mark.parametrize(
+    ("edit", "match"),
+    [
+        (lambda e: e[2]["entry"].update(family_id="f3"), "scene_group_id"),
+        (lambda e: e[2]["episode"]["split"].update(partition="train"), "published mapping"),
+    ],
+)
+def test_amendment_2_checks_are_gated(edit: Any, match: str) -> None:
+    episodes = copy.deepcopy(_good())
+    edit(episodes)
+    result = bi.data_checks(episodes)
+    assert not result["passed"]
+    assert any(match in problem for problem in result["problems"]), result["problems"]
+
+
+@pytest.mark.parametrize(
+    ("entry", "split", "match"),
+    [
+        ({"split": "train", "partition": "train", "family_id": "f"}, {"partition": "dev"}, "not"),
+        (
+            {"split": "heldout", "partition": "train", "family_id": "f"},
+            {"partition": "train"},
+            "dev",
+        ),
+        (
+            {"split": "train", "partition": "dev", "family_id": "f"},
+            {"partition": "train"},
+            "differs",
+        ),
+        (
+            {"split": "train", "partition": "train", "family_id": "g"},
+            {"partition": "train"},
+            "scene",
+        ),
+        (
+            {"split": "sealed", "partition": "dev", "family_id": "f"},
+            {"partition": "dev"},
+            "neither",
+        ),
+    ],
+)
+def test_the_published_split_is_checked_before_copying(
+    entry: dict[str, Any], split: dict[str, Any], match: str
+) -> None:
+    episode = {"split": {"scene_group_id": "f", **split}}
+    with pytest.raises(bi.ImportStopError, match=match):
+        bi.check_published_split({"episode_id": "e", **entry}, episode, "x")
+    good = {"episode_id": "e", "split": "heldout", "partition": "dev", "family_id": "f"}
+    bi.check_published_split(good, {"split": {"scene_group_id": "f", "partition": "dev"}}, "x")
 
 
 def test_a_duplicate_key_stops(tmp_path: Path) -> None:

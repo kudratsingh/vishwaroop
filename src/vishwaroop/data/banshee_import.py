@@ -6,13 +6,16 @@
 
 Run it from the repository root, in the tooling environment (the pinned ironclad-kit v1.2.0), at a
 clean commit. The rules are ET-M4-1 in ``evals/M4-exit-tests.json`` as amended by
-``evals/M4-amendment-1.json``; both are pinned by sha256 here and refused if changed.
+``evals/M4-amendment-1.json`` and ``evals/M4-amendment-2.json``; all three are pinned by sha256
+here and refused if changed.
 
 ``verify`` reads the exports in place and writes nothing. For each export it requires COMPLETE to
 hold the sha256 of MANIFEST.json, and that to equal the hash the owner was given. It applies the
 amended schema check: ``contract.schema_version`` exactly "1.0.0", with no conflicting declaration.
 It checks every listed file's path, size and sha256, and that nothing unlisted is present. For the
-two episode exports, it requires each episode.json's schema_version to be exactly "1.0.0".
+two episode exports, it requires each episode.json's schema_version to be exactly "1.0.0", and
+amendment 2's metadata check: split.partition "train" for the train split and "dev" for held-out,
+the entry's partition equal to it, and scene_group_id equal to the entry's family_id.
 ``import`` runs the same checks, then copies each export, MANIFEST.json and COMPLETE included and
 byte for byte, into ``data/imports/<export_id>/``. It re-hashes every copied file, makes the copy
 read-only, and appends one ``ledgers/imports.jsonl`` line per export and one
@@ -46,7 +49,12 @@ FROZEN = {
     Path("evals/M4-amendment-1.json"): (
         "79f8b00597f69fd0eaba993bc4323a5f4dea2d61d0e9b8330f2c2762415b52aa"
     ),
+    Path("evals/M4-amendment-2.json"): (
+        "334cc6b9b93c74afcf3ab0757ab85ecd310b876a4e7300d3db4d6490ea50763d"
+    ),
 }
+# amendment 2: the published split.partition for each M4 split
+PARTITION_FOR_SPLIT = {"train": "train", "heldout": "dev"}
 # The manifest sha256 of each published export, as banshee's COMPLETE markers and WO-029 report
 # gave them to the owner on 2026-11-07.
 EXPORTS = {
@@ -254,6 +262,7 @@ def verify_export(root: Path, export_id: str, expected: str, *, hash_files: bool
                     f"{export_id}: {entry['episode_id']} schema_version "
                     f"{episode.get('schema_version')!r}, not '1.0.0'"
                 )
+            check_published_split(entry, episode, export_id)
     else:
         for entry in manifest["entries"]:
             for ulog in entry.get("ulogs") or []:
@@ -262,6 +271,23 @@ def verify_export(root: Path, export_id: str, expected: str, *, hash_files: bool
             if not entry.get("ulogs"):
                 raise ImportStopError(f"{export_id}: {entry['episode_id']} has no ULog")
     return export
+
+
+def check_published_split(entry: dict[str, Any], episode: dict[str, Any], export_id: str) -> None:
+    """Amendment 2's metadata check on one episode, before anything is copied."""
+    split = episode.get("split", {})
+    expected = PARTITION_FOR_SPLIT.get(entry.get("split"))
+    problems = []
+    if expected is None:
+        problems.append(f"M4 split {entry.get('split')!r} is neither train nor heldout")
+    elif split.get("partition") != expected:
+        problems.append(f"split.partition {split.get('partition')!r}, not {expected!r}")
+    if entry.get("partition") != split.get("partition"):
+        problems.append("the entry's partition differs from split.partition")
+    if split.get("scene_group_id") != entry.get("family_id"):
+        problems.append("scene_group_id is not the entry's family_id")
+    if problems:
+        raise ImportStopError(f"{export_id}: {entry['episode_id']}: {'; '.join(problems)}")
 
 
 def stack_counts(entries: list[dict[str, Any]]) -> dict[str, Any]:
@@ -409,8 +435,8 @@ def data_checks(episodes: list[dict[str, Any]]) -> dict[str, Any]:
     ``passed`` is the frozen checks only: (1) every episode_id once, no transitions sha256 in two
     families; (2) every family in one M4 partition; (3) exactly one training and one held-out
     partition designated (others may exist and are unused); (4) the action labels and units and
-    the 7-value enu_local state stream; and families_and_partitions' family id <-> triple
-    bijection. ``other_problems`` holds consistency checks that the freeze does not gate on.
+    the 7-value enu_local state stream; families_and_partitions' family id <-> triple
+    bijection; and amendment 2's published split.partition and scene_group_id. ``other_problems`` holds consistency checks that the freeze does not gate on.
     """
     problems: list[str] = []
     other: list[str] = []
@@ -427,9 +453,11 @@ def data_checks(episodes: list[dict[str, Any]]) -> dict[str, Any]:
         if episode["episode_id"] != entry["episode_id"]:
             other.append(f"{entry['episode_id']}: episode.json names {episode['episode_id']}")
         if episode["split"]["scene_group_id"] != family:
-            other.append(f"{entry['episode_id']}: scene_group_id is not the family id")
+            problems.append(f"{entry['episode_id']}: scene_group_id is not the family id")
+        if episode["split"]["partition"] != PARTITION_FOR_SPLIT.get(entry["split"]):
+            problems.append(f"{entry['episode_id']}: split.partition is not the published mapping")
         if episode["split"]["partition"] != entry["partition"]:
-            other.append(f"{entry['episode_id']}: split.partition differs from the manifest")
+            problems.append(f"{entry['episode_id']}: split.partition differs from the manifest")
         triple = (entry["route_id"], entry["wind_id"], entry["fault_family"])
         triples[family].add(triple)
         families_of_triple[triple].add(family)
