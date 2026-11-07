@@ -265,3 +265,15 @@ def test_the_verdict_reports_how_often_the_size_check_ran() -> None:
     assert result["size_check"]["controls"]["share_of_frames_checked"] == pytest.approx(0.2)
     assert len(result["size_check"]["cube_resized_steps"]) == 10
     assert result["size_check"]["cube_resized_steps"][0] == {"seed": 10220, "step": 3, "T": 99}
+
+
+def test_every_pinned_file_has_its_pinned_sha256() -> None:
+    import hashlib
+
+    from vishwaroop.synth.et_m3_1 import FROZEN
+
+    for path, expected in FROZEN.items():
+        assert hashlib.sha256((ROOT / path).read_bytes()).hexdigest() == expected, path
+    frozen = json.loads((ROOT / "evals/M3-protocol-2.json").read_text(encoding="utf-8"))
+    for path, expected in frozen["builds_on"].items():
+        assert FROZEN[Path(path)] == expected, path

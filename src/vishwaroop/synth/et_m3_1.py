@@ -71,7 +71,10 @@ from .snapshot import (
 
 FROZEN = {
     Path("evals/M3-protocol-2.json"): (
-        "f6bce1dbdf9fec8cce1bf8d941b7e6dfdb1255e20e8d128e6bd09d967825442c"
+        "1ada3f4679210edda3b9d429cb267043e04625e6ee42d0b959a353479604e97d"
+    ),
+    Path("src/vishwaroop/sim/so100_kinematics.py"): (
+        "c36d06206fa0f0f47ee3f975c79697e44a9f760235ab68a1a32148f853a3ac5f"
     ),
     Path("evals/M3-exit-tests.json"): (
         "2e35a50397b1c97919cb0be7d31b09b374d3fd0f0564741090b93c5e31e8f2d4"
