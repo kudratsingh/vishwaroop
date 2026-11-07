@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-07 07:23 UTC · ledger records: 126
+Generated: 2026-11-07 07:37 UTC · ledger records: 130
 
 ## Phases
 
@@ -12,7 +12,7 @@ Generated: 2026-11-07 07:23 UTC · ledger records: 126
 | M1 | Compact predictor, latent planner, action-chunk scorer | **passed** | 5 / 5 / 5 | M0 | WO-004, WO-005, WO-006, WO-012, WO-013, WO-014, WO-015, WO-016 |
 | M2a | Closed-loop policy evaluator (simulation) | **not_started** | 0 / 0 / 5 | M1 | WO-017, WO-018 |
 | M2b | Real-arm evaluator validation | **not_started** | 0 / 0 / 4 | M2a | — |
-| M3 | Synthetic-data engine (SFT route) | **not_started** | 0 / 0 / 5 | M0 | WO-020 |
+| M3 | Synthetic-data engine (SFT route) | **not_started** | 0 / 2 / 6 | M0 | WO-020, WO-021 |
 | M4 | Drone dynamics adaptation (offline and shadow only) | **not_started** | 0 / 2 / 4 | M1 | WO-019 |
 | M5 | Future: verifier at test time (best-of-N action chunks) | **not_started** | 0 / 0 / 2 | M2b | — |
 | M6 | Future: verifier as reward for real-robot RL | **not_started** | 0 / 0 / 2 | M5 | — |
@@ -43,11 +43,12 @@ Generated: 2026-11-07 07:23 UTC · ledger records: 126
 | ET-M2b-2 | M2b | Ranking on held-out real checkpoint pairs using matched placements with randomized within-pair order and paired analysis. | proposed default: selection regret <= 5 points; false optimism <= 10%; sample size frozen from a precision plan | not_run | — |
 | ET-M2b-3 | M2b | Physical episodes saved at the validated selection error and cost per evaluated checkpoint are reported. | reported with denominators; no threshold on the value itself | not_run | — |
 | ET-M2b-4 | M2b | One sealed confirmation suite is opened once under logged owner authorization and the result is reported regardless of outcome. | exactly one opening; frozen candidate hashes recorded before access | not_run | — |
-| ET-M3-1 | M3 | Generation starts from initial frames rendered from known simulator scenes whose initial state and asset hashes were saved first; scene-consistency checks reject injected mismatches. | 100% of injected mismatches rejected | not_run | — |
+| ET-M3-1 | M3 | Generation starts from initial frames rendered from known simulator scenes whose initial state and asset hashes were saved first; scene-consistency checks reject injected mismatches. | frozen: 100% of 60 injected mismatches rejected, at most 3 of 60 controls falsely rejected (evals/M3-exit-tests.json) | frozen | — |
 | ET-M3-2 | M3 | Inverse-dynamics actions are replayed from the initial state only and judged on task predicates; executability and false accept/reject rates are measured on an audited sample. | proposed default: false acceptance <= 10% on >= 100 audited trajectories | not_run | — |
 | ET-M3-3 | M3 | Matched-budget downstream ablation on the SFT route: real-only, real plus ordinary augmentation, real plus generated, with multiple seeds and held-out success with intervals. | proposed default: >= 3 seeds per arm; a benefit is claimed only if real+generated beats real+augmentation by a frozen margin; a negative result is a valid delivery | not_run | — |
 | ET-M3-4 | M3 | Total generation, filtering and training cost per accepted trajectory is reported including rejected generations. | reported; no threshold on the value | not_run | — |
 | ET-M3-5 | M3 | Generated demonstrations feed only the SFT route; GRPO uses on-policy samples only. | no code path routes IDM-labelled data into the GRPO objective | not_run | — |
+| ET-M3-6 | M3 | Targeted synthetic failure data improves prediction on a failure family held out from training (owner D2, 2026-11-06). | frozen: F3 beats F1 at every horizon 1 to 10, on both streams and all three seeds, and loses at most 2 points on the no-harm holdout (evals/M3-exit-tests.json) | frozen | — |
 | ET-M4-1 | M4 | Drone episodes are imported read-only through the contract and validate. | frozen: 100% of imported episodes contract_valid (evals/M4-exit-tests.json) | frozen | — |
 | ET-M4-2 | M4 | The residual model predicts 1 s of open-loop motion better than the nominal model on held-out flight families (evals/M4-exit-tests.json). | frozen (owner, 2026-11-06): learned RMSE <= 0.85 x nominal RMSE, where RMSE is the square root of the equal-weight mean over held-out families of each family's mean squared 3-D position error at step 20 of a 20-step open-loop rollout (evals/M4-exit-tests.json) | frozen | — |
 | ET-M4-3 | M4 | Uncertainty is calibrated and a gating rule (trust the learned model only when calibrated uncertainty is below a bound) is proposed and evaluated offline; shadow predictions are logged only. | no code path can emit a setpoint; gating rule documented with offline evidence | not_run | — |
@@ -83,4 +84,5 @@ Generated: 2026-11-07 07:23 UTC · ledger records: 126
 | WO-018 | M2a: a GPU pilot to measure the speedup over the Mac, then one full run if it fits | M2a | **in_progress** | 2026-11-07T07:23:55.659967Z | — |
 | WO-019 | M4: import banshee's D1 simulation episodes, read-only, and validate them | M4 | **created** | 2026-11-02T13:19:20.243311Z | — |
 | WO-020 | M3: re-measure the family-holdout gaps under plain A, and pick M3's target family | M3 | **accepted** | 2026-11-07T07:13:29.084289Z | reports/WO-020-m3-remeasure-family-gaps.md |
+| WO-021 | M3: protocol, scene engine and the scene-consistency check (ET-M3-1) | M3 | **ready** | 2026-11-07T07:37:18.702597Z | — |
 

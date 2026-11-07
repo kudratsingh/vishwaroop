@@ -92,11 +92,12 @@ Phase states: `not_started → ready → in_progress → (blocked ↔) → passe
 
 | Exit test | Statement | Threshold |
 |---|---|---|
-| ET-M3-1 | Generation from known sim scenes with initial state and asset hashes saved first; scene-consistency check rejects injected mismatches | 100% rejected |
+| ET-M3-1 | Generation from known sim scenes with initial state and asset hashes saved first; scene-consistency check rejects injected mismatches | *frozen:* 100% of 60 injected rejected, at most 3 of 60 controls falsely rejected (`evals/M3-exit-tests.json`) |
 | ET-M3-2 | IDM actions replayed from initial state only; executability and false accept/reject measured on an audited sample | *proposed default:* false acceptance ≤ 10% on ≥ 100 audited |
 | ET-M3-3 | Matched-budget ablation (real-only / real+augmentation / real+generated), ≥ 3 seeds, held-out success with intervals | benefit claimed only above a frozen margin; negative result is valid |
 | ET-M3-4 | Cost per accepted trajectory including rejected generations | reported |
 | ET-M3-5 | Generated demos feed SFT only; GRPO uses on-policy samples only | code-path audit clean |
+| ET-M3-6 | Targeted synthetic failure data improves prediction on a failure family held out from training (owner D2, 2026-11-06); target `m0-scripted-missed-grasp` | *frozen:* F3 beats F1 at every horizon, both streams, all seeds, losing at most 2 points on the no-harm holdout (`evals/M3-exit-tests.json`) |
 
 Details: `docs/SYNTHETIC_DATA_M3.md`.
 
