@@ -276,7 +276,7 @@ def verify_export(root: Path, export_id: str, expected: str, *, hash_files: bool
 def check_published_split(entry: dict[str, Any], episode: dict[str, Any], export_id: str) -> None:
     """Amendment 2's metadata check on one episode, before anything is copied."""
     split = episode.get("split", {})
-    expected = PARTITION_FOR_SPLIT.get(entry.get("split"))
+    expected = PARTITION_FOR_SPLIT.get(str(entry.get("split")))
     problems = []
     if expected is None:
         problems.append(f"M4 split {entry.get('split')!r} is neither train nor heldout")
@@ -436,7 +436,8 @@ def data_checks(episodes: list[dict[str, Any]]) -> dict[str, Any]:
     families; (2) every family in one M4 partition; (3) exactly one training and one held-out
     partition designated (others may exist and are unused); (4) the action labels and units and
     the 7-value enu_local state stream; families_and_partitions' family id <-> triple
-    bijection; and amendment 2's published split.partition and scene_group_id. ``other_problems`` holds consistency checks that the freeze does not gate on.
+    bijection; and amendment 2's published split.partition and scene_group_id.
+    ``other_problems`` holds consistency checks that the freeze does not gate on.
     """
     problems: list[str] = []
     other: list[str] = []
