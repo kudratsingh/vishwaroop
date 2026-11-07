@@ -4,20 +4,23 @@
     python -m vishwaroop.synth.et_m3_1 score
 
 Run it from the repository root, in the robotics environment, at a clean commit. Both are ledgered
-runs and both refuse changed frozen files (``evals/M3-protocol.md``, ``evals/M3-exit-tests.json``,
-``evals/M0-exit-tests.json``).
+runs and both refuse changed frozen files: ``evals/M3-protocol-2.json``, which replaces ET-M3-1,
+and what it builds on (``evals/M3-protocol.md``, ``evals/M3-exit-tests.json``,
+``src/vishwaroop/sim/so100_kinematics.py``), and ``evals/M0-exit-tests.json``.
 
-``pilot`` snapshots and renders block 10 seeds 10900 to 10919 (even seeds nominal, odd seeds the
-operators), measures every frame, and writes ``evals/M3-checker-tolerances.json`` once by the frozen
-rule, printing its sha256 for the status ledger. If no band inside the frozen limits contains every
-pilot frame, it writes nothing to ``evals/`` and exits 4, so that the owner is told before any
+``pilot`` snapshots and renders block 10 seeds 10300 to 10319 (even seeds nominal, odd seeds the
+operators), measures every frame, finds each candidate's size-checkable frames, and writes
+``evals/M3-checker-tolerances.json`` once by the frozen rule, printing its sha256 for the status
+ledger. If any of the freeze's seven stop conditions holds (``checker.pilot_tolerances`` lists
+them all), it writes nothing to ``evals/`` and exits 4, so that the owner is told before any
 candidate is generated.
 
 ``score`` refuses unless the tolerances file's sha256 is recorded in ``work_orders/STATUS.jsonl``
-and no score exists. It builds the 60 controls (seeds 10000 to 10059) and the 60 injections (seeds
-10100 to 10159, each into its own unmodified source candidate), runs the checker once on each
+and no score exists. It builds the 60 controls (seeds 10400 to 10459) and the 60 injections (seeds
+10200 to 10259, each into its own unmodified source candidate; a cube-resize source without a
+size-checkable frame 1 to T - 1 is replaced from 10800 up), runs the checker once on each
 source, injection and control, applies the threshold with the injection-credit rule, and writes
-``et_m3_1_score.json`` once. Snapshots are written once into the run directory; frames stay in
+``et_m3_1_score_p2.json`` once. Snapshots are written once into the run directory; frames stay in
 memory, one candidate at a time.
 
 Exit codes: 0 done (whatever the verdict), 2 refused, 3 simulator not run, 4 the pilot stopped.
@@ -28,6 +31,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import sys
 import time
 from pathlib import Path
@@ -43,16 +47,20 @@ from .checker import (
     PilotCandidate,
     PilotStopError,
     Tolerances,
+    camera_position,
     check_candidate,
     first_frame_difference,
     load_tolerances,
     measure,
     pilot_tolerances,
     reference,
+    sightline_clearance,
+    size_checkable_frames,
     verdict,
 )
 from .operators import EpisodeKind, et_m3_1_episodes
 from .snapshot import (
+    RenderedEpisode,
     RenderingEnv,
     Snapshot,
     SnapshotError,
@@ -63,6 +71,12 @@ from .snapshot import (
 )
 
 FROZEN = {
+    Path("evals/M3-protocol-2.json"): (
+        "36b5135a45c645502013c9271cbfe05d030795df631da4c887c4455f4b907a46"
+    ),
+    Path("src/vishwaroop/sim/so100_kinematics.py"): (
+        "c36d06206fa0f0f47ee3f975c79697e44a9f760235ab68a1a32148f853a3ac5f"
+    ),
     Path("evals/M3-exit-tests.json"): (
         "2e35a50397b1c97919cb0be7d31b09b374d3fd0f0564741090b93c5e31e8f2d4"
     ),
@@ -73,11 +87,11 @@ FROZEN = {
 M0_EXIT_TESTS = Path("evals/M0-exit-tests.json")
 STATUS_LEDGER = Path("work_orders/STATUS.jsonl")
 RUNS = Path("runs")
-PILOT_RESULT = "et_m3_1_pilot.json"
-SCORE_RESULT = "et_m3_1_score.json"
+PILOT_RESULT = "et_m3_1_pilot_p2.json"
+SCORE_RESULT = "et_m3_1_score_p2.json"
 SNAPSHOTS = "snapshots"
 STOPPED = 4
-FIRST_INJECTION_SEED = 10100  # inject.FIRST_SEED; inject needs numpy, so it is imported late
+FIRST_INJECTION_SEED = 10200  # inject.FIRST_SEED; inject needs numpy, so it is imported late
 
 
 def check_frozen(frozen: dict[Path, str] = FROZEN) -> dict[str, str]:
@@ -128,6 +142,17 @@ def _scene(env: RenderingEnv, seed: int, task: tuple[str, str, int], run_dir: Pa
     return snapshot
 
 
+def _size_frames(snapshot: Snapshot, rendered: RenderedEpisode) -> int:
+    """The candidate's size-checkable frames, from its scene's initial joint and cube positions,
+    the render camera's centre, and its actions; never from a frame."""
+    return size_checkable_frames(
+        rendered.initial_joints,
+        rendered.initial_cube,
+        camera_position(snapshot.manifest),
+        rendered.actions,
+    )
+
+
 def _episode_note(episode: EpisodeKind, steps: int, planning_error: str | None) -> dict[str, Any]:
     return {**episode.to_json(), "T": steps, "planning_error": planning_error}
 
@@ -140,54 +165,118 @@ def run_pilot(env: RenderingEnv, task: tuple[str, str, int], run_dir: Path) -> d
         print(f"pilot seed {episode.seed} {episode.kind}", file=sys.stderr, flush=True)
         snapshot = _scene(env, episode.seed, task, run_dir)
         rendered = render_episode(env, snapshot, episode, task[2])
+        start = rendered.initial_cube
+        camera = camera_position(snapshot.manifest)
         candidates.append(
             PilotCandidate(
                 seed=episode.seed,
                 snapshot=measure(snapshot.render),
                 frames=tuple(measure(frame) for frame in rendered.frames),
                 first_difference=first_frame_difference(rendered.frames[0], snapshot.render),
+                size_frames=_size_frames(snapshot, rendered),
+                cube_displacement_m=tuple(
+                    math.dist(cube, start) for cube in rendered.cube_positions
+                ),
+                actual_clearance_m=tuple(
+                    sightline_clearance(joints, camera, start)
+                    for joints in rendered.joint_positions
+                ),
             )
         )
-        episodes.append(_episode_note(episode, rendered.steps, rendered.planning_error))
+        episodes.append(
+            {
+                **_episode_note(episode, rendered.steps, rendered.planning_error),
+                "size_checkable_frames": candidates[-1].size_frames,
+                "cube_positions": rendered.cube_positions,
+                "actual_clearance_m": list(candidates[-1].actual_clearance_m),
+            }
+        )
     return {"candidates": candidates, "episodes": episodes}
 
 
 def _check(
-    snapshot: Snapshot, manifest: dict[str, Any], frames: list[Any], tolerances: Tolerances
+    snapshot: Snapshot,
+    manifest: dict[str, Any],
+    frames: list[Any],
+    tolerances: Tolerances,
+    size_frames: int,
 ) -> dict[str, Any]:
     ref = reference(snapshot.manifest, measure(snapshot.render), snapshot.render.shape, tolerances)
-    return check_candidate(manifest, frames, ref, snapshot.render, tolerances).to_json()
+    return check_candidate(
+        manifest, frames, ref, snapshot.render, tolerances, size_frames
+    ).to_json()
 
 
 def run_score(
     env: RenderingEnv, task: tuple[str, str, int], run_dir: Path, tolerances: Tolerances
 ) -> dict[str, Any]:
     """Build and check the 60 controls and 60 injections, one candidate at a time."""
-    from .inject import RENDER_SEED_OFFSET, TYPES, InjectionError, inject, injection_plan
+    from .inject import (
+        RENDER_SEED_OFFSET,
+        RESIZE_REPLACEMENT_SEEDS,
+        TYPES,
+        InjectionError,
+        inject,
+        injection_plan,
+    )
 
     controls = []
     for episode in et_m3_1_episodes(CONTROL_SEEDS):
         print(f"control seed {episode.seed} {episode.kind}", file=sys.stderr, flush=True)
         snapshot = _scene(env, episode.seed, task, run_dir)
         rendered = render_episode(env, snapshot, episode, task[2])
-        result = _check(snapshot, snapshot.candidate_manifest(), rendered.frames, tolerances)
+        size_frames = _size_frames(snapshot, rendered)
+        result = _check(
+            snapshot, snapshot.candidate_manifest(), rendered.frames, tolerances, size_frames
+        )
         controls.append(
             {**_episode_note(episode, rendered.steps, rendered.planning_error), **result}
         )
     plan = injection_plan()
     sources = {item.seed: item for item in et_m3_1_episodes([seed for _, _, seed in plan])}
     injections = []
-    for t, i, seed in plan:
-        episode = sources[seed]
-        print(f"injection type {t} i {i} seed {seed}", file=sys.stderr, flush=True)
-        snapshot = _scene(env, seed, task, run_dir)
-        rendered = render_episode(env, snapshot, episode, task[2])
+    replacements = iter(RESIZE_REPLACEMENT_SEEDS)
+    # replacement seeds are one ascending sequence, so F2's lateral-miss count runs over all of them
+    replacement_kinds = {item.seed: item for item in et_m3_1_episodes(RESIZE_REPLACEMENT_SEEDS)}
+    for t, i, frozen_seed in plan:
+        seed: int | None = frozen_seed
+        skipped: list[dict[str, Any]] = []
+        while seed is not None:
+            episode = sources[seed] if seed == frozen_seed else replacement_kinds[seed]
+            print(f"injection type {t} i {i} seed {seed}", file=sys.stderr, flush=True)
+            snapshot = _scene(env, seed, task, run_dir)
+            rendered = render_episode(env, snapshot, episode, task[2])
+            size_frames = _size_frames(snapshot, rendered)
+            if t != 3 or min(size_frames, rendered.steps) >= 2:
+                break
+            skipped.append(
+                {"seed": seed, "size_checkable_frames": size_frames, "T": rendered.steps}
+            )
+            seed = next(replacements, None)
+        if seed is None:
+            injections.append(
+                {
+                    "type": t,
+                    "name": TYPES[t],
+                    "i": i,
+                    "frozen_seed": frozen_seed,
+                    "skipped_seeds": skipped,
+                    "seed": None,
+                    "source_passed": False,
+                    "injected_passed": None,
+                    "failed_checks": [],
+                    "injection_error": "not built: replacement seeds 10800 to 10899 ran out",
+                }
+            )
+            continue
         manifest = snapshot.candidate_manifest()
-        source = _check(snapshot, manifest, rendered.frames, tolerances)
+        source = _check(snapshot, manifest, rendered.frames, tolerances, size_frames)
         item: dict[str, Any] = {
             "type": t,
             "name": TYPES[t],
             "i": i,
+            "frozen_seed": frozen_seed,
+            "skipped_seeds": skipped,
             "seed": seed,
             "source": {**_episode_note(episode, rendered.steps, rendered.planning_error), **source},
             "source_passed": source["passed"],
@@ -204,12 +293,20 @@ def run_score(
                     projection = None
                     item["projection_error"] = str(exc)
             injected = inject(
-                t, i, rendered.frames, manifest, projection=projection, other_render=other
+                t,
+                i,
+                rendered.frames,
+                manifest,
+                projection=projection,
+                other_render=other,
+                size_frames=size_frames,
+                seed=seed,
             )
         except InjectionError as exc:
             item.update(injected_passed=None, failed_checks=[], injection_error=str(exc))
         else:
-            checked = _check(snapshot, injected.manifest, injected.frames, tolerances)
+            # an injection alters frames and the manifest, never the actions, so n is the source's
+            checked = _check(snapshot, injected.manifest, injected.frames, tolerances, size_frames)
             item.update(
                 detail=injected.detail,
                 injected=checked,
@@ -232,7 +329,7 @@ def _pilot(args: argparse.Namespace) -> int:
     task = _task()
     env = ManiSkillPickCube(env_id=task[0], max_episode_steps=task[2], render=True)
     with ledgered_run(
-        purpose="WO-021: ET-M3-1 tolerance pilot, block 10 seeds 10900-10919",
+        purpose="WO-021: ET-M3-1 tolerance pilot (m3-protocol-2), block 10 seeds 10300-10319",
         config={"frozen": frozen, "pilot_seeds": [PILOT_SEEDS[0], PILOT_SEEDS[-1]]},
         seeds={str(seed): seed for seed in PILOT_SEEDS},
         env_lock={"stack": env.stack_identity()},
@@ -278,7 +375,7 @@ def _score(args: argparse.Namespace) -> int:
     task = _task()
     env = ManiSkillPickCube(env_id=task[0], max_episode_steps=task[2], render=True)
     with ledgered_run(
-        purpose="WO-021: ET-M3-1 scored once, 60 controls and 60 injections on block 10",
+        purpose="WO-021: ET-M3-1 (m3-protocol-2) scored once, 60 controls and 60 injections",
         config={"frozen": frozen, "tolerances_sha256": digest},
         seeds={"controls_first": CONTROL_SEEDS[0], "injections_first": FIRST_INJECTION_SEED},
         env_lock={"stack": env.stack_identity()},

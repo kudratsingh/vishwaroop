@@ -50,6 +50,8 @@ def tolerances(**changes: Any) -> Tolerances:
     values: dict[str, Any] = {
         "a_lo": 0.8,
         "a_hi": 1.25,
+        "p_lo": 0.8,
+        "p_hi": 1.25,
         "merge_radius_px": 20.0,
         "first_frame_tolerance": 0.5,
         "goal_centroid_px": 3.0,
@@ -68,12 +70,14 @@ def run_evaluate(
     manifest: dict[str, Any] | None = None,
     first: float = 0.0,
     tol: Tolerances | None = None,
+    size_frames: int | None = None,
 ) -> Any:
     tol = tol or tolerances()
     snap = snapshot_manifest()
     ref = reference(snap, CUBE, SHAPE, tol)
     candidate = manifest or {key: snap[key] for key in ref.manifest}
-    return evaluate(candidate, [SHAPE] * len(frames), first, frames, ref, tol)
+    size = len(frames) if size_frames is None else size_frames
+    return evaluate(candidate, [SHAPE] * len(frames), first, frames, ref, tol, size)
 
 
 def test_merged_area_counts_components_within_the_radius_of_the_largest() -> None:
@@ -98,12 +102,12 @@ def test_each_check_rejects_its_own_mismatch() -> None:
     assert run_evaluate([CUBE], manifest=wrong).to_json()["failed_checks"] == ["manifest"]
     assert run_evaluate([CUBE], first=0.6).to_json()["failed_checks"] == ["first_frame"]
     gone = run_evaluate([CUBE, frame(())])
-    assert gone.to_json()["failed_checks"] == ["cube_area"]
+    assert gone.to_json()["failed_checks"] == ["cube_area", "cube_size"]
     assert gone.failed["cube_area"]["frame"] == 1
     small = run_evaluate([frame(((360, 300.0, 200.0),))])
-    assert small.to_json()["failed_checks"] == ["cube_area"]
+    assert small.to_json()["failed_checks"] == ["cube_area", "cube_size"]
     big = run_evaluate([frame(((1536, 300.0, 200.0),))])
-    assert big.to_json()["failed_checks"] == ["cube_area"]
+    assert big.to_json()["failed_checks"] == ["cube_area", "cube_size"]
     twice = run_evaluate([frame(((600, 300.0, 200.0), (600, 300.0, 260.0)))])
     assert twice.to_json()["failed_checks"] == ["extra_red"]
     moved = run_evaluate([frame(((600, 300.0, 200.0),), at=360.0)])
@@ -122,8 +126,15 @@ def test_band_ends_are_inside_the_band() -> None:
     assert run_evaluate([frame(((750, 300.0, 200.0),))]).passed
 
 
-def pilot(*ratios: float, merge: float = 10.0, green: int = 300, goal: float = 2.0) -> list[Any]:
-    """Two pilot candidates whose frames show the cube at the given area ratios."""
+def pilot(
+    *ratios: float,
+    merge: float = 10.0,
+    green: int = 300,
+    goal: float = 2.0,
+    size_frames: int | None = 1,
+) -> list[Any]:
+    """Two pilot candidates whose frames show the cube at the given area ratios. Only frame 0 is
+    size-checkable unless ``size_frames`` says otherwise (``None``: every frame)."""
     snapshot = FrameStats(((1000, 300.0, 200.0),), 400, (150.0, 350.0))
     frames = [FrameStats(((1000, 300.0, 200.0),), 400, (150.0, 350.0))]
     frames += [
@@ -134,42 +145,47 @@ def pilot(*ratios: float, merge: float = 10.0, green: int = 300, goal: float = 2
         )
         for r in ratios
     ]
+    size = len(frames) if size_frames is None else size_frames
     return [
-        PilotCandidate(10900, snapshot, tuple(frames), 0.2),
-        PilotCandidate(10901, snapshot, tuple(frames[:1]), 0.4),
+        PilotCandidate(10900, snapshot, tuple(frames), 0.2, size, (0.0,) * len(frames)),
+        PilotCandidate(10901, snapshot, tuple(frames), 0.4, size, (0.0,) * len(frames)),
     ]
 
 
 def test_the_pilot_widens_each_observed_extreme_by_ten_percent() -> None:
     result = pilot_tolerances(pilot(0.7, 1.2, merge=10.0, green=300, goal=2.0))
     assert result["merge_radius_px"] == pytest.approx(11.0)
-    assert result["cube_area_band"] == pytest.approx([0.63, 1.32])
     assert result["goal_centroid_px"] == pytest.approx(2.2)
     assert result["first_frame_tolerance"] == pytest.approx(0.44)
     assert result["min_green_pixels"] == 300
     assert result["masks"] == MASK_RULES
     assert result["observed"]["area_ratio_min"] == {"value": 0.7, "seed": 10900, "frame": 1}
+    assert result["presence_band"] == pytest.approx([0.63, 1.32])
+    assert result["size_band"] == pytest.approx([0.9, 1.1])
     tol = Tolerances.from_json(result)
-    assert (tol.a_lo, tol.a_hi) == pytest.approx((0.63, 1.32))
+    assert (tol.p_lo, tol.p_hi) == pytest.approx((0.63, 1.32))
+    assert (tol.a_lo, tol.a_hi) == pytest.approx((0.9, 1.1))
 
 
 @pytest.mark.parametrize("ratios", [(0.3, 1.0), (1.0, 2.33), (0.39, 2.4)])
 def test_the_pilot_stops_when_the_band_leaves_the_frozen_limits(ratios: tuple[float, ...]) -> None:
-    with pytest.raises(PilotStopError, match=r"tell|0\.36") as stop:
-        pilot_tolerances(pilot(*ratios))
-    assert "band" in stop.value.observed
+    with pytest.raises(PilotStopError, match=r"0\.36") as stop:
+        pilot_tolerances(pilot(*ratios, size_frames=None))
+    assert "size_band" in stop.value.observed
+    assert any("not knowable" in reason for reason in stop.value.observed["stops"])
 
 
-def test_the_pilot_just_inside_the_limits_is_kept() -> None:
-    result = pilot_tolerances(pilot(0.401, 2.32))
-    low, high = result["cube_area_band"]
-    assert low > 0.36 and high < 2.56
+def test_the_presence_band_has_no_limits_but_must_exclude_a_missing_cube() -> None:
+    result = pilot_tolerances(pilot(0.2, 2.9))
+    assert result["presence_band"] == pytest.approx([0.18, 3.19])
+    with pytest.raises(PilotStopError, match="cannot exclude a missing cube"):
+        pilot_tolerances(pilot(0.0, 1.0))
 
 
 def test_the_pilot_stops_when_a_snapshot_shows_no_cube() -> None:
     empty = FrameStats((), 400, (150.0, 350.0))
     with pytest.raises(PilotStopError, match="no cube"):
-        pilot_tolerances([PilotCandidate(10900, empty, (CUBE,), 0.0)])
+        pilot_tolerances([PilotCandidate(10900, empty, (CUBE,) * 3, 0.0, 3, (0.0,) * 3)])
 
 
 def test_the_injection_credit_rule() -> None:
@@ -260,9 +276,13 @@ def test_tolerances_load_only_with_their_pinned_sha256(tmp_path: Path) -> None:
     ("changes", "match"),
     [
         ({"masks": {**MASK_RULES, "connectivity": 4}}, "mask rules"),
-        ({"cube_area_band": [0.3, 1.2]}, "limits"),
-        ({"cube_area_band": [0.7, 2.6]}, "limits"),
-        ({"protocol_version": "m3-protocol-2"}, "protocol"),
+        ({"size_band": [0.3, 1.2]}, "limits"),
+        ({"size_band": [0.7, 2.6]}, "limits"),
+        ({"presence_band": [0.0, 1.2]}, "missing cube"),
+        ({"presence_band": None}, "presence_band"),
+        ({"size_band": [0.9]}, "size_band"),
+        ({"protocol_version": "m3-protocol-1"}, "protocol"),
+        ({"sightline_clearance_m": 0.05}, "sightline"),
         ({"other_component_fraction": 0.3}, "0.25"),
     ],
 )
@@ -320,7 +340,7 @@ def test_a_frame_of_the_wrong_shape_fails_frame_shape() -> None:
     snap = snapshot_manifest()
     ref = reference(snap, CUBE, SHAPE, tol)
     candidate = {key: snap[key] for key in ref.manifest}
-    result = evaluate(candidate, [SHAPE, (256, 256, 3)], 0.0, [CUBE], ref, tol)
+    result = evaluate(candidate, [SHAPE, (256, 256, 3)], 0.0, [CUBE], ref, tol, 1)
     assert result.to_json()["failed_checks"] == ["frame_shape"]
     assert result.failed["frame_shape"]["frame"] == 1
 
@@ -340,6 +360,6 @@ def test_another_red_component_of_exactly_a_quarter_of_the_cube_fails() -> None:
 
 @pytest.mark.parametrize("band", [[0.36, 1.2], [0.7, 2.56]])
 def test_a_band_on_a_frozen_limit_is_refused(tmp_path: Path, band: list[float]) -> None:
-    path, digest = tolerance_file(tmp_path, cube_area_band=band)
+    path, digest = tolerance_file(tmp_path, size_band=band)
     with pytest.raises(ValueError, match="limits"):
         load_tolerances(path, digest)

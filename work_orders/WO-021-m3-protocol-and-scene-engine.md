@@ -32,3 +32,8 @@ A pilot that cannot fit a band inside the frozen limits (the owner is told); any
 
 ## Progress (append-only)
 - **2026-11-07, the tolerance pilot stopped by its frozen rule.** Run `20261107T083058Z_83f404c3`, at clean `5ca439e`. In unmodified pilot frames the cube's visible area was 0.176 to 1.938 of the snapshot's: smallest at seed 10900, frame 90, with the gripper over it; largest at seed 10908, frame 185, placed nearer the camera. The widened band, [0.158, 2.131], is outside the frozen 0.36 < a_lo and a_hi < 2.56. No tolerances file, control or injection exists. ET-M3-1 waits for the owner's decision on `m3-protocol-2`.
+- **2026-11-07, the owner chose option A; `m3-protocol-2` drafted, reviewed and rechecked before freezing.**
+  - ET-M3-1 under `m3-protocol-1` is recorded as failed (`reports/WO-021-et-m3-1-protocol-1.md`).
+  - `evals/M3-protocol-2.json` replaces only ET-M3-1. It keeps protocol-1's every-frame area band as a presence band, and adds a size band in size-checkable frames. Those frames are chosen by a sightline rule computed from the commanded joints only.
+  - The rule's 0.035 m clearance comes from the ledgered diagnostic `20261107T112025Z_3f2d4bd9`, run on spent seeds 10900 to 10919.
+  - The independent review found a blocker: with the area band limited to size-checkable frames, a removed cube went undetected after them. The presence band fixes it. The review also found that failing candidates with no size-checkable frame would sink the test on a technicality; such candidates now get no size-band check instead.
