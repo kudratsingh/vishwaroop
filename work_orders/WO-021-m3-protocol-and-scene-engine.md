@@ -29,3 +29,6 @@ A pilot that cannot fit a band inside the frozen limits (the owner is told); any
 
 ## Report
 `reports/WO-021-m3-protocol-and-scene-engine.md`
+
+## Progress (append-only)
+- **2026-11-07, the tolerance pilot stopped by its frozen rule.** Run `20261107T083058Z_83f404c3`, at clean `5ca439e`. In unmodified pilot frames the cube's visible area was 0.176 to 1.938 of the snapshot's: smallest at seed 10900, frame 90, with the gripper over it; largest at seed 10908, frame 185, placed nearer the camera. The widened band, [0.158, 2.131], is outside the frozen 0.36 < a_lo and a_hi < 2.56. No tolerances file, control or injection exists. ET-M3-1 waits for the owner's decision on `m3-protocol-2`.
