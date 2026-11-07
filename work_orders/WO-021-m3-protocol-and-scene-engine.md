@@ -42,3 +42,8 @@ A pilot that cannot fit a band inside the frozen limits (the owner is told); any
   - In them: area ratio 1.000 throughout, cube displacement at most 1.5e-6 m, actual-joint clearance at least 0.0351 m.
   - Over every frame the area ratio ran from 0.129 to 1.190.
   - Tolerances: size band [0.9, 1.1], presence band [0.116, 1.309], merge radius 27.4 px, first-frame tolerance 0.0, goal-centroid distance 13.6 px, minimum green count 0. Their sha256 is in the status ledger before any control or injection.
+- **2026-11-07, ET-M3-1 under `m3-protocol-2` scored once and failed.** Run `20261107T113835Z_1d794f74` at clean `4efb133` (**measured**, simulation); report `reports/WO-021-et-m3-1-protocol-2.md`.
+  - Controls: 9 of 60 falsely rejected (limit 3). Injections: 54 of 60 credited. All 60 injected candidates failed a check; 6 were not credited because their sources failed.
+  - Every failure is on the every-frame presence band, whose 20-seed tails (0.129 to 1.190, widened to [0.116, 1.309]) fresh seeds exceeded (0.069 to 1.491).
+  - The new size band falsely rejected nothing.
+  - A revision needs `m3-protocol-3` and the owner's decision.
