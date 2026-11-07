@@ -72,6 +72,8 @@ def _torch() -> Any:
 def _sync(device: str) -> None:
     if device == "mps":
         _torch().mps.synchronize()
+    elif device == "cuda":
+        _torch().cuda.synchronize()
 
 
 def _peak_tracker(device: str) -> Callable[[], float]:
@@ -82,6 +84,8 @@ def _peak_tracker(device: str) -> Callable[[], float]:
     def sample() -> float:
         if device == "mps":
             peak[0] = max(peak[0], float(torch.mps.driver_allocated_memory()))
+        elif device == "cuda":
+            peak[0] = max(peak[0], float(torch.cuda.max_memory_allocated()))
         return peak[0]
 
     return sample
