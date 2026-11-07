@@ -1,0 +1,20 @@
+{
+  "amends": "evals/M4-exit-tests.json",
+  "amends_sha256": "86b6d7d1ac8743c483d15078eeb97204208561254913b9df76261ff01e918651",
+  "amendment": "m4-protocol-1 amendment 1",
+  "phase": "M4",
+  "frozen_on": "2026-11-07",
+  "frozen_before": "any file is copied from banshee's exports, and before either M4 model exists",
+  "decided_by": "owner, 2026-11-07 (ledgers/approvals.jsonl, WO-019): both decisions approved as the agent proposed them. The wording below is the agent's, as sent to the owner and approved.",
+  "how_it_applies": "evals/M4-exit-tests.json stays as frozen and is not edited. Where this file names a field, its text replaces that field's text; every other field of evals/M4-exit-tests.json applies unchanged.",
+  "why": {
+    "schema_check": "ET-M4-1's schema_check named a top-level schema_version in each MANIFEST.json, written before banshee's export format existed. banshee's four published manifests (WO-029) declare the contract version only at contract.schema_version, so the frozen check stopped the import before copying, as it should. The owner chose to read the declaration where the producer put it rather than have banshee republish.",
+    "threshold": "ET-M4-2's threshold required the gate of every declared seed, which was the agent's stricter reading of the owner's aggregate gate. The owner chose option B: one model, the seed ensemble, gated, with every seed reported."
+  },
+  "ET-M4-1": {
+    "schema_check": "In each of the four producer manifests (episode and ULog exports), the contract schema version is the value of contract.schema_version. It must be present and be exactly the string \"1.0.0\", the contract schema_version that the pinned ironclad-kit v1.2.0 validates (ironclad docs/adr/ADR-0008-PROGRAM-schema-version-decides-exchange.md). Stop and report before copying anything if, in any manifest: the contract object or its schema_version is missing; the value is not a string or not exactly \"1.0.0\"; or the manifest declares a conflicting schema version anywhere else (a top-level schema_version, or any other schema_version key outside the contract object, whose value differs from \"1.0.0\"). Each episode's own episode.json schema_version must also be exactly \"1.0.0\", or the import stops. The producer manifests are kept byte-for-byte as published, and every episode is revalidated with vishwaroop's pinned ironclad-kit v1.2.0 as the frozen validator field says."
+  },
+  "ET-M4-2": {
+    "threshold": "The scored learned model is the ensemble E of the three declared seeds (0, 1, 2). In every eligible window each seed rolls out its own 20 open-loop steps on its own predictions, exactly as the rollout rule says, independently of the other seeds. E's prediction at step k is the per-component arithmetic mean of the three seeds' step-k predicted positions and velocities, and for yaw the circular mean atan2(sum over s of sin yaw_s, sum over s of cos yaw_s); E's mean is never fed back into any seed's rollout. Pass if RMSE(E) <= 0.85 x RMSE(nominal), both under the gated metric on the identical window list; nothing else decides the pass. Reported beside it, not gated, on the same windows: each seed's own RMSE, its ratio to nominal and its per-family means, with its bootstrap interval from the same resamples as E's; every seed whose ratio exceeds 0.85 is flagged; the spread (largest minus smallest) of the three seed ratios; and whether the every-seed rule (every seed's RMSE <= 0.85 x nominal) would also have passed, as information only. If any seed fails to train, or gives a non-finite prediction on any eligible window, the run stops and reports, writes no score, and no ensemble of fewer seeds is scored. ET-M4-2's other reported metrics and flags apply to E. scored_once scores the nominal, each seed and E in one run."
+  }
+}
