@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-07 07:37 UTC · ledger records: 130
+Generated: 2026-11-07 08:27 UTC · ledger records: 131
 
 ## Phases
 
@@ -84,5 +84,5 @@ Generated: 2026-11-07 07:37 UTC · ledger records: 130
 | WO-018 | M2a: a GPU pilot to measure the speedup over the Mac, then one full run if it fits | M2a | **in_progress** | 2026-11-07T07:23:55.659967Z | — |
 | WO-019 | M4: import banshee's D1 simulation episodes, read-only, and validate them | M4 | **created** | 2026-11-02T13:19:20.243311Z | — |
 | WO-020 | M3: re-measure the family-holdout gaps under plain A, and pick M3's target family | M3 | **accepted** | 2026-11-07T07:13:29.084289Z | reports/WO-020-m3-remeasure-family-gaps.md |
-| WO-021 | M3: protocol, scene engine and the scene-consistency check (ET-M3-1) | M3 | **ready** | 2026-11-07T07:37:18.702597Z | — |
+| WO-021 | M3: protocol, scene engine and the scene-consistency check (ET-M3-1) | M3 | **in_progress** | 2026-11-07T08:27:59.661473Z | — |
 

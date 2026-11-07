@@ -1,7 +1,7 @@
 PYTHON ?= python3
 BASE ?= origin/main
 
-.PHONY: check lint format type test verify secrets links immutable board sim-check help
+.PHONY: check lint format type test verify secrets links immutable board sim-check synth-test help
 
 help:
 	@echo "make check      - full CPU tier (lint, type, test, verify, secrets, links)"
@@ -51,3 +51,7 @@ board:
 sim-check:
 	@echo "Simulator tier is not automated in this starter. Run it on a machine with the pinned stack and attach the report (docs/WORKFLOW.md section 6)."
 	@echo "Status: not run"
+
+# The synth tests that need numpy and scipy, which the CPU tier lacks; run in the robotics env.
+synth-test:
+	PYTHONPATH=src:tests $(HOME)/.cache/vishwaroop-robotics/sim-venv/bin/python -m pytest -q tests/test_synth_*.py

@@ -313,3 +313,33 @@ def test_the_frozen_m3_files_are_the_ones_the_commands_pin(tmp_path: Path) -> No
     changed.write_bytes((ROOT / "evals/M3-exit-tests.json").read_bytes() + b" ")
     with pytest.raises(ValueError, match="frozen"):
         check_frozen({changed: "2e35a50397b1c97919cb0be7d31b09b374d3fd0f0564741090b93c5e31e8f2d4"})
+
+
+def test_a_frame_of_the_wrong_shape_fails_frame_shape() -> None:
+    tol = tolerances()
+    snap = snapshot_manifest()
+    ref = reference(snap, CUBE, SHAPE, tol)
+    candidate = {key: snap[key] for key in ref.manifest}
+    result = evaluate(candidate, [SHAPE, (256, 256, 3)], 0.0, [CUBE], ref, tol)
+    assert result.to_json()["failed_checks"] == ["frame_shape"]
+    assert result.failed["frame_shape"]["frame"] == 1
+
+
+def test_a_manifest_with_an_extra_field_fails() -> None:
+    snap = snapshot_manifest()
+    ref = reference(snap, CUBE, SHAPE, tolerances())
+    candidate = {key: snap[key] for key in ref.manifest}
+    candidate["extra"] = 1
+    assert run_evaluate([CUBE], manifest=candidate).to_json()["failed_checks"] == ["manifest"]
+
+
+def test_another_red_component_of_exactly_a_quarter_of_the_cube_fails() -> None:
+    exact = frame(((600, 300.0, 200.0), (150, 50.0, 50.0)))
+    assert run_evaluate([exact]).to_json()["failed_checks"] == ["extra_red"]
+
+
+@pytest.mark.parametrize("band", [[0.36, 1.2], [0.7, 2.56]])
+def test_a_band_on_a_frozen_limit_is_refused(tmp_path: Path, band: list[float]) -> None:
+    path, digest = tolerance_file(tmp_path, cube_area_band=band)
+    with pytest.raises(ValueError, match="limits"):
+        load_tolerances(path, digest)

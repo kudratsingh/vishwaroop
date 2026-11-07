@@ -162,3 +162,45 @@ def test_the_pilot_and_scoring_flow_end_to_end(
     json.dumps(report, allow_nan=False)
     with pytest.raises(SnapshotError, match="written once"):
         et_m3_1.run_score(env, TASK, tmp_path / "score", tolerances)
+
+
+class _CountingEnv(FakeSceneEnv):
+    """A FABRICATED env whose render encodes how many steps ran since the last restore."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.steps_since_restore = 0
+
+    def restore_state(self, state: bytes) -> Any:
+        self.steps_since_restore = 0
+        return super().restore_state(state)
+
+    def step(self, action: list[float]) -> Any:
+        self.steps_since_restore += 1
+        return super().step(action)
+
+    def render_rgb(self) -> Any:
+        image = super().render_rgb().copy()
+        image[0, 0, :] = self.steps_since_restore
+        return image
+
+
+def test_frame_t_is_rendered_after_exactly_t_steps_with_the_seed_as_noise_seed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from vishwaroop.synth import snapshot as module
+
+    seen: list[int] = []
+    real = module.ScriptedPickPlace
+
+    def recording(settings: Any, noise_seed: int = 0) -> Any:
+        seen.append(noise_seed)
+        return real(settings, noise_seed=noise_seed)
+
+    monkeypatch.setattr(module, "ScriptedPickPlace", recording)
+    env = _CountingEnv()
+    snap = take_snapshot(env, 10001, *TASK[:2])
+    rendered = render_episode(env, snap, et_m3_1_episodes([10001])[0], TASK[2])
+    assert len(rendered.frames) == rendered.steps + 1
+    assert [int(f[0, 0, 0]) for f in rendered.frames] == list(range(rendered.steps + 1))
+    assert seen == [10001]
