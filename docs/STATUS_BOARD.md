@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-07 11:43 UTC · ledger records: 137
+Generated: 2026-11-07 12:05 UTC · ledger records: 139
 
 ## Phases
 

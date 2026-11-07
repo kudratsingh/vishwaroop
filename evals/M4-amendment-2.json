@@ -1,0 +1,18 @@
+{
+  "amends": "evals/M4-exit-tests.json",
+  "amends_sha256": "86b6d7d1ac8743c483d15078eeb97204208561254913b9df76261ff01e918651",
+  "after": {"evals/M4-amendment-1.json": "79f8b00597f69fd0eaba993bc4323a5f4dea2d61d0e9b8330f2c2762415b52aa"},
+  "amendment": "m4-protocol-1 amendment 2",
+  "phase": "M4",
+  "frozen_on": "2026-11-07",
+  "frozen_before": "any file is copied from banshee's exports, and before either M4 model exists",
+  "decided_by": "owner, 2026-11-07 (ledgers/approvals.jsonl, WO-019): option 1, the published metadata kept and the freeze made to describe it. The wording below is the agent's, as sent to the owner and approved, with the owner's added requirements (byte-for-byte metadata, the train/dev and scene_group_id checks, manifests select M4 partitions).",
+  "how_it_applies": "evals/M4-exit-tests.json and evals/M4-amendment-1.json stay as frozen and are not edited. Where this file names a field, its text replaces that field's text (for ET-M4-2 families_and_partitions, the whole field is restated below); every other field applies unchanged.",
+  "why": "ET-M4-1's metadata field and ET-M4-2's families_and_partitions said each episode's split.partition is and stays dev. That came from vishwaroop's survey of banshee's unpublished episodes (2026-11-02). banshee's published exports (WO-029) set split.partition from banshee's frozen split plan by a documented transformation (banshee.publish.export v1): train for the 395 episodes of training-partition families, dev for the 176 of held-out families, with scene_group_id set to the family id. The agent found the mismatch before copying; the owner chose to keep the published data and amend the text.",
+  "ET-M4-1": {
+    "metadata": "Each episode keeps its metadata exactly as banshee published it: every copied file, episode.json included, is byte-for-byte the published file, checked by sha256. banshee's documented transformation (banshee.publish.export v1) set split.partition from its frozen split plan and scene_group_id to the family id. Before copying, the import requires, for every episode of both episode exports: split.partition is \"train\" when the manifest entry's split (the M4 partition) is \"train\", and \"dev\" when it is \"heldout\"; the manifest entry's partition field equals split.partition; and split.scene_group_id equals the manifest entry's family_id. If any episode differs, the import stops and reports before copying. The stack (ROS 2 Jazzy or Humble) is recorded as a field of the import record; it is not a family or partition key."
+  },
+  "ET-M4-2": {
+    "families_and_partitions": "A family is the producer manifest's family identifier, or its (route, wind, fault) triple if no identifier is given; each identifier maps to exactly one triple and back. A family's M4 partition is the one the producer manifests' family plan assigns (each entry's split: train or heldout), and only the manifests select M4 partitions. Each episode's split.partition is kept as published (train or dev, as ET-M4-1's metadata check requires) and plays no part in choosing training or held-out data. Families in any partition other than training and held-out are not used by ET-M4-2."
+  }
+}
