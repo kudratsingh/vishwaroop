@@ -1,0 +1,214 @@
+{
+  "band_limits": [
+    0.36,
+    2.56
+  ],
+  "code": "Code commit ff9ff8ed9e17b20a6c72097ffbd8ca301fb7a770, dirty False.",
+  "first_frame_metric": "mean_absolute_difference_uint8",
+  "first_frame_tolerance": 0.0,
+  "goal_centroid_px": 13.61929352976872,
+  "masks": {
+    "connectivity": 8,
+    "green": {
+      "B_lt": 80,
+      "G_gt": 120,
+      "R_lt": 80
+    },
+    "red": {
+      "B_lt": 60,
+      "G_lt": 60,
+      "R_gt": 120
+    }
+  },
+  "merge_radius_px": 27.353482164778804,
+  "min_green_pixels": 0,
+  "observed": {
+    "area_ratio_max": {
+      "frame": 185,
+      "seed": 10304,
+      "value": 1.1902071563088512
+    },
+    "area_ratio_min": {
+      "frame": 139,
+      "seed": 10305,
+      "value": 0.12875536480686695
+    },
+    "candidates": 20,
+    "first_frame_difference": {
+      "seed": 10319,
+      "value": 0.0
+    },
+    "goal_centroid_px": {
+      "frame": 142,
+      "seed": 10312,
+      "value": 12.381175936153381
+    },
+    "max_cube_displacement_in_size_checkable_frames_m": {
+      "seed": 10310,
+      "value": 1.4782797299455468e-06
+    },
+    "merge_distance_px": {
+      "frame": 137,
+      "seed": 10306,
+      "value": 24.866801967980727
+    },
+    "min_actual_joint_clearance_in_size_checkable_frames_m": {
+      "frame": 16,
+      "seed": 10303,
+      "value": 0.03508951110515724
+    },
+    "min_green_pixels": {
+      "frame": 143,
+      "seed": 10304,
+      "value": 0
+    },
+    "presence_band": [
+      0.11587982832618025,
+      1.3092278719397363
+    ],
+    "size_band": [
+      0.9,
+      1.1
+    ],
+    "size_checkable": {
+      "candidates": 20,
+      "max": 57,
+      "median": 32.5,
+      "min": 16,
+      "share_of_frames_checked": 0.19070422535211268,
+      "with_none": 0,
+      "with_none_in_1_to_T_minus_1": 0
+    },
+    "size_checkable_area_ratio_max": {
+      "frame": 56,
+      "seed": 10319,
+      "value": 1.0
+    },
+    "size_checkable_area_ratio_min": {
+      "frame": 0,
+      "seed": 10300,
+      "value": 1.0
+    },
+    "size_checkable_by_seed": {
+      "10300": {
+        "frames": 186,
+        "size_checkable_frames": 40
+      },
+      "10301": {
+        "frames": 186,
+        "size_checkable_frames": 31
+      },
+      "10302": {
+        "frames": 186,
+        "size_checkable_frames": 40
+      },
+      "10303": {
+        "frames": 186,
+        "size_checkable_frames": 28
+      },
+      "10304": {
+        "frames": 186,
+        "size_checkable_frames": 31
+      },
+      "10305": {
+        "frames": 186,
+        "size_checkable_frames": 30
+      },
+      "10306": {
+        "frames": 186,
+        "size_checkable_frames": 40
+      },
+      "10307": {
+        "frames": 186,
+        "size_checkable_frames": 32
+      },
+      "10308": {
+        "frames": 186,
+        "size_checkable_frames": 34
+      },
+      "10309": {
+        "frames": 16,
+        "size_checkable_frames": 16
+      },
+      "10310": {
+        "frames": 186,
+        "size_checkable_frames": 33
+      },
+      "10311": {
+        "frames": 186,
+        "size_checkable_frames": 33
+      },
+      "10312": {
+        "frames": 186,
+        "size_checkable_frames": 39
+      },
+      "10313": {
+        "frames": 186,
+        "size_checkable_frames": 31
+      },
+      "10314": {
+        "frames": 186,
+        "size_checkable_frames": 33
+      },
+      "10315": {
+        "frames": 186,
+        "size_checkable_frames": 49
+      },
+      "10316": {
+        "frames": 186,
+        "size_checkable_frames": 27
+      },
+      "10317": {
+        "frames": 186,
+        "size_checkable_frames": 22
+      },
+      "10318": {
+        "frames": 186,
+        "size_checkable_frames": 31
+      },
+      "10319": {
+        "frames": 186,
+        "size_checkable_frames": 57
+      }
+    },
+    "size_checkable_frames_outside_premise_band": 0,
+    "stops": [],
+    "without_size_checkable_frame_1_to_T_minus_1": []
+  },
+  "other_component_fraction": 0.25,
+  "pilot_seeds": [
+    10300,
+    10301,
+    10302,
+    10303,
+    10304,
+    10305,
+    10306,
+    10307,
+    10308,
+    10309,
+    10310,
+    10311,
+    10312,
+    10313,
+    10314,
+    10315,
+    10316,
+    10317,
+    10318,
+    10319
+  ],
+  "presence_band": [
+    0.11587982832618025,
+    1.3092278719397363
+  ],
+  "protocol_version": "m3-protocol-2",
+  "rule": "ET-M3-1 tolerance pilot (m3-protocol-2): each tolerance is the pilot's observed extreme widened by 10%; the size band over size-checkable frames, subject to 0.36 < a_lo and a_hi < 2.56; the presence band over every frame",
+  "run": "20261107T113546Z_783f6d54",
+  "sightline_clearance_m": 0.035,
+  "size_band": [
+    0.9,
+    1.1
+  ],
+  "widening": 0.1
+}
