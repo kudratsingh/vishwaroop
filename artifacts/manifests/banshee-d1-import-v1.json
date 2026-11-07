@@ -1,0 +1,5768 @@
+{
+ "code": "Code commit 145a3bb75bf9dbccaaf60fe2f8b4d17c719f7654, dirty False.",
+ "contract_split_audit": {
+  "holdout_scenes=False": {
+   "episodes": 571,
+   "note": "No guarantee against undeclared confounders or test-set disclosure.",
+   "status": "declared_group_and_lineage_checks_passed"
+  },
+  "holdout_scenes=True": {
+   "episodes": 571,
+   "note": "No guarantee against undeclared confounders or test-set disclosure.",
+   "status": "declared_group_and_lineage_checks_passed"
+  }
+ },
+ "episodes_index": [
+  {
+   "episode_id": "banshee-d1-20261101T051322Z_10bc58fd",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-20261101T051742Z_49b6cc47",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T051934Z_1779f115",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T052044Z_cafc3dbe",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T052154Z_b31db8c4",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T052305Z_a3e94dbd",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T052415Z_de2eed0c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T052525Z_b79f5090",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T052635Z_2c0e17bf",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T052746Z_10797ffa",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T052856Z_b056a02c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T053006Z_e82b546f",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T054322Z_3b0d572c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T054434Z_908f01fc",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T054545Z_463db2fd",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T054657Z_94dcdf21",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T054808Z_40ad1133",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T054920Z_c4759c8d",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T055032Z_d3cf33d9",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T055143Z_f412d3f2",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T055255Z_8dd65595",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T055406Z_81c79653",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T082353Z_e79967bb",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T082504Z_53262e08",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T082616Z_c58bdd79",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T082727Z_8798c202",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T082839Z_95978544",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T082950Z_e177aa7b",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T083102Z_07cdd994",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T083213Z_1e83af3a",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T083324Z_01c54fb4",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T083436Z_300ead68",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T092757Z_8e90c809",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T092908Z_c608f6fa",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T093019Z_1ae0fe12",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T093131Z_1eace15c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T093242Z_a07cdc55",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T093354Z_268c2c00",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T093505Z_8fb7a2cd",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T093617Z_e2f51f9e",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T093728Z_afcb1bd8",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T093839Z_510ebce0",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T104232Z_6b4b5c26",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T104344Z_e581bb4e",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T104455Z_5cf7c778",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T104606Z_5f0f2e26",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T104717Z_5d92619e",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T104829Z_052b4b31",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T104940Z_5174366d",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T105051Z_e6272152",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T105202Z_b7915bff",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T105313Z_1b92d24b",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T114534Z_c9f24edc",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T114646Z_e0ede21d",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T114758Z_9d1f54ee",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T114911Z_b661f969",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T115023Z_45f4cf13",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T115135Z_c80335a3",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T115247Z_bae3698c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T115400Z_ce353427",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T115512Z_52929ef7",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T115624Z_2cb08618",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T233501Z_7d4a8632",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T233613Z_8ec50506",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T233725Z_1827b636",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T233837Z_4e5fc254",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T233949Z_5dff9ec8",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T234101Z_58da4678",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T234213Z_e238a10a",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T234324Z_e947ff97",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T234437Z_6ffb7324",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261101T234549Z_4fd083ff",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261102T092705Z_75002cc6",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261102T092817Z_0d70eae3",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261102T092929Z_85d90035",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261102T093040Z_c54759e5",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261102T093152Z_915a8db0",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261102T093304Z_e079590c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261102T093416Z_4d14da05",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261102T093528Z_b5306808",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261102T093640Z_4f3158b3",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261102T093752Z_9cf5ced2",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261101T084002Z_a0bffa8e",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-E-01-20261101T084058Z_0523b383",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9a99b909ab|calm|E",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-E-02-20261101T084148Z_f7fa9234",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9a99b909ab|calm|E",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-E-03-20261101T084302Z_aea99e8d",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|E",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-E-04-20261101T084347Z_08934db6",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|E",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-S-01-20261101T084432Z_d8565fcf",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|S",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-S-02-20261101T084522Z_9dfb7494",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|S",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-L-01-20261101T084612Z_89a99e50",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|L",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-L-02-20261101T084716Z_fc3a7b14",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|L",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-L-03-20261101T084836Z_bb9b3783",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|L",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-P-01-20261101T084926Z_fbaad66a",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|P",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-P-03-20261101T085017Z_d5852829",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|P",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-P-02-20261101T085116Z_0cff5e71",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|P",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-01-20261101T085207Z_c59028c7",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-02-20261101T085258Z_a4a7c7d9",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-03-20261101T085352Z_8a3d0405",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-04-20261101T085446Z_63479169",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-01-20261101T085549Z_3970a05e",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-02-20261101T085643Z_f3a9a922",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-03-20261101T085737Z_bb4f6bc1",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-04-20261101T085832Z_3f1c6a2e",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-05-20261101T085925Z_7564b8aa",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-016773cf1d|calm|C",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-06-20261101T090013Z_97dcb628",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-37077de8d7|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-B-01-20261101T090125Z_fa276945",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|B",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-01-20261101T090315Z_8cb7f3ef",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|R",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-02-20261101T090407Z_49f954b4",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|R",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-03-20261101T090459Z_930b4bcb",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-04-20261101T090549Z_3f0e5797",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|R",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-R-05-20261101T090646Z_9e488d93",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|R",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-06-20261101T090740Z_d93bf434",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-01-20261101T090845Z_71194adb",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-02-20261101T090938Z_782aa97f",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-01-20261101T091030Z_aa015ff1",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-02-20261101T091142Z_e2c41f9e",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-748e2c871c|calm|G",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-03-20261101T091303Z_e6fddd26",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|G",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-04-20261101T091406Z_4d936951",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-05-20261101T091526Z_18df67f7",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-a7a9fc7451|calm|G",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-01-20261101T091622Z_776a0825",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-02-20261101T091735Z_7172de4b",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-03-20261101T091842Z_2fd4231f",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-04-20261101T091932Z_29681ccb",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-W-01-20261101T092022Z_09df05ba",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-e1ebc8169e|wind-5.4|W",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-V-01-20261101T092152Z_d8140fb5",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|V",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-V-02-20261101T092311Z_8f9a5135",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-a7a9fc7451|calm|V",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-V-03-20261101T092430Z_0652ddac",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|V",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-V-04-20261101T092549Z_836783c7",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|V",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-V-05-20261101T092653Z_af010af7",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|V",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261101T095443Z_041d38de",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-E-01-20261101T095538Z_8a003738",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9a99b909ab|calm|E",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-E-02-20261101T095652Z_5d081057",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9a99b909ab|calm|E",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-E-03-20261101T095807Z_e31e491e",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|E",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-E-04-20261101T095852Z_a790b38a",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|E",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-S-01-20261101T095937Z_dbf49787",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|S",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-S-02-20261101T100027Z_3c4646b0",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|S",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-L-01-20261101T100117Z_e0e01321",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|L",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-L-02-20261101T100222Z_5f698189",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|L",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-L-03-20261101T100342Z_2b34fef0",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|L",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-P-01-20261101T100432Z_e89ef997",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|P",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-P-03-20261101T100522Z_f8326adf",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|P",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-P-02-20261101T100622Z_9a38098b",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|P",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-01-20261101T100712Z_8e44ba02",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-02-20261101T100804Z_4c92c1c8",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-03-20261101T100857Z_b61a04e8",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-04-20261101T100951Z_194217d3",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-01-20261101T101054Z_1637dc71",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-02-20261101T101148Z_566ea4ee",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-03-20261101T101243Z_cde1cd27",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-04-20261101T101337Z_ef9879aa",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-05-20261101T101431Z_6af61e30",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-016773cf1d|calm|C",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-06-20261101T101519Z_a6e668e5",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-37077de8d7|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-B-01-20261101T101631Z_8c2e3220",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|B",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-01-20261101T101821Z_3c36357a",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|R",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-02-20261101T101913Z_f60bbcdd",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|R",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-03-20261101T102005Z_3b094449",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-04-20261101T102055Z_660fff87",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|R",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-R-05-20261101T102152Z_cb1869c3",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|R",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-06-20261101T102246Z_c14f509c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-K-01-20261101T102321Z_df57bc8b",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-02-20261101T102414Z_f6db05bb",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-01-20261101T102506Z_e5b13e7b",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-02-20261101T102618Z_27d65ce4",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-748e2c871c|calm|G",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-03-20261101T102739Z_090ff10a",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|G",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-04-20261101T102842Z_4b78a31e",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-05-20261101T103002Z_3ea3879a",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-a7a9fc7451|calm|G",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-01-20261101T103057Z_fa46a03a",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-02-20261101T103211Z_99756d0f",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-03-20261101T103318Z_6dc50df0",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-04-20261101T103407Z_280c0165",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-W-01-20261101T103458Z_cf72cebe",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-e1ebc8169e|wind-5.4|W",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-V-01-20261101T103628Z_26236cc0",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|V",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-V-02-20261101T103747Z_a811414b",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-a7a9fc7451|calm|V",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-V-03-20261101T103906Z_be63f29a",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|V",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-V-04-20261101T104025Z_815c7da3",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|V",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-V-05-20261101T104128Z_46463090",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|V",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261101T105612Z_aaa2dd17",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-E-01-20261101T105708Z_c07a82c8",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9a99b909ab|calm|E",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-E-02-20261101T105822Z_564e9875",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9a99b909ab|calm|E",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-E-03-20261101T105938Z_eddc8f98",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|E",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-E-04-20261101T110042Z_b0963f08",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|E",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-S-01-20261101T110128Z_f6d29bfa",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|S",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-S-02-20261101T110219Z_33e77381",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|S",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-L-01-20261101T110310Z_83dc34aa",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|L",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-L-02-20261101T110416Z_f97f6d1d",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|L",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-L-03-20261101T110537Z_40b2dbfa",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|L",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-P-01-20261101T110628Z_57b2db9e",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|P",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-P-03-20261101T110719Z_29d06196",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|P",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-P-02-20261101T110821Z_ecbe0008",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|P",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-01-20261101T110912Z_8187bfa7",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-02-20261101T111005Z_e5abb2e6",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-03-20261101T111059Z_623cb884",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-04-20261101T111154Z_aab44f9d",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-01-20261101T111259Z_23f957f1",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-02-20261101T111354Z_ffc40f9f",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-03-20261101T111450Z_f640bac2",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-04-20261101T111545Z_083cc6c2",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-05-20261101T111640Z_0846d6a8",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-016773cf1d|calm|C",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-06-20261101T111728Z_bfd3d6c2",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-37077de8d7|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-B-01-20261101T111842Z_c57cae8c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|B",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-01-20261101T112033Z_ba529291",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|R",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-02-20261101T112126Z_a08c322c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|R",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-03-20261101T112219Z_63bb3d04",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-04-20261101T112310Z_9cee0db4",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|R",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-R-05-20261101T112408Z_aa81303f",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|R",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-06-20261101T112504Z_cdd4ffc4",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-01-20261101T112610Z_03ba9d55",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-02-20261101T112704Z_4947ca0f",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-01-20261101T112757Z_5d24f0ff",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-02-20261101T112910Z_d6c90d46",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-748e2c871c|calm|G",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-03-20261101T113031Z_8b866808",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|G",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-04-20261101T113135Z_e6d7dd5c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-05-20261101T113257Z_cc5bde49",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-a7a9fc7451|calm|G",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-01-20261101T113353Z_05ccc2b6",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-02-20261101T113507Z_ee472972",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-03-20261101T113616Z_5c5e84e5",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-04-20261101T113707Z_c062011e",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-W-01-20261101T113758Z_02c88488",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-e1ebc8169e|wind-5.4|W",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-V-01-20261101T113929Z_6df50147",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|V",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-V-02-20261101T114048Z_e252e762",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-a7a9fc7451|calm|V",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-V-03-20261101T114207Z_44335a7c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|V",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-V-04-20261101T114326Z_0c22712a",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|V",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-V-05-20261101T114430Z_428a541f",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|V",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-07-20261101T224056Z_4114c67c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-07-20261101T224134Z_5db327be",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261101T224526Z_9c002ae2",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-E-01-20261101T224623Z_00408302",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9a99b909ab|calm|E",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-E-02-20261101T224737Z_5dcd9a4e",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9a99b909ab|calm|E",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-E-03-20261101T224854Z_48789044",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|E",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-E-04-20261101T224957Z_c0782281",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|E",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-S-01-20261101T225043Z_157b0cca",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|S",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-S-02-20261101T225133Z_9ec62ad0",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|S",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-L-01-20261101T225224Z_8a1fef61",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|L",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-L-02-20261101T225330Z_9f567d2f",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|L",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-L-03-20261101T225450Z_d4606bf2",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|L",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-P-01-20261101T225541Z_3feb1dd7",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|P",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-P-03-20261101T225631Z_d80d19e7",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|P",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-P-02-20261101T225732Z_d2a56dd8",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|P",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-01-20261101T225822Z_2c5e6be2",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-02-20261101T225915Z_2d8901e0",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-03-20261101T230009Z_23cb2f1e",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-04-20261101T230104Z_28e27135",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-01-20261101T230208Z_b101c547",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-02-20261101T230302Z_b1ab8b46",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-03-20261101T230358Z_afb0f0e8",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-04-20261101T230453Z_35fb8f32",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-05-20261101T230548Z_b655b624",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-016773cf1d|calm|C",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-06-20261101T230637Z_2baa3e2c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-37077de8d7|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-B-01-20261101T230749Z_982f4537",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|B",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-01-20261101T230940Z_d2f463e6",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|R",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-02-20261101T231033Z_c39dec3a",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|R",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-03-20261101T231126Z_285de1d6",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-04-20261101T231218Z_4061f791",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|R",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-R-05-20261101T231316Z_9185d03c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|R",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-06-20261101T231410Z_f2da21a2",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-07-20261101T231516Z_053eca03",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-01-20261101T231544Z_9dad6d41",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-02-20261101T231638Z_543f5293",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-01-20261101T231731Z_8fe62e3f",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-02-20261101T231843Z_c49c321b",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-748e2c871c|calm|G",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-03-20261101T232004Z_75ed4958",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|G",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-04-20261101T232108Z_3b7d920d",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-05-20261101T232228Z_cb0eeec6",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-a7a9fc7451|calm|G",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-01-20261101T232324Z_440bf3ea",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-02-20261101T232438Z_29e72d18",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-03-20261101T232546Z_f844c3f6",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-04-20261101T232636Z_d157f9ca",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-W-01-20261101T232727Z_c64d437f",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-e1ebc8169e|wind-5.4|W",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-V-01-20261101T232857Z_5f24ef83",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|V",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-V-02-20261101T233016Z_e40838ab",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-a7a9fc7451|calm|V",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-V-03-20261101T233135Z_799cbc31",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|V",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-V-04-20261101T233253Z_58b31fdb",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|V",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-V-05-20261101T233357Z_63237e28",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|V",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261102T031004Z_8bbe6bc3",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-01-20261102T031100Z_49ed5951",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261102T031317Z_6fef89d0",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-01-20261102T031412Z_de0daa39",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-H-02-20261102T031500Z_d7929f04",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-01-20261102T031553Z_0d173bd4",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-02-20261102T031646Z_79c8cbfd",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-01-20261102T031738Z_101b261c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-02-20261102T031832Z_60feab00",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-05-20261102T031928Z_3537858e",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-016773cf1d|calm|C",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-06-20261102T032015Z_822ef3b3",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-37077de8d7|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-01-20261102T032127Z_2b3321e2",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-02-20261102T032212Z_0cec65a0",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-748e2c871c|calm|G",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-W-01-20261102T032408Z_96643728",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-e1ebc8169e|wind-5.4|W",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-01-20261102T032538Z_cc8937f6",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-02-4KG-20261102T032652Z_aac2b923",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-K-01-4KG-20261102T032744Z_54b0c263",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-01-4KG-20261102T032822Z_c873f232",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-04-4KG-20261102T032907Z_ff522d98",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-01-LD-20261102T033026Z_42971abc",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-04-LD-20261102T033119Z_fdd2a0c9",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-W-01-LD-20261102T033239Z_16de1a49",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-e1ebc8169e|wind-5.4|W",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261102T033409Z_8867388e",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-01-20261102T033504Z_e7e1d842",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-H-02-20261102T033539Z_9fd288a9",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-01-20261102T033632Z_aa3d9875",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-K-02-20261102T033725Z_a1f418eb",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-01-20261102T033816Z_fc8b779a",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-02-20261102T033910Z_ed59eabf",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-05-20261102T034004Z_608b7594",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-016773cf1d|calm|C",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-06-20261102T034052Z_fd51ea46",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-37077de8d7|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-01-20261102T034202Z_46b9ec30",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-02-20261102T034314Z_84236e71",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-748e2c871c|calm|G",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-04-20261102T034434Z_1318cb7a",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-W-01-20261102T034553Z_daab5ed5",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-e1ebc8169e|wind-5.4|W",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-01-20261102T034723Z_48f9c5e6",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-02-4KG-20261102T034836Z_99981da4",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-K-01-4KG-20261102T034927Z_d50d783b",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-01-4KG-20261102T035019Z_5e8362f8",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-04-4KG-20261102T035130Z_6d9ed498",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-01-LD-20261102T035249Z_64610a93",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-04-LD-20261102T035341Z_f17fb004",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-W-01-LD-20261102T035501Z_5f779f96",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-e1ebc8169e|wind-5.4|W",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261102T035630Z_3547bf7b",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-H-01-20261102T035705Z_c970b9ef",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-02-20261102T035757Z_cc9820dd",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-01-20261102T035849Z_c9a3c4d2",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-02-20261102T035942Z_d0fe6f25",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-01-20261102T040033Z_7ef1ab94",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-02-20261102T040126Z_63e79603",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-05-20261102T040221Z_f811c6db",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-016773cf1d|calm|C",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-06-20261102T040309Z_c42623a7",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-37077de8d7|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-01-20261102T040419Z_5ec2c341",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-02-20261102T040531Z_db5e6ed4",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-748e2c871c|calm|G",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-04-20261102T040651Z_a9cd581e",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-W-01-20261102T040810Z_431b5bb2",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-e1ebc8169e|wind-5.4|W",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-01-20261102T040939Z_a7a78ce0",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-02-4KG-20261102T041052Z_44dc29ba",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-01-4KG-20261102T041144Z_e7b6615b",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-01-4KG-20261102T041236Z_659b61c8",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-04-4KG-20261102T041347Z_917770b8",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-01-LD-20261102T041506Z_77738ae0",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-04-LD-20261102T041558Z_1bef3fa3",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-W-01-LD-20261102T041718Z_4621ca45",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-e1ebc8169e|wind-5.4|W",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-X500-1-20261102T042307Z_929412af",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-X650-1-20261102T042404Z_24132759",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-X500-2-20261102T042458Z_54630a16",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-X650-2-20261102T042555Z_b0e27690",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-X500-3-20261102T042650Z_527dd9de",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-X650-3-20261102T042746Z_8247632f",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-X500-4-20261102T042840Z_fc183c36",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-X650-4-20261102T042936Z_24ae4488",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-X500-5-20261102T043030Z_8cc9caa0",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-X650-5-20261102T043126Z_89c00e7e",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-X500-6-20261102T043220Z_6fc76708",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-X650-6-20261102T043316Z_0a4620ff",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261102T043411Z_d95ac714",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-01-20261102T043505Z_0afa2c5b",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-01-20261102T043557Z_1289f578",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-06-20261102T043649Z_857bd975",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-37077de8d7|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-01-20261102T043759Z_068e516c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-04-20261102T043911Z_0c19b6e6",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-02-4KG-20261102T044030Z_6307e9d3",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-01-4KG-20261102T044122Z_1459d3c1",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-01-4KG-20261102T044213Z_5594ff85",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261102T044324Z_9c250368",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-01-20261102T044419Z_86580a3c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-01-20261102T044511Z_c521763c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-06-20261102T044604Z_aeedc933",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-37077de8d7|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-01-20261102T044714Z_dd7c25d2",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-04-20261102T044826Z_21e5c1ea",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-02-4KG-20261102T044946Z_270747c8",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-01-4KG-20261102T045038Z_ab81c71b",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-01-4KG-20261102T045130Z_d453b7c9",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-H-01-20261102T045241Z_d720bd4a",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-2p5-20261102T051639Z_ee248af2",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-6b34193465|wind-2.5|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-5-20261102T051905Z_53b69a7c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-088fc9a3df|wind-5.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-5-LD-20261102T052038Z_03520a03",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-088fc9a3df|wind-5.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-5-HD-20261102T052212Z_84c3a60d",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-088fc9a3df|wind-5.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-4-20261102T052346Z_8c66cb40",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-3cbfec1518|wind-4.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-4-LD-20261102T052529Z_9d7ea239",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-3cbfec1518|wind-4.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-4-HD-20261102T052713Z_db785b7f",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-3cbfec1518|wind-4.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-3-20261102T052856Z_041219ff",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-c3cb9b1b6a|wind-3.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-3-LD-20261102T053055Z_2653d260",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-c3cb9b1b6a|wind-3.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-3-HD-20261102T053254Z_12c5859f",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-c3cb9b1b6a|wind-3.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-2p5-20261102T053453Z_a2148dd9",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-6b34193465|wind-2.5|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-2p5-LD-20261102T053703Z_1080fbf7",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-6b34193465|wind-2.5|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-2p5-HD-20261102T053915Z_69e9ebba",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-6b34193465|wind-2.5|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-5-20261102T054125Z_89bdb3a7",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-088fc9a3df|wind-5.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-5-LD-20261102T054259Z_86b1da18",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-088fc9a3df|wind-5.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-5-HD-20261102T054433Z_7608bc9f",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-088fc9a3df|wind-5.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-4-20261102T054606Z_5daf2e2c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-3cbfec1518|wind-4.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-4-LD-20261102T054750Z_8e5366bb",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-3cbfec1518|wind-4.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-4-HD-20261102T054934Z_bbe1c569",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-3cbfec1518|wind-4.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-3-20261102T055118Z_6a3cb559",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-c3cb9b1b6a|wind-3.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-3-LD-20261102T055316Z_f8db1978",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-c3cb9b1b6a|wind-3.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-3-HD-20261102T055515Z_6292b387",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-c3cb9b1b6a|wind-3.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-2p5-20261102T055714Z_ca4bece3",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-6b34193465|wind-2.5|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-2p5-LD-20261102T055925Z_b0696948",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-6b34193465|wind-2.5|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-2p5-HD-20261102T060135Z_466ae735",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-6b34193465|wind-2.5|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-5-20261102T060346Z_ceaf8736",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-088fc9a3df|wind-5.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-5-LD-20261102T060520Z_82fdea44",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-088fc9a3df|wind-5.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-5-HD-20261102T060653Z_8ec2705d",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-088fc9a3df|wind-5.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-4-20261102T060827Z_2cad5bab",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-3cbfec1518|wind-4.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-4-LD-20261102T061011Z_18e0f42f",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-3cbfec1518|wind-4.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-4-HD-20261102T061154Z_fb473da5",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-3cbfec1518|wind-4.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-3-20261102T061338Z_0f3957b6",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-c3cb9b1b6a|wind-3.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-3-LD-20261102T061537Z_131108c1",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-c3cb9b1b6a|wind-3.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-3-HD-20261102T061735Z_5d91b5e4",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-c3cb9b1b6a|wind-3.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-2p5-20261102T061934Z_4a9c12ca",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-6b34193465|wind-2.5|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-2p5-LD-20261102T062145Z_18d9479d",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-6b34193465|wind-2.5|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-2p5-HD-20261102T062356Z_d8315637",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-6b34193465|wind-2.5|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-PL-3-20261102T062728Z_d465ba1d",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-c3cb9b1b6a|wind-3.0|PL",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261102T093904Z_6a2f50c2",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-E-01-20261102T094000Z_bb8e2a0c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9a99b909ab|calm|E",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-E-02-20261102T094114Z_b1945214",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9a99b909ab|calm|E",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-E-03-20261102T094230Z_0492ab7b",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|E",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-E-04-20261102T094333Z_e6efd2fa",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|E",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-S-01-20261102T094419Z_b433d164",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|S",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-S-02-20261102T094510Z_bf143c22",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|S",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-L-01-20261102T094600Z_ff151b6b",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|L",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-L-02-20261102T094706Z_d69c9333",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|L",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-L-03-20261102T094827Z_72b2bb71",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|L",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-P-01-20261102T094918Z_ba3c3130",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|P",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-P-03-20261102T095009Z_000be7f4",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|P",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-P-02-20261102T095110Z_7cbbb46d",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|P",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-01-20261102T095200Z_4b207c83",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-02-20261102T095253Z_7a5c96cf",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-03-20261102T095347Z_9cb3ae09",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-H-04-20261102T095442Z_64f4e0f1",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|H",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-01-20261102T095546Z_822e0a7c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-02-20261102T095641Z_d89cb86c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-03-20261102T095736Z_7db7ac48",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-04-20261102T095831Z_fd9db566",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-05-20261102T095926Z_6c2148cf",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-016773cf1d|calm|C",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-C-06-20261102T100014Z_0fcccd9e",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-37077de8d7|calm|C",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-B-01-20261102T100127Z_81831a37",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|B",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-01-20261102T100318Z_6f8058fd",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|R",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-02-20261102T100411Z_52172a46",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|R",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-03-20261102T100503Z_d0d083db",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-04-20261102T100554Z_1b3eca81",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|R",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-R-05-20261102T100651Z_3b869d7b",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|R",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-06-20261102T100746Z_702c6bfc",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-07-20261102T100852Z_23bafb4d",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-01-20261102T100920Z_5a9cd910",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-K-02-20261102T101014Z_631da17f",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|K",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-01-20261102T101106Z_deebfa7c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-02-20261102T101219Z_1bec7d25",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-748e2c871c|calm|G",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-G-03-20261102T101340Z_d97949cc",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|G",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-04-20261102T101444Z_4818c1bf",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-595609ee78|calm|G",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-G-05-20261102T101604Z_ef9afdb1",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-a7a9fc7451|calm|G",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-01-20261102T101701Z_3e36684d",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-8c8f13ccc2|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-02-20261102T101815Z_1e8bb66b",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-9e7b430903|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-03-20261102T101922Z_238dea0b",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-T-04-20261102T102013Z_6404b906",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|T",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-W-01-20261102T102104Z_13431e49",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-e1ebc8169e|wind-5.4|W",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-V-01-20261102T102234Z_401503e7",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|V",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-V-02-20261102T102353Z_7a3eedc2",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-a7a9fc7451|calm|V",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-V-03-20261102T102511Z_36c5d0b2",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|V",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "humble",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-V-04-20261102T102630Z_fd80fbb6",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|V",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-V-05-20261102T102734Z_a8e1bce6",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "d1-square-v1|calm|V",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261102T115937Z_5cd57b65",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-06-20261102T120033Z_7185c2ca",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261102T120139Z_1ee05186",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-06-20261102T120234Z_68dd2298",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261102T120341Z_f1bb8b0d",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-06-20261102T120436Z_0f72f77d",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261102T120542Z_9426a8d4",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-06-20261102T120638Z_035f4549",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261102T120718Z_ddab39b4",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-06-20261102T120814Z_7a1e6139",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261102T120933Z_9bd0d0d4",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-06-20261102T121028Z_65741b19",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261102T121134Z_178cc481",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-06-20261102T121229Z_fe46014f",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261102T121335Z_5296b7c7",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-06-20261102T121430Z_0e7c5a8f",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261102T121536Z_dd82ff6c",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-R-06-20261102T121632Z_41f1e793",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|R",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-N-01-20261102T121738Z_d293fd7d",
+   "export_id": "banshee-d1-sim-episodes",
+   "family_id": "wp-65dc8ff298|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "humble",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T065900Z_1ee4a6bc",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T070033Z_e070fcc6",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-20261107T070139Z_67912c3c",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-20261107T070237Z_ff852acb",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T070355Z_fd52dc45",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-2.5|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-20261107T070623Z_5c1e7058",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T070735Z_cdb78670",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T070847Z_0fe98e40",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-20261107T070957Z_2e699567",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T071110Z_2b7200df",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T071221Z_29c6068c",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T071333Z_6aff5985",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T071452Z_dbc7bbcd",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-2.5|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-20261107T071535Z_4481813e",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T071654Z_1159b1e3",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T071806Z_e5b14748",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T071918Z_edd296ba",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T072030Z_8fc60594",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-20261107T072108Z_75b1d979",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-20261107T072220Z_7a8075e1",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-20261107T072252Z_683f43f0",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T072410Z_a9f12d41",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-2.5|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T072529Z_589bcb57",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T072647Z_91c53fc5",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T072800Z_5c38649f",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T072912Z_67becf01",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T073023Z_96b436fc",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T073135Z_35c41097",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T073247Z_b1d91621",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T073359Z_33cd4e42",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T073518Z_287532b8",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-2.5|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T073637Z_a4eeef1f",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T073756Z_54abb030",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T073907Z_3479578c",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T074020Z_1314320b",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T074131Z_63725f8c",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T074243Z_f07e1325",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T074355Z_e4d08f62",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T074506Z_d224fbe0",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T074625Z_4f4c2122",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-2.5|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T074743Z_76adc8cd",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T074902Z_df8d2e6c",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T075014Z_753c541d",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T075126Z_58ae236d",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T075237Z_11c03388",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T075349Z_aded5547",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T075501Z_2826d8a0",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T075613Z_502afcd2",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T075731Z_a0d3608f",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-2.5|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T075850Z_718c0e0c",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-20261107T075944Z_7f64fd2f",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T080056Z_63ff25d9",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T080207Z_a130e38c",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T080319Z_2efaf7f1",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T080431Z_178c6235",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T080543Z_81d5e6dc",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T080654Z_64be9200",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T080813Z_b1fa2a1b",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-2.5|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T080933Z_a9308000",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T081051Z_7c7710ed",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T081203Z_6246cb8f",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T081315Z_3d88e9a3",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T081427Z_e801a101",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T081539Z_79dff182",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T081650Z_1429fbb6",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T081802Z_dd0a9fed",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-20261107T081837Z_35117b84",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-2.5|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-20261107T081918Z_ee516fcc",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": false
+  },
+  {
+   "episode_id": "banshee-d1-20261107T081951Z_e495c237",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T082102Z_74f33783",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T082214Z_6c72cad3",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T082326Z_9873b5f0",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T082438Z_910713d7",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T082550Z_3f460f5a",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T082701Z_99c18ca5",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T082820Z_dec31e76",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-2.5|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T082938Z_05ac2eb3",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T083056Z_d73d43f9",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T083208Z_553feefa",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T083320Z_4b5cfb5c",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T083432Z_ddd27710",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T083543Z_3ee5c79e",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T083655Z_d4d1191c",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T083806Z_6967d668",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T083925Z_668fdaaf",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-2.5|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T084044Z_3ea6136a",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T084202Z_e55f527e",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T084314Z_3a5d5707",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T084426Z_aee775fc",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T084538Z_7a3e9337",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|calm|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T084650Z_86878a53",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T084801Z_6c3728e2",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-square-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T084913Z_acda26db",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T085031Z_7d081da0",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-2.5|nominal",
+   "m4_split": "heldout",
+   "split_partition": "dev",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T085150Z_92b58ace",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-line-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T085308Z_20306a3f",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|calm|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T085420Z_0be8c310",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-2.5|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  },
+  {
+   "episode_id": "banshee-d1-20261107T085532Z_489897ea",
+   "export_id": "banshee-d1-variation-v1-episodes",
+   "family_id": "d1-climb-v1|wind-5.0|nominal",
+   "m4_split": "train",
+   "split_partition": "train",
+   "stack": "jazzy",
+   "success": true
+  }
+ ],
+ "m4_data_checks": {
+  "by_partition": {
+   "heldout": {
+    "by_export": {
+     "banshee-d1-sim-episodes": 154,
+     "banshee-d1-variation-v1-episodes": 22
+    },
+    "by_stack": {
+     "humble": 22,
+     "jazzy": 154
+    },
+    "episodes": 176,
+    "failed": 28,
+    "families": 10,
+    "succeeded": 148
+   },
+   "train": {
+    "by_export": {
+     "banshee-d1-sim-episodes": 319,
+     "banshee-d1-variation-v1-episodes": 76
+    },
+    "by_stack": {
+     "humble": 45,
+     "jazzy": 350
+    },
+    "episodes": 395,
+    "failed": 44,
+    "families": 33,
+    "succeeded": 351
+   }
+  },
+  "episodes": 571,
+  "families": {
+   "d1-climb-v1|calm|nominal": {
+    "episodes": 11,
+    "exports": [
+     "banshee-d1-variation-v1-episodes"
+    ],
+    "failed": 0,
+    "partition": "train",
+    "stacks": [
+     "jazzy"
+    ]
+   },
+   "d1-climb-v1|wind-2.5|nominal": {
+    "episodes": 11,
+    "exports": [
+     "banshee-d1-variation-v1-episodes"
+    ],
+    "failed": 0,
+    "partition": "train",
+    "stacks": [
+     "jazzy"
+    ]
+   },
+   "d1-climb-v1|wind-5.0|nominal": {
+    "episodes": 11,
+    "exports": [
+     "banshee-d1-variation-v1-episodes"
+    ],
+    "failed": 1,
+    "partition": "train",
+    "stacks": [
+     "jazzy"
+    ]
+   },
+   "d1-line-v1|calm|nominal": {
+    "episodes": 11,
+    "exports": [
+     "banshee-d1-variation-v1-episodes"
+    ],
+    "failed": 1,
+    "partition": "train",
+    "stacks": [
+     "jazzy"
+    ]
+   },
+   "d1-line-v1|wind-2.5|nominal": {
+    "episodes": 11,
+    "exports": [
+     "banshee-d1-variation-v1-episodes"
+    ],
+    "failed": 3,
+    "partition": "heldout",
+    "stacks": [
+     "jazzy"
+    ]
+   },
+   "d1-line-v1|wind-5.0|nominal": {
+    "episodes": 10,
+    "exports": [
+     "banshee-d1-variation-v1-episodes"
+    ],
+    "failed": 2,
+    "partition": "train",
+    "stacks": [
+     "jazzy"
+    ]
+   },
+   "d1-square-v1|calm|G": {
+    "episodes": 5,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "heldout",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "d1-square-v1|calm|R": {
+    "episodes": 4,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 1,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "d1-square-v1|calm|V": {
+    "episodes": 10,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "d1-square-v1|calm|nominal": {
+    "episodes": 93,
+    "exports": [
+     "banshee-d1-sim-episodes",
+     "banshee-d1-variation-v1-episodes"
+    ],
+    "failed": 2,
+    "partition": "heldout",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "d1-square-v1|wind-2.5|nominal": {
+    "episodes": 11,
+    "exports": [
+     "banshee-d1-variation-v1-episodes"
+    ],
+    "failed": 2,
+    "partition": "train",
+    "stacks": [
+     "jazzy"
+    ]
+   },
+   "d1-square-v1|wind-5.0|nominal": {
+    "episodes": 11,
+    "exports": [
+     "banshee-d1-variation-v1-episodes"
+    ],
+    "failed": 2,
+    "partition": "train",
+    "stacks": [
+     "jazzy"
+    ]
+   },
+   "wp-016773cf1d|calm|C": {
+    "episodes": 8,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "heldout",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-088fc9a3df|wind-5.0|PL": {
+    "episodes": 9,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "train",
+    "stacks": [
+     "jazzy"
+    ]
+   },
+   "wp-37077de8d7|calm|C": {
+    "episodes": 10,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 1,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-3cbfec1518|wind-4.0|PL": {
+    "episodes": 9,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "train",
+    "stacks": [
+     "jazzy"
+    ]
+   },
+   "wp-595609ee78|calm|G": {
+    "episodes": 30,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 15,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-65dc8ff298|calm|B": {
+    "episodes": 5,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-65dc8ff298|calm|E": {
+    "episodes": 5,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-65dc8ff298|calm|L": {
+    "episodes": 15,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 5,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-65dc8ff298|calm|P": {
+    "episodes": 15,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-65dc8ff298|calm|R": {
+    "episodes": 19,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 2,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-65dc8ff298|calm|S": {
+    "episodes": 10,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-65dc8ff298|calm|T": {
+    "episodes": 10,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-65dc8ff298|calm|V": {
+    "episodes": 10,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 10,
+    "partition": "heldout",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-65dc8ff298|calm|nominal": {
+    "episodes": 33,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 1,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-6b34193465|wind-2.5|PL": {
+    "episodes": 10,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "train",
+    "stacks": [
+     "jazzy"
+    ]
+   },
+   "wp-748e2c871c|calm|G": {
+    "episodes": 8,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 8,
+    "partition": "heldout",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-8c8f13ccc2|calm|C": {
+    "episodes": 8,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-8c8f13ccc2|calm|E": {
+    "episodes": 5,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "heldout",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-8c8f13ccc2|calm|H": {
+    "episodes": 18,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 2,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-8c8f13ccc2|calm|K": {
+    "episodes": 19,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 2,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-8c8f13ccc2|calm|T": {
+    "episodes": 8,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-9a99b909ab|calm|E": {
+    "episodes": 10,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-9e7b430903|calm|C": {
+    "episodes": 18,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-9e7b430903|calm|H": {
+    "episodes": 16,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 2,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-9e7b430903|calm|K": {
+    "episodes": 8,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-9e7b430903|calm|R": {
+    "episodes": 20,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 5,
+    "partition": "heldout",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-9e7b430903|calm|T": {
+    "episodes": 5,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-a7a9fc7451|calm|G": {
+    "episodes": 5,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "heldout",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-a7a9fc7451|calm|V": {
+    "episodes": 5,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 5,
+    "partition": "train",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   },
+   "wp-c3cb9b1b6a|wind-3.0|PL": {
+    "episodes": 10,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "train",
+    "stacks": [
+     "jazzy"
+    ]
+   },
+   "wp-e1ebc8169e|wind-5.4|W": {
+    "episodes": 11,
+    "exports": [
+     "banshee-d1-sim-episodes"
+    ],
+    "failed": 0,
+    "partition": "heldout",
+    "stacks": [
+     "humble",
+     "jazzy"
+    ]
+   }
+  },
+  "other_checks_passed": true,
+  "other_problems": [],
+  "passed": true,
+  "problems": []
+ },
+ "manifests": {
+  "banshee-d1-sim-episodes": "d7bc0545852e8a3549790a956782723240faf6f4aa6496ab55ad15367d711fc0",
+  "banshee-d1-sim-ulogs": "9e8c1fb2053f8a47289b4508789c1faad9649632f2a15bec7d97f09ad9d12f18",
+  "banshee-d1-variation-v1-episodes": "383dfea07505aa2db716c4c45a03eb31c6014f75bb603ddfd0a58f8096414cfe",
+  "banshee-d1-variation-v1-ulogs": "0b76d7b87bb78ab1b5fc94d3ac66af2c0e0389b4b6f0090a72f6b9961af940c0"
+ },
+ "partition_tables": {
+  "banshee-d1-sim-episodes": {
+   "heldout -> dev": 154,
+   "train -> train": 319
+  },
+  "banshee-d1-variation-v1-episodes": {
+   "heldout -> dev": 22,
+   "train -> train": 76
+  }
+ },
+ "passed": true,
+ "run": "20261107T120856Z_a197b588",
+ "stacks": {
+  "banshee-d1-sim-episodes": {
+   "by_stack": {
+    "humble": 67,
+    "jazzy": 406
+   },
+   "by_stack_and_split": {
+    "humble/heldout": 22,
+    "humble/train": 45,
+    "jazzy/heldout": 132,
+    "jazzy/train": 274
+   },
+   "failed": 60,
+   "successful": 413
+  },
+  "banshee-d1-variation-v1-episodes": {
+   "by_stack": {
+    "jazzy": 98
+   },
+   "by_stack_and_split": {
+    "jazzy/heldout": 22,
+    "jazzy/train": 76
+   },
+   "failed": 12,
+   "successful": 86
+  }
+ },
+ "ulogs": {
+  "banshee-d1-sim-ulogs": {
+   "bytes": 6970856625,
+   "episodes": 473,
+   "files": 473,
+   "for": "banshee-d1-sim-episodes",
+   "sha256_match": true
+  },
+  "banshee-d1-variation-v1-ulogs": {
+   "bytes": 1659967763,
+   "episodes": 98,
+   "files": 98,
+   "for": "banshee-d1-variation-v1-episodes",
+   "sha256_match": true
+  }
+ },
+ "validation": {
+  "all_contract_valid": true,
+  "contract_valid": 571,
+  "episodes": 571,
+  "invalid": []
+ },
+ "validator": "ironclad-kit 1.2.0 (vishwaroop's pin), ironclad.contracts.v1.validate"
+}

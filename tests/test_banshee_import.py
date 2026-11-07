@@ -376,3 +376,38 @@ def test_the_partition_table_records_split_partition_by_m4_split(tmp_path: Path)
     directory, digest = make_export(tmp_path)
     export = bi.verify_export(directory, "x-episodes", digest)
     assert bi.partition_table(export) == {"train -> train": 1}
+
+
+def test_a_stopped_import_resumes_without_deleting_or_duplicating(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """FABRICATED: the second run re-verifies the first copy and writes no second ledger line."""
+    import argparse
+
+    source = tmp_path / "source"
+    _, a = make_export(source, "x-episodes")
+    _, b = make_export(source, "x-ulogs", kind="ulogs")
+    repo = tmp_path / "repo"
+    (repo / "ledgers").mkdir(parents=True)
+    monkeypatch.chdir(repo)
+    monkeypatch.setattr(bi, "EXPORTS", {"x-episodes": a, "x-ulogs": b})
+    monkeypatch.setattr(bi, "ULOG_FOR", {"x-episodes": "x-ulogs"})
+    monkeypatch.setattr(bi, "check_frozen", lambda root=Path("."): {"rules": "f" * 64})
+    monkeypatch.setattr(bi, "git_state", lambda repo=Path("."): {"commit": "c", "dirty": False})
+    monkeypatch.setattr(
+        bi,
+        "import_record",
+        lambda export, frozen, commit: {
+            "export_id": export.export_id,
+            "manifest_sha256": bi.EXPORTS[export.export_id],
+        },
+    )
+    args = argparse.Namespace(source=source)
+    assert bi._cmd_import(args) == 0
+    assert bi._cmd_import(args) == 0
+    lines = (repo / "ledgers/imports.jsonl").read_text().splitlines()
+    assert len(lines) == 2
+    assert len((repo / "ledgers/licenses.jsonl").read_text().splitlines()) == 1
+    monkeypatch.setattr(bi, "git_state", lambda repo=Path("."): {"commit": "c", "dirty": True})
+    with pytest.raises(bi.ImportStopError, match="commit first"):
+        bi._cmd_import(args)
