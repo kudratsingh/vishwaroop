@@ -4,22 +4,23 @@
     python -m vishwaroop.synth.et_m3_1 score
 
 Run it from the repository root, in the robotics environment, at a clean commit. Both are ledgered
-runs and both refuse changed frozen files (``evals/M3-protocol-2.json``, which replaces ET-M3-1,
-and the files it builds on: ``evals/M3-protocol.md``, ``evals/M3-exit-tests.json``,
-``evals/M0-exit-tests.json``).
+runs and both refuse changed frozen files: ``evals/M3-protocol-2.json``, which replaces ET-M3-1,
+and what it builds on (``evals/M3-protocol.md``, ``evals/M3-exit-tests.json``,
+``src/vishwaroop/sim/so100_kinematics.py``), and ``evals/M0-exit-tests.json``.
 
 ``pilot`` snapshots and renders block 10 seeds 10300 to 10319 (even seeds nominal, odd seeds the
 operators), measures every frame, finds each candidate's size-checkable frames, and writes
 ``evals/M3-checker-tolerances.json`` once by the frozen rule, printing its sha256 for the status
-ledger. If the rule stops (a band outside the frozen limits, a candidate without a size-checkable
-frame 1 to T - 1, or the cube moving in a size-checkable frame), it writes nothing to ``evals/``
-and exits 4, so that the owner is told before any candidate is generated.
+ledger. If any of the freeze's seven stop conditions holds (``checker.pilot_tolerances`` lists
+them all), it writes nothing to ``evals/`` and exits 4, so that the owner is told before any
+candidate is generated.
 
 ``score`` refuses unless the tolerances file's sha256 is recorded in ``work_orders/STATUS.jsonl``
 and no score exists. It builds the 60 controls (seeds 10400 to 10459) and the 60 injections (seeds
-10200 to 10259, each into its own unmodified source candidate), runs the checker once on each
+10200 to 10259, each into its own unmodified source candidate; a cube-resize source without a
+size-checkable frame 1 to T - 1 is replaced from 10800 up), runs the checker once on each
 source, injection and control, applies the threshold with the injection-credit rule, and writes
-``et_m3_1_score.json`` once. Snapshots are written once into the run directory; frames stay in
+``et_m3_1_score_p2.json`` once. Snapshots are written once into the run directory; frames stay in
 memory, one candidate at a time.
 
 Exit codes: 0 done (whatever the verdict), 2 refused, 3 simulator not run, 4 the pilot stopped.
@@ -71,7 +72,7 @@ from .snapshot import (
 
 FROZEN = {
     Path("evals/M3-protocol-2.json"): (
-        "1ada3f4679210edda3b9d429cb267043e04625e6ee42d0b959a353479604e97d"
+        "36b5135a45c645502013c9271cbfe05d030795df631da4c887c4455f4b907a46"
     ),
     Path("src/vishwaroop/sim/so100_kinematics.py"): (
         "c36d06206fa0f0f47ee3f975c79697e44a9f760235ab68a1a32148f853a3ac5f"
@@ -235,11 +236,13 @@ def run_score(
     sources = {item.seed: item for item in et_m3_1_episodes([seed for _, _, seed in plan])}
     injections = []
     replacements = iter(RESIZE_REPLACEMENT_SEEDS)
+    # replacement seeds are one ascending sequence, so F2's lateral-miss count runs over all of them
+    replacement_kinds = {item.seed: item for item in et_m3_1_episodes(RESIZE_REPLACEMENT_SEEDS)}
     for t, i, frozen_seed in plan:
-        seed = frozen_seed
+        seed: int | None = frozen_seed
         skipped: list[dict[str, Any]] = []
-        while True:
-            episode = sources.get(seed) or et_m3_1_episodes([seed])[0]
+        while seed is not None:
+            episode = sources[seed] if seed == frozen_seed else replacement_kinds[seed]
             print(f"injection type {t} i {i} seed {seed}", file=sys.stderr, flush=True)
             snapshot = _scene(env, seed, task, run_dir)
             rendered = render_episode(env, snapshot, episode, task[2])
@@ -249,10 +252,23 @@ def run_score(
             skipped.append(
                 {"seed": seed, "size_checkable_frames": size_frames, "T": rendered.steps}
             )
-            replacement = next(replacements, None)
-            if replacement is None:
-                break  # inject() then refuses it: not built, so not rejected
-            seed = replacement
+            seed = next(replacements, None)
+        if seed is None:
+            injections.append(
+                {
+                    "type": t,
+                    "name": TYPES[t],
+                    "i": i,
+                    "frozen_seed": frozen_seed,
+                    "skipped_seeds": skipped,
+                    "seed": None,
+                    "source_passed": False,
+                    "injected_passed": None,
+                    "failed_checks": [],
+                    "injection_error": "not built: replacement seeds 10800 to 10899 ran out",
+                }
+            )
+            continue
         manifest = snapshot.candidate_manifest()
         source = _check(snapshot, manifest, rendered.frames, tolerances, size_frames)
         item: dict[str, Any] = {

@@ -8,10 +8,11 @@ every check holds:
 - ``manifest``: the candidate manifest's fields equal the snapshot's;
 - ``first_frame``: frame 0's mean absolute difference from the snapshot's saved render, over every
   pixel and channel in uint8 units, is at most the first-frame tolerance;
-- ``cube_area``: in every size-checkable frame (``size_checkable_frames``), the red components
-  whose centroids lie within the merge radius of the largest one's centroid have a total area
-  within [a_lo, a_hi] x the snapshot render's cube area; a candidate with no size-checkable frame
-  fails it, since its size cannot be checked;
+- ``cube_area``: in every frame, the red components whose centroids lie within the merge radius
+  of the largest one's centroid have a total area within the presence band [p_lo, p_hi] x the
+  snapshot render's cube area (protocol-1's band, kept for every frame);
+- ``cube_size``: in every size-checkable frame (``size_checkable_frames``), that area is within the
+  size band [a_lo, a_hi]; a candidate with no size-checkable frame gets no ``cube_size`` check;
 - ``extra_red``: in no frame does another red component of at least 0.25 x that area exist;
 - ``goal_centroid``: in every frame with at least the pilot's minimum count of green pixels (and at
   least one), the green pixels' centroid is within the goal-centroid distance of the snapshot's.
@@ -254,6 +255,9 @@ class Tolerances:
             raise ValueError("the tolerances file's other-component fraction is not 0.25")
         if data.get("sightline_clearance_m") != SIGHTLINE_CLEARANCE_M:
             raise ValueError("the tolerances file's sightline clearance is not 0.035 m")
+        for name in ("size_band", "presence_band"):
+            if not isinstance(data.get(name), list) or len(data[name]) != 2:
+                raise ValueError(f"the tolerances file has no two-value {name}")
         a_lo, a_hi = (float(value) for value in data["size_band"])
         if not (BAND_LIMITS[0] < a_lo <= a_hi < BAND_LIMITS[1]):
             raise ValueError(f"band [{a_lo}, {a_hi}] is outside the frozen limits {BAND_LIMITS}")
@@ -700,6 +704,8 @@ def verdict(
         "cube_resized_steps": [
             {
                 "seed": item["seed"],
+                "frozen_seed": item.get("frozen_seed", item["seed"]),
+                "skipped_seeds": item.get("skipped_seeds", []),
                 "T": item.get("source", {}).get("T"),
                 **{k: v for k, v in item.get("detail", {}).items() if k in ("step", "T")},
             }

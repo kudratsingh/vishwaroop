@@ -22,4 +22,4 @@ No tolerances file, control or injection was generated under `m3-protocol-1`. It
 ## After the stop
 The owner was told before any candidate was generated, as the rule requires. On 2026-11-07 the owner chose option A (`ledgers/approvals.jsonl`): run the size check only in frames where the cube's size is knowable, with those frames chosen independently of the area measurement. `m3-protocol-2` freezes that before its own pilot on seeds 10300 to 10319.
 
-Three scratch diagnoses on the spent pilot seeds 10900 to 10919 informed `m3-protocol-2`. They were not ledgered and wrote nothing to `evals/`; `evals/M3-protocol-2.json` (`known_before_this_freeze`) gives their numbers.
+Three scratch diagnoses on the spent pilot seeds 10900 to 10919 informed `m3-protocol-2`. They were not ledgered and wrote nothing to `evals/`. The ledgered diagnostic `20261107T112025Z_3f2d4bd9` (clean commit `2bcc4f0`, same seeds) reproduced their numbers for the record. `evals/M3-protocol-2.json` (`known_before_this_freeze`) gives both.

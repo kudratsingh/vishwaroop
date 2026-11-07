@@ -279,6 +279,8 @@ def test_tolerances_load_only_with_their_pinned_sha256(tmp_path: Path) -> None:
         ({"size_band": [0.3, 1.2]}, "limits"),
         ({"size_band": [0.7, 2.6]}, "limits"),
         ({"presence_band": [0.0, 1.2]}, "missing cube"),
+        ({"presence_band": None}, "presence_band"),
+        ({"size_band": [0.9]}, "size_band"),
         ({"protocol_version": "m3-protocol-1"}, "protocol"),
         ({"sightline_clearance_m": 0.05}, "sightline"),
         ({"other_component_fraction": 0.3}, "0.25"),
