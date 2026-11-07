@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-02 13:08 UTC · ledger records: 118
+Generated: 2026-11-07 06:41 UTC · ledger records: 119
 
 ## Phases
 
@@ -13,7 +13,7 @@ Generated: 2026-11-02 13:08 UTC · ledger records: 118
 | M2a | Closed-loop policy evaluator (simulation) | **not_started** | 0 / 0 / 5 | M1 | WO-017, WO-018 |
 | M2b | Real-arm evaluator validation | **not_started** | 0 / 0 / 4 | M2a | — |
 | M3 | Synthetic-data engine (SFT route) | **not_started** | 0 / 0 / 5 | M0 | — |
-| M4 | Drone dynamics adaptation (offline and shadow only) | **not_started** | 0 / 0 / 4 | M1 | — |
+| M4 | Drone dynamics adaptation (offline and shadow only) | **not_started** | 0 / 0 / 4 | M1 | WO-019 |
 | M5 | Future: verifier at test time (best-of-N action chunks) | **not_started** | 0 / 0 / 2 | M2b | — |
 | M6 | Future: verifier as reward for real-robot RL | **not_started** | 0 / 0 / 2 | M5 | — |
 | M7 | Future: data curation loop | **not_started** | 0 / 0 / 1 | M3, M5 | — |
@@ -81,4 +81,5 @@ Generated: 2026-11-02 13:08 UTC · ledger records: 118
 | WO-016 | Retest ET-M1-5 with a calibration split that includes perturbed chunks | M1 | **accepted** | 2026-11-02T12:22:18.309434Z | reports/WO-016-m1-et5-retest.md |
 | WO-017 | M2a observation model: a 30-minute Mac pilot to check the GPU estimate | M2a | **accepted** | 2026-11-02T12:55:18.599343Z | reports/WO-017-m2a-mac-pilot.md |
 | WO-018 | M2a: a GPU pilot to measure the speedup over the Mac, then one full run if it fits | M2a | **ready** | 2026-11-02T13:08:19.541210Z | — |
+| WO-019 | M4: import banshee's D1 simulation episodes, read-only, and validate them | M4 | **created** | 2026-11-02T13:19:20.243311Z | — |
 
