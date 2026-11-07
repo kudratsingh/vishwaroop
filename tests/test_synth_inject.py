@@ -49,6 +49,8 @@ from vishwaroop.synth.masks import green_mask, red_mask  # noqa: E402
 TOL = Tolerances(
     a_lo=0.8,
     a_hi=1.25,
+    p_lo=0.8,
+    p_hi=1.25,
     merge_radius_px=20.0,
     first_frame_tolerance=0.0,
     goal_centroid_px=3.0,
@@ -148,7 +150,7 @@ def test_object_removed_fills_the_cube_with_the_ring_median() -> None:
         rows, cols = np.nonzero(red_mask(frames[k]))
         assert (injection.frames[k][rows, cols] == BACKGROUND).all()
     result = checked(injection.frames, injection.manifest, injection.seed)
-    assert result.to_json()["failed_checks"] == ["cube_area"]
+    assert result.to_json()["failed_checks"] == ["cube_area", "cube_size"]
     assert result.failed["cube_area"]["frame"] == step
 
 

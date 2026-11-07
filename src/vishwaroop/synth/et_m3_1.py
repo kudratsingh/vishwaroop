@@ -53,6 +53,7 @@ from .checker import (
     measure,
     pilot_tolerances,
     reference,
+    sightline_clearance,
     size_checkable_frames,
     verdict,
 )
@@ -161,6 +162,7 @@ def run_pilot(env: RenderingEnv, task: tuple[str, str, int], run_dir: Path) -> d
         snapshot = _scene(env, episode.seed, task, run_dir)
         rendered = render_episode(env, snapshot, episode, task[2])
         start = rendered.initial_cube
+        camera = camera_position(snapshot.manifest)
         candidates.append(
             PilotCandidate(
                 seed=episode.seed,
@@ -171,9 +173,20 @@ def run_pilot(env: RenderingEnv, task: tuple[str, str, int], run_dir: Path) -> d
                 cube_displacement_m=tuple(
                     math.dist(cube, start) for cube in rendered.cube_positions
                 ),
+                actual_clearance_m=tuple(
+                    sightline_clearance(joints, camera, start)
+                    for joints in rendered.joint_positions
+                ),
             )
         )
-        episodes.append(_episode_note(episode, rendered.steps, rendered.planning_error))
+        episodes.append(
+            {
+                **_episode_note(episode, rendered.steps, rendered.planning_error),
+                "size_checkable_frames": candidates[-1].size_frames,
+                "cube_positions": rendered.cube_positions,
+                "actual_clearance_m": list(candidates[-1].actual_clearance_m),
+            }
+        )
     return {"candidates": candidates, "episodes": episodes}
 
 
@@ -194,7 +207,14 @@ def run_score(
     env: RenderingEnv, task: tuple[str, str, int], run_dir: Path, tolerances: Tolerances
 ) -> dict[str, Any]:
     """Build and check the 60 controls and 60 injections, one candidate at a time."""
-    from .inject import RENDER_SEED_OFFSET, TYPES, InjectionError, inject, injection_plan
+    from .inject import (
+        RENDER_SEED_OFFSET,
+        RESIZE_REPLACEMENT_SEEDS,
+        TYPES,
+        InjectionError,
+        inject,
+        injection_plan,
+    )
 
     controls = []
     for episode in et_m3_1_episodes(CONTROL_SEEDS):
@@ -211,18 +231,33 @@ def run_score(
     plan = injection_plan()
     sources = {item.seed: item for item in et_m3_1_episodes([seed for _, _, seed in plan])}
     injections = []
-    for t, i, seed in plan:
-        episode = sources[seed]
-        print(f"injection type {t} i {i} seed {seed}", file=sys.stderr, flush=True)
-        snapshot = _scene(env, seed, task, run_dir)
-        rendered = render_episode(env, snapshot, episode, task[2])
+    replacements = iter(RESIZE_REPLACEMENT_SEEDS)
+    for t, i, frozen_seed in plan:
+        seed = frozen_seed
+        skipped: list[dict[str, Any]] = []
+        while True:
+            episode = sources.get(seed) or et_m3_1_episodes([seed])[0]
+            print(f"injection type {t} i {i} seed {seed}", file=sys.stderr, flush=True)
+            snapshot = _scene(env, seed, task, run_dir)
+            rendered = render_episode(env, snapshot, episode, task[2])
+            size_frames = _size_frames(snapshot, rendered)
+            if t != 3 or min(size_frames, rendered.steps) >= 2:
+                break
+            skipped.append(
+                {"seed": seed, "size_checkable_frames": size_frames, "T": rendered.steps}
+            )
+            replacement = next(replacements, None)
+            if replacement is None:
+                break  # inject() then refuses it: not built, so not rejected
+            seed = replacement
         manifest = snapshot.candidate_manifest()
-        size_frames = _size_frames(snapshot, rendered)
         source = _check(snapshot, manifest, rendered.frames, tolerances, size_frames)
         item: dict[str, Any] = {
             "type": t,
             "name": TYPES[t],
             "i": i,
+            "frozen_seed": frozen_seed,
+            "skipped_seeds": skipped,
             "seed": seed,
             "source": {**_episode_note(episode, rendered.steps, rendered.planning_error), **source},
             "source_passed": source["passed"],
@@ -246,6 +281,7 @@ def run_score(
                 projection=projection,
                 other_render=other,
                 size_frames=size_frames,
+                seed=seed,
             )
         except InjectionError as exc:
             item.update(injected_passed=None, failed_checks=[], injection_error=str(exc))

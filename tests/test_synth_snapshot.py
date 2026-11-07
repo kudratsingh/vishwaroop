@@ -204,3 +204,28 @@ def test_frame_t_is_rendered_after_exactly_t_steps_with_the_seed_as_noise_seed(
     assert len(rendered.frames) == rendered.steps + 1
     assert [int(f[0, 0, 0]) for f in rendered.frames] == list(range(rendered.steps + 1))
     assert seen == [10001]
+
+
+def test_a_short_resize_source_is_replaced_from_10800_up(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """FABRICATED: the frozen type-3 source is made short; the scorer takes 10800 instead."""
+    monkeypatch.setattr(et_m3_1, "CONTROL_SEEDS", (10400,))
+    frozen = inject.injection_seed(3, 0)
+    monkeypatch.setattr(inject, "injection_plan", lambda: [(3, 0, frozen)])
+    real = et_m3_1._size_frames
+    monkeypatch.setattr(
+        et_m3_1,
+        "_size_frames",
+        lambda snapshot, rendered: 1 if snapshot.seed == frozen else real(snapshot, rendered),
+    )
+    env: Any = FakeSceneEnv()
+    measured = et_m3_1.run_pilot(env, TASK, tmp_path / "pilot")
+    tolerances = Tolerances.from_json(
+        json.loads(json.dumps(pilot_tolerances(measured["candidates"])))
+    )
+    report = et_m3_1.run_score(env, TASK, tmp_path / "score", tolerances)
+    item = report["injections"][0]
+    assert item["frozen_seed"] == frozen and item["seed"] == 10800
+    assert item["skipped_seeds"] == [{"seed": frozen, "size_checkable_frames": 1, "T": 15}]
+    assert item["detail"]["step"] >= 1 and item["injected_passed"] is False

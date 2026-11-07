@@ -9,8 +9,10 @@ same array objects); every altered frame is a new array, so a source candidate i
 Injection ``i`` of type ``t`` (1 to 6, ``i`` 0 to 9) is on seed ``10200 + 10 (t - 1) + i``. Its
 ``rng = random.Random(seed)`` first draws the injection step: ``rng.randrange(1, T)`` for every
 type but 3, and for type 3 ``rng.choice`` of the size-checkable frames 1 to T - 1 in ascending
-order; then the type's own draws in the frozen order. ``InjectionError`` means an injection could
-not be built as frozen; the scorer counts it as not rejected.
+order; then the type's own draws in the frozen order. A type-3 source with no such frame is
+replaced by the next seed from 10800 up (``RESIZE_REPLACEMENT_SEEDS``) whose source has one; the
+scorer finds it, lists every seed it skips, and passes it here as ``seed``. ``InjectionError``
+means an injection could not be built as frozen; the scorer counts it as not rejected.
 """
 
 from __future__ import annotations
@@ -47,6 +49,7 @@ GOAL_PIXELS_I = (2, 5, 8)
 TASK_ID_I = (1, 7)  # i = 4 changes the version instead (see task_change)
 WRONG_TASK_ID = "PickCube-v1"
 RENDER_SEED_OFFSET = 500
+RESIZE_REPLACEMENT_SEEDS = tuple(range(10800, 10900))
 
 
 class InjectionError(ValueError):
@@ -251,6 +254,7 @@ def inject(
     projection: Array | None = None,
     other_render: Array | None = None,
     size_frames: int | None = None,
+    seed: int | None = None,
 ) -> Injection:
     """Build injection ``i`` of type ``t`` from its unmodified source candidate.
 
@@ -258,9 +262,14 @@ def inject(
     Type 4 with i in 2, 5, 8 needs the human render camera's 3 x 4 ``projection``; type 6 needs
     ``other_render``, the snapshot render of seed + 500. Type 3 needs ``size_frames``, the source
     candidate's ``checker.size_checkable_frames``, and is not built when no frame 1 to T - 1 is
-    size-checkable.
+    size-checkable. ``seed`` is the injection's seed, by default ``injection_seed(t, i)``; a
+    cube-resize injection may instead take a replacement seed from ``RESIZE_REPLACEMENT_SEEDS``.
     """
-    seed = injection_seed(t, i)
+    frozen_seed = injection_seed(t, i)
+    if seed is None:
+        seed = frozen_seed
+    elif seed != frozen_seed and not (t == 3 and seed in RESIZE_REPLACEMENT_SEEDS):
+        raise ValueError(f"seed {seed} is neither {frozen_seed} nor a cube-resize replacement")
     if manifest["seed"] != seed:
         raise InjectionError(f"the source candidate is on seed {manifest['seed']}, not {seed}")
     last = len(frames) - 1

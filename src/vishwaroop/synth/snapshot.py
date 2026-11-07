@@ -262,6 +262,7 @@ class RenderedEpisode:
     initial_joints: list[float]
     initial_cube: list[float]
     cube_positions: list[list[float]]
+    joint_positions: list[list[float]]
 
     @property
     def steps(self) -> int:
@@ -274,8 +275,8 @@ def render_episode(
     """Restore the scene's saved state and run the episode's scripted controller, rendering frame 0
     after the restore and frame t after control step t. ``ScriptedPickPlace`` uses
     ``noise_seed = seed``. Also kept: the restored joint and cube positions, which frame
-    eligibility uses, and the simulator's cube position at every frame, which only the pilot's
-    premise check reads."""
+    eligibility uses, and the simulator's cube and joint positions at every frame, which only the
+    pilot's premise checks and record read."""
     if episode.seed != snapshot.seed:
         raise SnapshotError(f"episode seed {episode.seed} is not the scene's {snapshot.seed}")
     inputs = {stream.name for stream in env.stream_specs if stream.role == "input"}
@@ -284,6 +285,7 @@ def render_episode(
     initial_joints = [float(value) for value in packet["joint_position"]]
     initial_cube = [float(value) for value in packet["object_position"]]
     cubes = [initial_cube]
+    joints = [initial_joints]
     frames = [capture_render(env)]
     actions: list[list[float]] = []
     for step in range(max_steps):
@@ -293,7 +295,8 @@ def render_episode(
         packet = env.step(list(action))
         actions.append(list(action))
         cubes.append([float(value) for value in packet["object_position"]])
+        joints.append([float(value) for value in packet["joint_position"]])
         frames.append(capture_render(env))
     return RenderedEpisode(
-        episode, frames, actions, policy.planning_error, initial_joints, initial_cube, cubes
+        episode, frames, actions, policy.planning_error, initial_joints, initial_cube, cubes, joints
     )

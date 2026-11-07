@@ -38,9 +38,13 @@ TWICE = FrameStats(
     red=((600, 300.0, 200.0), (600, 300.0, 300.0)), green_count=400, green_centroid=(150.0, 350.0)
 )
 HOME = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+MEDIUM = FrameStats(red=((420, 300.0, 200.0),), green_count=400, green_centroid=(150.0, 350.0))
+GONE = FrameStats(red=(), green_count=400, green_centroid=(150.0, 350.0))
 TOL = Tolerances(
     a_lo=0.9,
     a_hi=1.1,
+    p_lo=0.5,
+    p_hi=2.0,
     merge_radius_px=30.0,
     first_frame_tolerance=0.5,
     goal_centroid_px=3.0,
@@ -72,19 +76,26 @@ def test_the_frozen_numbers() -> None:
     assert "10200 + 10 x (t - 1) + i" in frozen["ET-M3-1"]["injections"]
 
 
-def test_the_band_applies_only_in_size_checkable_frames() -> None:
-    assert run([CUBE, CUBE, SMALL], 2).passed
-    failed = run([CUBE, SMALL, CUBE], 2).to_json()
-    assert failed["failed_checks"] == ["cube_area"]
-    assert failed["failures"]["cube_area"]["frame"] == 1
+def test_the_size_band_applies_only_in_size_checkable_frames() -> None:
+    assert run([CUBE, CUBE, MEDIUM], 2).passed
+    failed = run([CUBE, MEDIUM, CUBE], 2).to_json()
+    assert failed["failed_checks"] == ["cube_size"]
+    assert failed["failures"]["cube_size"]["frame"] == 1
     assert failed["size_checkable_frames"] == 2 and failed["frames"] == 3
 
 
-def test_a_candidate_with_no_size_checkable_frame_fails_the_size_check_only() -> None:
-    result = run([CUBE, CUBE], 0).to_json()
-    assert result["failed_checks"] == ["cube_area"]
-    assert "cannot be checked" in result["failures"]["cube_area"]["reason"]
-    assert "fails cube_area" in ZERO_SIZE_CHECKABLE_STATEMENT
+def test_the_presence_band_applies_in_every_frame() -> None:
+    for size_frames in (0, 1, 3):
+        result = run([CUBE, CUBE, GONE], size_frames).to_json()
+        assert "cube_area" in result["failed_checks"]
+        assert result["failures"]["cube_area"]["frame"] == 2
+    assert run([CUBE, SMALL], 1).to_json()["failed_checks"] == ["cube_area"]
+
+
+def test_a_candidate_with_no_size_checkable_frame_gets_no_size_check_only() -> None:
+    result = run([CUBE, MEDIUM], 0).to_json()
+    assert result["passed"] and result["size_checkable_frames"] == 0
+    assert "gets no cube_size check" in ZERO_SIZE_CHECKABLE_STATEMENT
 
 
 def test_the_other_checks_still_apply_in_every_frame() -> None:
@@ -165,21 +176,46 @@ def _pilot(size_frames: int, moved: float = 0.0, moved_at: int = 1) -> list[Pilo
 
 def test_the_pilot_band_ignores_frames_that_are_not_size_checkable() -> None:
     result = pilot_tolerances(_pilot(3))
-    assert result["cube_area_band"] == pytest.approx([0.9, 1.1])
+    assert result["size_band"] == pytest.approx([0.9, 1.1])
+    assert result["presence_band"] == pytest.approx([0.324, 1.1])
     assert result["sightline_clearance_m"] == SIGHTLINE_CLEARANCE_M
     summary = result["observed"]["size_checkable"]
     assert summary["min"] == 3 and summary["with_none"] == 0
     assert summary["share_of_frames_checked"] == pytest.approx(6 / 8)
 
 
-def test_the_pilot_stops_without_a_checkable_frame_after_frame_0() -> None:
-    with pytest.raises(PilotStopError, match="no size-checkable frame") as stop:
-        pilot_tolerances(_pilot(1))
-    assert stop.value.observed["size_checkable_by_seed"]["10300"]["size_checkable_frames"] == 1
+def test_the_pilot_stops_when_more_than_two_candidates_lack_a_checkable_frame() -> None:
+    frames = (CUBE, CUBE, CUBE, CUBE)
+    short = [PilotCandidate(10300 + k, CUBE, frames, 0.1, 1, (0.0,) * 4) for k in range(3)]
+    full = PilotCandidate(10310, CUBE, frames, 0.1, 4, (0.0,) * 4)
+    assert pilot_tolerances([*short[:2], full])
+    with pytest.raises(PilotStopError, match="more than 2") as stop:
+        pilot_tolerances([*short, full])
+    assert stop.value.observed["without_size_checkable_frame_1_to_T_minus_1"] == [
+        10300,
+        10301,
+        10302,
+    ]
+
+
+def test_the_pilot_stops_when_a_checkable_frame_is_not_full_size() -> None:
+    frames = (CUBE, MEDIUM, CUBE, CUBE)
+    with pytest.raises(PilotStopError, match="not knowable"):
+        pilot_tolerances([PilotCandidate(10300, CUBE, frames, 0.1, 3, (0.0,) * 4)])
+    assert pilot_tolerances([PilotCandidate(10300, CUBE, frames, 0.1, 1, (0.0,) * 4)])
+
+
+def test_the_pilot_reports_every_stop_that_holds() -> None:
+    frames = (CUBE, MEDIUM, CUBE, CUBE)
+    moved = (0.0, 0.01, 0.0, 0.0)
+    with pytest.raises(PilotStopError) as stop:
+        pilot_tolerances([PilotCandidate(10300, CUBE, frames, 0.1, 3, moved)])
+    reasons = " ".join(stop.value.observed["stops"])
+    assert "moved" in reasons and "not knowable" in reasons
 
 
 def test_the_pilot_stops_when_the_cube_moves_in_a_checkable_frame() -> None:
-    with pytest.raises(PilotStopError, match="premise"):
+    with pytest.raises(PilotStopError, match="moved"):
         pilot_tolerances(_pilot(3, moved=0.006, moved_at=2))
     assert pilot_tolerances(_pilot(3, moved=0.006, moved_at=3))  # not size-checkable: no stop
     assert pilot_tolerances(_pilot(3, moved=0.005, moved_at=2))
@@ -190,7 +226,7 @@ def test_the_size_check_summary() -> None:
     assert summary == {
         "candidates": 4,
         "with_none": 1,
-        "with_none_after_frame_0": 2,
+        "with_none_in_1_to_T_minus_1": 2,
         "min": 0,
         "median": 3.0,
         "max": 10,
