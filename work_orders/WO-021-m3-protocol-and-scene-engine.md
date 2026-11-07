@@ -37,3 +37,8 @@ A pilot that cannot fit a band inside the frozen limits (the owner is told); any
   - `evals/M3-protocol-2.json` replaces only ET-M3-1. It keeps protocol-1's every-frame area band as a presence band, and adds a size band in size-checkable frames. Those frames are chosen by a sightline rule computed from the commanded joints only.
   - The rule's 0.035 m clearance comes from the ledgered diagnostic `20261107T112025Z_3f2d4bd9`, run on spent seeds 10900 to 10919.
   - The independent review found a blocker: with the area band limited to size-checkable frames, a removed cube went undetected after them. The presence band fixes it. The review also found that failing candidates with no size-checkable frame would sink the test on a technicality; such candidates now get no size-band check instead.
+- **2026-11-07, `m3-protocol-2` frozen (PR #35) and its tolerance pilot run once.** Run `20261107T113546Z_783f6d54` at clean `ff9ff8e`, seeds 10300 to 10319, no stop condition held (**measured**, simulation).
+  - Size-checkable frames: 19.1% of all frames, median 32.5 per candidate, at least 16; none without a checkable frame after frame 0.
+  - In them: area ratio 1.000 throughout, cube displacement at most 1.5e-6 m, actual-joint clearance at least 0.0351 m.
+  - Over every frame the area ratio ran from 0.129 to 1.190.
+  - Tolerances: size band [0.9, 1.1], presence band [0.116, 1.309], merge radius 27.4 px, first-frame tolerance 0.0, goal-centroid distance 13.6 px, minimum green count 0. Their sha256 is in the status ledger before any control or injection.
