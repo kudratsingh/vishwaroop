@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-07 12:05 UTC · ledger records: 139
+Generated: 2026-11-07 12:20 UTC · ledger records: 141
 
 ## Phases
 
@@ -82,7 +82,7 @@ Generated: 2026-11-07 12:05 UTC · ledger records: 139
 | WO-016 | Retest ET-M1-5 with a calibration split that includes perturbed chunks | M1 | **accepted** | 2026-11-02T12:22:18.309434Z | reports/WO-016-m1-et5-retest.md |
 | WO-017 | M2a observation model: a 30-minute Mac pilot to check the GPU estimate | M2a | **accepted** | 2026-11-02T12:55:18.599343Z | reports/WO-017-m2a-mac-pilot.md |
 | WO-018 | M2a: a GPU pilot to measure the speedup over the Mac, then one full run if it fits | M2a | **in_progress** | 2026-11-07T07:23:55.659967Z | — |
-| WO-019 | M4: import banshee's D1 simulation episodes, read-only, and validate them | M4 | **created** | 2026-11-02T13:19:20.243311Z | — |
+| WO-019 | M4: import banshee's D1 simulation episodes, read-only, and validate them | M4 | **in_progress** | 2026-11-07T12:20:17.214137Z | — |
 | WO-020 | M3: re-measure the family-holdout gaps under plain A, and pick M3's target family | M3 | **accepted** | 2026-11-07T07:13:29.084289Z | reports/WO-020-m3-remeasure-family-gaps.md |
 | WO-021 | M3: protocol, scene engine and the scene-consistency check (ET-M3-1) | M3 | **in_progress** | 2026-11-07T08:27:59.661473Z | — |
 
