@@ -47,8 +47,8 @@ Every completed failed flight is kept. Some held-out families are all failures: 
 
 ## Notes for the next M4 work order (not acted on here)
 - **Frozen order.** ET-M4-2's window eligibility, nominal fit and scoring come next, in the order the freeze sets. Drone model training is a separate owner decision.
-- **The stale-observation trips.** banshee reports that all 12 failed variation flights and its one incomplete attempt stopped at a stale-observation safety trip, which is not yet explained. Its exports exclude that attempt (one corrupt timestamp). ET-M4-2's eligibility rules (fresh `capture_t_ns`, the cadence bounds) will exclude stale windows; exclusions are reported by family.
-- **Disk.** The import used about 9.1 GB; 18 GiB remain free.
+- **The stale-observation trips (reported by banshee, not checked here).** banshee's WO-029 report, as relayed by the owner, says all 12 failed variation flights and one incomplete attempt stopped at a stale-observation safety trip, which banshee has not explained. The contract check rejected the attempt because one of its 980 observations has a corrupt timestamp, and both variation exports (episodes and ULogs) exclude it. Here, each of the 12 failed flights' exported `outcome.json` shows `vm_returncode` 1, against 0 for the 86 successes, but no exported file names the trip. ET-M4-2's eligibility rules (fresh `capture_t_ns`, the cadence bounds) will exclude stale windows, and exclusions are reported by family.
+- **Disk.** The import copied 9,133,498,815 bytes (8.5 GiB). Free space measured after the import was 18 GiB. No artifact records it.
 
 ## Review
 An independent review of the import tool came before anything was copied. It found one blocker: `split.partition` was not `dev` for training families. That led to amendment 2, which the owner approved. It also found five should-fix items (resumability, the stack field, the artifact on failure, which checks gate, duplicate keys) and some nits. All were fixed before the import ran. A recheck of the results and this report follows (`AGENTS.md §13.8`).
