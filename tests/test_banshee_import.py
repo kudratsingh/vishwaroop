@@ -26,14 +26,21 @@ def make_export(
     """A small export with one episode: its directory and its manifest sha256."""
     directory = root / export_id
     files = {}
+    shared = dict.fromkeys(bi.SHARED_ENTRY_FIELDS)
+    shared.update(stack="jazzy", split="train", partition="train", success=True, run_id="r1")
     if kind == "episodes":
-        episode = {"episode_id": "e1", "schema_version": "1.0.0"}
+        episode = {
+            "episode_id": "e1",
+            "schema_version": "1.0.0",
+            "split": {"partition": "train", "scene_group_id": "f"},
+        }
         files["episodes/r1/episode.json"] = json.dumps(episode).encode()
         files["episodes/r1/transitions.jsonl"] = b"{}\n"
-        entries = [{"episode_id": "e1", "path": "episodes/r1"}]
+        entries = [{"episode_id": "e1", "path": "episodes/r1", **shared}]
     else:
         files["ulogs/r1/a.ulg"] = b"ulog"
-        entries = [{"episode_id": "e1"}]
+        ulogs = [{"path": "ulogs/r1/a.ulg", "sha256": _sha(b"ulog")}]
+        entries = [{"episode_id": "e1", "ulogs": ulogs, **shared}]
     for relative, data in files.items():
         (directory / relative).parent.mkdir(parents=True, exist_ok=True)
         (directory / relative).write_bytes(data)
@@ -43,6 +50,12 @@ def make_export(
         "kind": kind,
         "contract": {"name": "ironclad contracts v1", "schema_version": "1.0.0"},
         "entries": entries,
+        "counts": {
+            "entries": 1,
+            "by_stack_and_split": {"jazzy/train": 1},
+            "successful": 1,
+            "failed": 0,
+        },
         "files": [
             {"path": relative, "sha256": _sha(data), "bytes": len(data)}
             for relative, data in files.items()
@@ -135,7 +148,7 @@ def test_an_unsafe_path_stops(tmp_path: Path) -> None:
 
 def test_an_episode_on_another_schema_version_stops(tmp_path: Path) -> None:
     directory, _ = make_export(tmp_path)
-    data = json.dumps({"episode_id": "e1", "schema_version": "1.1.0"}).encode()
+    data = json.dumps({"episode_id": "e1", "schema_version": "1.1.0", "split": {}}).encode()
     (directory / "episodes/r1/episode.json").write_bytes(data)
     manifest = json.loads((directory / "MANIFEST.json").read_bytes())
     manifest["files"][0].update(sha256=_sha(data), bytes=len(data))
@@ -172,8 +185,10 @@ def test_the_copy_is_byte_for_byte_read_only_and_write_once(
                 "rights": "r",
             },
         ),
-        "a" * 64,
+        {"evals/M4-amendment-1.json": "a" * 64},
+        "c0ffee",
     )
+    assert record["stacks"]["by_stack"] == {"jazzy": 1} and record["tool_commit"] == "c0ffee"
     assert record["source"] == "banshee:data/exports/x-episodes"
     assert not record["target"].startswith("/") and "Users" not in json.dumps(record)
 
@@ -224,7 +239,6 @@ def test_the_m4_data_checks_pass_on_a_clean_union() -> None:
             "transitions",
         ),
         (lambda e: e[1]["entry"].update(wind_id="wind"), "triples"),
-        (lambda e: e[2]["entry"].update(family_id="f3"), "scene_group_id"),
         (lambda e: e[1]["entry"].update(episode_id="a"), "occurs 2 times"),
         (lambda e: e[0]["episode"]["action_spec"].update(labels=["vx"]), "action_spec"),
         (lambda e: e[0]["episode"]["streams"][0].update(shape=[6]), "state"),
@@ -237,3 +251,71 @@ def test_the_m4_data_checks_catch_each_problem(edit: Any, match: str) -> None:
     result = bi.data_checks(episodes)
     assert not result["passed"]
     assert any(match in problem for problem in result["problems"]), result["problems"]
+
+
+def test_consistency_checks_outside_the_freeze_are_reported_not_gated() -> None:
+    episodes = copy.deepcopy(_good())
+    episodes[2]["entry"]["family_id"] = "f3"
+    result = bi.data_checks(episodes)
+    assert result["passed"]
+    assert not result["other_checks_passed"]
+    assert any("scene_group_id" in problem for problem in result["other_problems"])
+
+
+def test_a_duplicate_key_stops(tmp_path: Path) -> None:
+    directory, _ = make_export(tmp_path)
+    raw = (directory / "MANIFEST.json").read_bytes()
+    raw = raw.replace(b'"producer": "banshee"', b'"producer": "banshee", "producer": "banshee"')
+    (directory / "MANIFEST.json").write_bytes(raw)
+    (directory / "COMPLETE").write_text(_sha(raw), encoding="ascii")
+    with pytest.raises(bi.ImportStopError, match="duplicate"):
+        bi.verify_export(directory, "x-episodes", _sha(raw))
+
+
+@pytest.mark.parametrize(
+    ("change", "match"),
+    [
+        ({"counts": {"entries": 2}}, "counts.entries"),
+        ({"counts": {"entries": 1, "by_stack_and_split": {"humble/train": 1}}}, "stack"),
+    ],
+)
+def test_counts_must_match_the_entries(tmp_path: Path, change: dict[str, Any], match: str) -> None:
+    directory, digest = make_export(tmp_path, **change)
+    with pytest.raises(bi.ImportStopError, match=match):
+        bi.verify_export(directory, "x-episodes", digest)
+
+
+def test_an_unknown_stack_stops(tmp_path: Path) -> None:
+    directory, _ = make_export(tmp_path)
+    manifest = json.loads((directory / "MANIFEST.json").read_bytes())
+    manifest["entries"][0]["stack"] = None
+    raw = json.dumps(manifest).encode()
+    (directory / "MANIFEST.json").write_bytes(raw)
+    (directory / "COMPLETE").write_text(_sha(raw), encoding="ascii")
+    with pytest.raises(bi.ImportStopError, match="unknown stacks"):
+        bi.verify_export(directory, "x-episodes", _sha(raw))
+
+
+def test_episode_and_ulog_exports_must_agree(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _, a = make_export(tmp_path, "x-episodes")
+    ulogs, b = make_export(tmp_path, "x-ulogs", kind="ulogs")
+    monkeypatch.setattr(bi, "EXPORTS", {"x-episodes": a, "x-ulogs": b})
+    monkeypatch.setattr(bi, "ULOG_FOR", {"x-episodes": "x-ulogs"})
+    assert len(bi.verify_all(tmp_path)) == 2
+    manifest = json.loads((ulogs / "MANIFEST.json").read_bytes())
+    manifest["entries"][0]["success"] = False
+    manifest["counts"].update(successful=0, failed=1)
+    raw = json.dumps(manifest).encode()
+    (ulogs / "MANIFEST.json").write_bytes(raw)
+    (ulogs / "COMPLETE").write_text(_sha(raw), encoding="ascii")
+    monkeypatch.setattr(bi, "EXPORTS", {"x-episodes": a, "x-ulogs": _sha(raw)})
+    with pytest.raises(bi.ImportStopError, match="differs in"):
+        bi.verify_all(tmp_path)
+
+
+def test_the_partition_table_records_split_partition_by_m4_split(tmp_path: Path) -> None:
+    directory, digest = make_export(tmp_path)
+    export = bi.verify_export(directory, "x-episodes", digest)
+    assert bi.partition_table(export) == {"train -> train": 1}

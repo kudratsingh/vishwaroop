@@ -32,6 +32,7 @@ import json
 import os
 import shutil
 import stat
+import subprocess
 import sys
 from collections import Counter, defaultdict
 from dataclasses import dataclass
@@ -70,11 +71,52 @@ ARTIFACT = Path("artifacts/manifests/banshee-d1-import-v1.json")
 ACTION_LABELS = ["ve", "vn", "vu", "yaw_rate"]
 ACTION_UNITS = ["m/s", "m/s", "m/s", "rad/s"]
 M4_PARTITIONS = {"train", "heldout"}
+STACKS = {"jazzy", "humble"}
 MARKERS = ("MANIFEST.json", "COMPLETE")
+FREE_SPACE_MARGIN_BYTES = 2 * 1024**3
+SHARED_ENTRY_FIELDS = (
+    "run_id",
+    "stack",
+    "airframe",
+    "suite_id",
+    "case_id",
+    "family_id",
+    "route_id",
+    "wind_id",
+    "fault_family",
+    "split",
+    "partition",
+    "success",
+)
 
 
 class ImportStopError(ValueError):
     """A frozen stop condition: report it, copy nothing more."""
+
+
+def strict_loads(raw: bytes | str) -> Any:
+    """json.loads that refuses duplicate keys, so a repeated declaration cannot hide."""
+
+    def pairs(items: list[tuple[str, Any]]) -> dict[str, Any]:
+        out: dict[str, Any] = {}
+        for key, value in items:
+            if key in out:
+                raise ImportStopError(f"duplicate JSON key {key!r}")
+            out[key] = value
+        return out
+
+    return json.loads(raw, object_pairs_hook=pairs)
+
+
+def git_state(repo: Path = Path(".")) -> dict[str, Any]:
+    """The checkout's commit and whether its tree is dirty (any change, untracked included)."""
+    commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=repo, capture_output=True, text=True, check=True
+    ).stdout.strip()
+    status = subprocess.run(
+        ["git", "status", "--porcelain"], cwd=repo, capture_output=True, text=True, check=True
+    ).stdout
+    return {"commit": commit, "dirty": bool(status.strip())}
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -177,7 +219,7 @@ def verify_export(root: Path, export_id: str, expected: str, *, hash_files: bool
         raise ImportStopError(
             f"{export_id}: MANIFEST.json sha256 {actual}, COMPLETE {complete}, expected {expected}"
         )
-    manifest = json.loads(raw)
+    manifest = strict_loads(raw)
     if manifest.get("export_id") != export_id or manifest.get("producer") != PRODUCER:
         raise ImportStopError(f"{export_id}: the manifest names another export or producer")
     check_schema_declaration(manifest, export_id)
@@ -201,17 +243,53 @@ def verify_export(root: Path, export_id: str, expected: str, *, hash_files: bool
     if unlisted:
         raise ImportStopError(f"{export_id}: files not in the manifest: {unlisted[:5]}")
     export = Export(export_id, root, raw, manifest)
+    if export.kind not in ("episodes", "ulogs"):
+        raise ImportStopError(f"{export_id}: unknown export kind {export.kind!r}")
+    check_counts(export)
     if export.kind == "episodes":
         for entry in manifest["entries"]:
-            episode = json.loads((_safe(root, entry["path"]) / "episode.json").read_bytes())
+            episode = strict_loads((_safe(root, entry["path"]) / "episode.json").read_bytes())
             if episode.get("schema_version") != SCHEMA_VERSION:
                 raise ImportStopError(
                     f"{export_id}: {entry['episode_id']} schema_version "
                     f"{episode.get('schema_version')!r}, not '1.0.0'"
                 )
-    elif export.kind != "ulogs":
-        raise ImportStopError(f"{export_id}: unknown export kind {export.kind!r}")
+    else:
+        for entry in manifest["entries"]:
+            for ulog in entry.get("ulogs") or []:
+                if listed.get(ulog["path"], {}).get("sha256") != ulog["sha256"]:
+                    raise ImportStopError(f"{export_id}: {ulog['path']} is not a listed file")
+            if not entry.get("ulogs"):
+                raise ImportStopError(f"{export_id}: {entry['episode_id']} has no ULog")
     return export
+
+
+def stack_counts(entries: list[dict[str, Any]]) -> dict[str, Any]:
+    """Counts by stack and by stack and M4 split, computed here from the entries."""
+    return {
+        "by_stack": dict(sorted(Counter(e["stack"] for e in entries).items())),
+        "by_stack_and_split": dict(
+            sorted(Counter(f"{e['stack']}/{e['split']}" for e in entries).items())
+        ),
+        "successful": sum(1 for e in entries if e["success"] is True),
+        "failed": sum(1 for e in entries if e["success"] is False),
+    }
+
+
+def check_counts(export: Export) -> None:
+    """The entries' stacks are known, and the counts computed here equal the producer's."""
+    entries = export.manifest["entries"]
+    counts = export.manifest.get("counts", {})
+    stacks = {e.get("stack") for e in entries}
+    if not stacks <= STACKS:
+        raise ImportStopError(f"{export.export_id}: unknown stacks {sorted(map(str, stacks))}")
+    if counts.get("entries") != len(entries):
+        raise ImportStopError(f"{export.export_id}: counts.entries differs from the entries")
+    mine = stack_counts(entries)
+    if counts.get("by_stack_and_split") != mine["by_stack_and_split"]:
+        raise ImportStopError(f"{export.export_id}: stack and split counts differ")
+    if (counts.get("successful"), counts.get("failed")) != (mine["successful"], mine["failed"]):
+        raise ImportStopError(f"{export.export_id}: success counts differ")
 
 
 def verify_all(source: Path, *, hash_files: bool = True) -> list[Export]:
@@ -221,11 +299,25 @@ def verify_all(source: Path, *, hash_files: bool = True) -> list[Export]:
     ]
     by_id = {export.export_id: export for export in exports}
     for episodes, ulogs in ULOG_FOR.items():
-        a = {e["episode_id"] for e in by_id[episodes].manifest["entries"]}
-        b = {e["episode_id"] for e in by_id[ulogs].manifest["entries"]}
-        if a != b:
+        a = {e["episode_id"]: e for e in by_id[episodes].manifest["entries"]}
+        b = {e["episode_id"]: e for e in by_id[ulogs].manifest["entries"]}
+        if set(a) != set(b) or len(a) != len(by_id[episodes].manifest["entries"]):
             raise ImportStopError(f"{episodes} and {ulogs} list different episodes")
+        for episode_id, entry in a.items():
+            other = b[episode_id]
+            differing = [f for f in SHARED_ENTRY_FIELDS if entry.get(f) != other.get(f)]
+            if differing:
+                raise ImportStopError(f"{episode_id}: {ulogs} differs in {differing}")
     return exports
+
+
+def partition_table(export: Export) -> dict[str, int]:
+    """How episode.json's split.partition goes with the M4 split, for the record."""
+    table: Counter[str] = Counter()
+    for entry in export.manifest["entries"]:
+        episode = strict_loads((export.root / entry["path"] / "episode.json").read_bytes())
+        table[f"{entry['split']} -> {episode['split']['partition']}"] += 1
+    return dict(sorted(table.items()))
 
 
 def _make_read_only(root: Path) -> None:
@@ -252,14 +344,13 @@ def copy_export(export: Export, repo: Path) -> Path:
             raise ImportStopError(f"{export.export_id}: the copy of {item['path']} differs")
     for marker in MARKERS:
         shutil.copyfile(export.root / marker, incoming / marker)
-    if sha256_bytes((incoming / "MANIFEST.json").read_bytes()) != EXPORTS[export.export_id]:
-        raise ImportStopError(f"{export.export_id}: the copied MANIFEST.json differs")
+    verify_export(incoming, export.export_id, EXPORTS[export.export_id])
     _make_read_only(incoming)
     os.rename(incoming, target)
     return target
 
 
-def import_record(export: Export, amendment_sha256: str) -> dict[str, Any]:
+def import_record(export: Export, frozen: dict[str, str], commit: str) -> dict[str, Any]:
     manifest = export.manifest
     return {
         "export_id": export.export_id,
@@ -274,11 +365,13 @@ def import_record(export: Export, amendment_sha256: str) -> dict[str, Any]:
         "split_plan": manifest.get("split_plan"),
         "transformation": manifest.get("transformation"),
         "counts": manifest["counts"],
+        "stacks": stack_counts(manifest["entries"]),
         "files": len(manifest["files"]),
         "bytes": sum(item["bytes"] for item in manifest["files"]),
         "rights": manifest["rights"],
         "read_only": True,
-        "rules": {"evals/M4-amendment-1.json": amendment_sha256},
+        "rules": frozen,
+        "tool_commit": commit,
         "actor": "claude-code-vishwaroop",
         "work_order": "WO-019",
     }
@@ -305,7 +398,7 @@ def _imported(repo: Path) -> dict[str, Export]:
         raw = (root / "MANIFEST.json").read_bytes()
         if sha256_bytes(raw) != expected:
             raise ImportStopError(f"the imported {export_id} manifest differs from the producer's")
-        out[export_id] = Export(export_id, root, raw, json.loads(raw))
+        out[export_id] = Export(export_id, root, raw, strict_loads(raw))
     return out
 
 
@@ -313,8 +406,14 @@ def data_checks(episodes: list[dict[str, Any]]) -> dict[str, Any]:
     """ET-M4-2's four data checks, over the union of both episode exports.
 
     Each item has the manifest ``entry``, its ``export_id`` and the ``episode`` (episode.json).
+    ``passed`` is the frozen checks only: (1) every episode_id once, no transitions sha256 in two
+    families; (2) every family in one M4 partition; (3) exactly one training and one held-out
+    partition designated (others may exist and are unused); (4) the action labels and units and
+    the 7-value enu_local state stream; and families_and_partitions' family id <-> triple
+    bijection. ``other_problems`` holds consistency checks that the freeze does not gate on.
     """
     problems: list[str] = []
+    other: list[str] = []
     ids = Counter(item["entry"]["episode_id"] for item in episodes)
     problems += [f"episode_id {k} occurs {n} times" for k, n in ids.items() if n > 1]
     triples: dict[str, set[tuple[str, str, str]]] = defaultdict(set)
@@ -326,11 +425,11 @@ def data_checks(episodes: list[dict[str, Any]]) -> dict[str, Any]:
         entry, episode = item["entry"], item["episode"]
         family = entry["family_id"]
         if episode["episode_id"] != entry["episode_id"]:
-            problems.append(f"{entry['episode_id']}: episode.json names {episode['episode_id']}")
+            other.append(f"{entry['episode_id']}: episode.json names {episode['episode_id']}")
         if episode["split"]["scene_group_id"] != family:
-            problems.append(f"{entry['episode_id']}: scene_group_id is not the family id")
+            other.append(f"{entry['episode_id']}: scene_group_id is not the family id")
         if episode["split"]["partition"] != entry["partition"]:
-            problems.append(f"{entry['episode_id']}: split.partition differs from the manifest")
+            other.append(f"{entry['episode_id']}: split.partition differs from the manifest")
         triple = (entry["route_id"], entry["wind_id"], entry["fault_family"])
         triples[family].add(triple)
         families_of_triple[triple].add(family)
@@ -355,14 +454,15 @@ def data_checks(episodes: list[dict[str, Any]]) -> dict[str, Any]:
     problems += [
         f"family {f} in partitions {sorted(p)}" for f, p in partitions.items() if len(p) > 1
     ]
-    problems += [
-        f"session {s} in partitions {sorted(p)}" for s, p in sessions.items() if len(p) > 1
-    ]
+    other += [f"session {s} in partitions {sorted(p)}" for s, p in sessions.items() if len(p) > 1]
     designated = {p for parts in partitions.values() for p in parts}
-    if designated != M4_PARTITIONS:
+    if not designated >= M4_PARTITIONS:
         problems.append(
-            f"the manifests designate partitions {sorted(designated)}, not train/heldout"
+            f"the manifests designate partitions {sorted(designated)}, not one train and one "
+            "heldout"
         )
+    if designated != M4_PARTITIONS:
+        other.append(f"partitions other than train and heldout: {sorted(designated)}")
     by_partition: dict[str, dict[str, Any]] = {}
     for split in sorted(designated):
         chosen = [i for i in episodes if i["entry"]["split"] == split]
@@ -387,6 +487,8 @@ def data_checks(episodes: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "passed": not problems,
         "problems": problems,
+        "other_checks_passed": not other,
+        "other_problems": other,
         "episodes": len(episodes),
         "by_partition": by_partition,
         "families": {
@@ -414,13 +516,14 @@ def run_audit(repo: Path) -> dict[str, Any]:
             try:
                 result = validate_episode(path)
             except (ContractError, OSError, ValueError) as exc:
-                validation["invalid"].append({"episode_id": entry["episode_id"], "error": str(exc)})
+                error = str(exc).replace(str(repo.resolve()), ".")
+                validation["invalid"].append({"episode_id": entry["episode_id"], "error": error})
                 continue
             if result["status"] == "contract_valid":
                 validation["contract_valid"] += 1
             paths.append(path)
             episodes.append(
-                {"export_id": export_id, "entry": entry, "episode": json.loads(path.read_bytes())}
+                {"export_id": export_id, "entry": entry, "episode": strict_loads(path.read_bytes())}
             )
     total = sum(len(imported[e].manifest["entries"]) for e in EPISODE_EXPORTS)
     validation["episodes"] = total
@@ -434,7 +537,7 @@ def run_audit(repo: Path) -> dict[str, Any]:
         except ContractError as exc:
             contract_audit[f"holdout_scenes={holdout_scenes}"] = {
                 "status": "failed",
-                "error": str(exc),
+                "error": str(exc).replace(str(repo.resolve()), "."),
             }
     checks = data_checks(episodes)
     ulogs: dict[str, Any] = {}
@@ -457,6 +560,20 @@ def run_audit(repo: Path) -> dict[str, Any]:
         "m4_data_checks": checks,
         "ulogs": ulogs,
         "manifests": {export_id: EXPORTS[export_id] for export_id in EXPORTS},
+        "partition_tables": {e: partition_table(imported[e]) for e in EPISODE_EXPORTS},
+        "stacks": {e: stack_counts(imported[e].manifest["entries"]) for e in EPISODE_EXPORTS},
+        "episodes_index": [
+            {
+                "episode_id": item["entry"]["episode_id"],
+                "export_id": item["export_id"],
+                "stack": item["entry"]["stack"],
+                "family_id": item["entry"]["family_id"],
+                "m4_split": item["entry"]["split"],
+                "split_partition": item["episode"]["split"]["partition"],
+                "success": item["entry"]["success"],
+            }
+            for item in episodes
+        ],
         "passed": validation["all_contract_valid"]
         and checks["passed"]
         and all(a.get("status") != "failed" for a in contract_audit.values()),
@@ -467,35 +584,60 @@ def _cmd_verify(args: argparse.Namespace) -> int:
     check_frozen()
     exports = verify_all(args.source)
     for export in exports:
-        print(
-            json.dumps(
-                {
-                    "export_id": export.export_id,
-                    "kind": export.kind,
-                    "entries": len(export.manifest["entries"]),
-                    "files": len(export.manifest["files"]),
-                    "manifest_sha256": EXPORTS[export.export_id],
-                    "contract": export.manifest["contract"],
-                }
-            )
-        )
+        line: dict[str, Any] = {
+            "export_id": export.export_id,
+            "kind": export.kind,
+            "entries": len(export.manifest["entries"]),
+            "files": len(export.manifest["files"]),
+            "bytes": sum(item["bytes"] for item in export.manifest["files"]),
+            "manifest_sha256": EXPORTS[export.export_id],
+            "contract": export.manifest["contract"],
+            "stacks": stack_counts(export.manifest["entries"]),
+        }
+        if export.kind == "episodes":
+            line["split_partition_by_m4_split"] = partition_table(export)
+        print(json.dumps(line, sort_keys=True))
     return 0
 
 
+def _ledgered(path: Path, field: str, value: str) -> bool:
+    if not path.exists():
+        return False
+    return any(json.loads(line).get(field) == value for line in path.read_text().splitlines())
+
+
 def _cmd_import(args: argparse.Namespace) -> int:
+    """Copy every export not yet imported; one that already is must re-verify, and only its
+    missing ledger lines are written, so a stopped import can be resumed without deleting."""
     from ironclad.core.ledger import append_record
 
     frozen = check_frozen()
+    git = git_state()
+    if git["dirty"]:
+        raise ImportStopError("commit first, so the import record names clean code")
     repo = Path(".")
     exports = verify_all(args.source)
+    pending = [e for e in exports if not (repo / IMPORTS / e.export_id).exists()]
+    needed = sum(item["bytes"] for e in pending for item in e.manifest["files"])
+    (repo / IMPORTS).mkdir(parents=True, exist_ok=True)
+    free = shutil.disk_usage(repo / IMPORTS).free
+    if free < needed + FREE_SPACE_MARGIN_BYTES:
+        raise ImportStopError(f"{needed} bytes to copy but {free} free (margin 2 GiB)")
+    imports = repo / "ledgers/imports.jsonl"
     for export in exports:
-        target = copy_export(export, repo)
-        record = append_record(
-            repo / "ledgers/imports.jsonl",
-            import_record(export, frozen["evals/M4-amendment-1.json"]),
-        )
-        print(f"imported {export.export_id} -> {target} ({record['record_id']})")
-    append_record(repo / "ledgers/licenses.jsonl", license_record())
+        target = repo / IMPORTS / export.export_id
+        if target.exists():
+            verify_export(target, export.export_id, EXPORTS[export.export_id])
+            print(f"already imported and re-verified: {target}")
+        else:
+            copy_export(export, repo)
+            print(f"imported {export.export_id} -> {target}")
+        if not _ledgered(imports, "manifest_sha256", EXPORTS[export.export_id]):
+            append_record(imports, import_record(export, frozen, git["commit"]))
+    licenses = repo / "ledgers/licenses.jsonl"
+    record = license_record()
+    if not _ledgered(licenses, "asset", record["asset"]):
+        append_record(licenses, record)
     return 0
 
 
@@ -504,6 +646,8 @@ def _cmd_audit(args: argparse.Namespace) -> int:
 
     require_code_root()
     frozen = check_frozen()
+    if git_state()["dirty"]:
+        raise ImportStopError("commit first, so the code note stays true")
     with ledgered_run(
         purpose="WO-019: revalidate banshee's imported D1 episodes and audit the M4 split",
         config={"frozen": frozen, "manifests": EXPORTS},
@@ -515,9 +659,10 @@ def _cmd_audit(args: argparse.Namespace) -> int:
         report = {"run": run.directory.name, "code": run.code_note, **run_audit(Path("."))}
         text = json.dumps(report, indent=1, sort_keys=True, allow_nan=False) + "\n"
         (run.directory / "import_audit.json").write_text(text, encoding="utf-8")
-        ARTIFACT.parent.mkdir(parents=True, exist_ok=True)
-        with ARTIFACT.open("x", encoding="utf-8") as stream:
-            stream.write(text)
+        if report["passed"]:
+            ARTIFACT.parent.mkdir(parents=True, exist_ok=True)
+            with ARTIFACT.open("x", encoding="utf-8") as stream:
+                stream.write(text)
         run.note = f"banshee D1 import audit passed {report['passed']}"
         print(run.note)
     return 0
