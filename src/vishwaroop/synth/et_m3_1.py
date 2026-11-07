@@ -1,0 +1,326 @@
+"""ET-M3-1: the tolerance pilot, then one scoring of the scene-consistency checker.
+
+    python -m vishwaroop.synth.et_m3_1 pilot
+    python -m vishwaroop.synth.et_m3_1 score
+
+Run it from the repository root, in the robotics environment, at a clean commit. Both are ledgered
+runs and both refuse changed frozen files (``evals/M3-protocol.md``, ``evals/M3-exit-tests.json``,
+``evals/M0-exit-tests.json``).
+
+``pilot`` snapshots and renders block 10 seeds 10900 to 10919 (even seeds nominal, odd seeds the
+operators), measures every frame, and writes ``evals/M3-checker-tolerances.json`` once by the frozen
+rule, printing its sha256 for the status ledger. If no band inside the frozen limits contains every
+pilot frame, it writes nothing to ``evals/`` and exits 4, so that the owner is told before any
+candidate is generated.
+
+``score`` refuses unless the tolerances file's sha256 is recorded in ``work_orders/STATUS.jsonl``
+and no score exists. It builds the 60 controls (seeds 10000 to 10059) and the 60 injections (seeds
+10100 to 10159, each into its own unmodified source candidate), runs the checker once on each
+source, injection and control, applies the threshold with the injection-credit rule, and writes
+``et_m3_1_score.json`` once. Snapshots are written once into the run directory; frames stay in
+memory, one candidate at a time.
+
+Exit codes: 0 done (whatever the verdict), 2 refused, 3 simulator not run, 4 the pilot stopped.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import sys
+import time
+from pathlib import Path
+from typing import Any
+
+from ..sim.env import ManiSkillPickCube, SimulatorUnavailableError
+from ..sim.replay import ReplayInvalidError, require_frozen_file
+from ..sim.runlog import ledgered_run, require_code_root
+from .checker import (
+    CONTROL_SEEDS,
+    PILOT_SEEDS,
+    TOLERANCES_PATH,
+    PilotCandidate,
+    PilotStopError,
+    Tolerances,
+    check_candidate,
+    first_frame_difference,
+    load_tolerances,
+    measure,
+    pilot_tolerances,
+    reference,
+    verdict,
+)
+from .operators import EpisodeKind, et_m3_1_episodes
+from .snapshot import (
+    RenderingEnv,
+    Snapshot,
+    SnapshotError,
+    projection_matrix,
+    render_episode,
+    take_snapshot,
+    write_snapshot,
+)
+
+FROZEN = {
+    Path("evals/M3-exit-tests.json"): (
+        "2e35a50397b1c97919cb0be7d31b09b374d3fd0f0564741090b93c5e31e8f2d4"
+    ),
+    Path("evals/M3-protocol.md"): (
+        "34ac1338b97d732f3de66f30e83227778af5360117df7674b21dce7dc253ea34"
+    ),
+}
+M0_EXIT_TESTS = Path("evals/M0-exit-tests.json")
+STATUS_LEDGER = Path("work_orders/STATUS.jsonl")
+RUNS = Path("runs")
+PILOT_RESULT = "et_m3_1_pilot.json"
+SCORE_RESULT = "et_m3_1_score.json"
+SNAPSHOTS = "snapshots"
+STOPPED = 4
+FIRST_INJECTION_SEED = 10100  # inject.FIRST_SEED; inject needs numpy, so it is imported late
+
+
+def check_frozen(frozen: dict[Path, str] = FROZEN) -> dict[str, str]:
+    """Refuse unless every frozen file has its frozen sha256."""
+    for path, expected in frozen.items():
+        actual = hashlib.sha256(path.read_bytes()).hexdigest()
+        if actual != expected:
+            raise ValueError(f"{path} has sha256 {actual}, not the frozen {expected}")
+    return {str(path): digest for path, digest in frozen.items()}
+
+
+def check_not_run(runs_root: Path, result: str) -> None:
+    """Refuse a second run once a result, or its partial file, exists in any run directory."""
+    found = sorted(Path(runs_root).glob(f"*/{result}*"))
+    if found:
+        raise ValueError(f"already run in {found[0]}; ET-M3-1 allows one {result}")
+
+
+def check_recorded(digest: str, status_ledger: Path = STATUS_LEDGER) -> None:
+    """Refuse unless a status-ledger note records the tolerances file with this sha256."""
+    for line in Path(status_ledger).read_text(encoding="utf-8").splitlines():
+        note = json.loads(line).get("note", "")
+        if TOLERANCES_PATH.name in note and digest in note:
+            return
+    raise ValueError(
+        f"{TOLERANCES_PATH} sha256 {digest} is not recorded in {status_ledger}; record it before "
+        "any control or injection is generated"
+    )
+
+
+def _task() -> tuple[str, str, int]:
+    require_frozen_file(M0_EXIT_TESTS)
+    task = json.loads(M0_EXIT_TESTS.read_text(encoding="utf-8"))["task"]
+    return task["env_id"], task["version"], int(task["max_episode_steps"])
+
+
+def _write_once(path: Path, value: dict[str, Any]) -> None:
+    text = json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    partial = path.with_name(f"{path.name}.partial")
+    with partial.open("x", encoding="utf-8") as stream:
+        stream.write(text)
+    partial.replace(path)
+
+
+def _scene(env: RenderingEnv, seed: int, task: tuple[str, str, int], run_dir: Path) -> Snapshot:
+    snapshot = take_snapshot(env, seed, task[0], task[1])
+    write_snapshot(snapshot, run_dir / SNAPSHOTS / f"seed-{seed:06d}")
+    return snapshot
+
+
+def _episode_note(episode: EpisodeKind, steps: int, planning_error: str | None) -> dict[str, Any]:
+    return {**episode.to_json(), "T": steps, "planning_error": planning_error}
+
+
+def run_pilot(env: RenderingEnv, task: tuple[str, str, int], run_dir: Path) -> dict[str, Any]:
+    """Snapshot, render and measure every pilot candidate. Returns the measurements and episodes."""
+    candidates = []
+    episodes = []
+    for episode in et_m3_1_episodes(PILOT_SEEDS):
+        print(f"pilot seed {episode.seed} {episode.kind}", file=sys.stderr, flush=True)
+        snapshot = _scene(env, episode.seed, task, run_dir)
+        rendered = render_episode(env, snapshot, episode, task[2])
+        candidates.append(
+            PilotCandidate(
+                seed=episode.seed,
+                snapshot=measure(snapshot.render),
+                frames=tuple(measure(frame) for frame in rendered.frames),
+                first_difference=first_frame_difference(rendered.frames[0], snapshot.render),
+            )
+        )
+        episodes.append(_episode_note(episode, rendered.steps, rendered.planning_error))
+    return {"candidates": candidates, "episodes": episodes}
+
+
+def _check(
+    snapshot: Snapshot, manifest: dict[str, Any], frames: list[Any], tolerances: Tolerances
+) -> dict[str, Any]:
+    ref = reference(snapshot.manifest, measure(snapshot.render), snapshot.render.shape, tolerances)
+    return check_candidate(manifest, frames, ref, snapshot.render, tolerances).to_json()
+
+
+def run_score(
+    env: RenderingEnv, task: tuple[str, str, int], run_dir: Path, tolerances: Tolerances
+) -> dict[str, Any]:
+    """Build and check the 60 controls and 60 injections, one candidate at a time."""
+    from .inject import RENDER_SEED_OFFSET, TYPES, InjectionError, inject, injection_plan
+
+    controls = []
+    for episode in et_m3_1_episodes(CONTROL_SEEDS):
+        print(f"control seed {episode.seed} {episode.kind}", file=sys.stderr, flush=True)
+        snapshot = _scene(env, episode.seed, task, run_dir)
+        rendered = render_episode(env, snapshot, episode, task[2])
+        result = _check(snapshot, snapshot.candidate_manifest(), rendered.frames, tolerances)
+        controls.append(
+            {**_episode_note(episode, rendered.steps, rendered.planning_error), **result}
+        )
+    plan = injection_plan()
+    sources = {item.seed: item for item in et_m3_1_episodes([seed for _, _, seed in plan])}
+    injections = []
+    for t, i, seed in plan:
+        episode = sources[seed]
+        print(f"injection type {t} i {i} seed {seed}", file=sys.stderr, flush=True)
+        snapshot = _scene(env, seed, task, run_dir)
+        rendered = render_episode(env, snapshot, episode, task[2])
+        manifest = snapshot.candidate_manifest()
+        source = _check(snapshot, manifest, rendered.frames, tolerances)
+        item: dict[str, Any] = {
+            "type": t,
+            "name": TYPES[t],
+            "i": i,
+            "seed": seed,
+            "source": {**_episode_note(episode, rendered.steps, rendered.planning_error), **source},
+            "source_passed": source["passed"],
+        }
+        try:
+            other = None
+            if t == 6:
+                other = _scene(env, seed + RENDER_SEED_OFFSET, task, run_dir).render
+            projection = None
+            if t == 4:
+                try:
+                    projection = projection_matrix(snapshot.manifest)
+                except SnapshotError as exc:
+                    projection = None
+                    item["projection_error"] = str(exc)
+            injected = inject(
+                t, i, rendered.frames, manifest, projection=projection, other_render=other
+            )
+        except InjectionError as exc:
+            item.update(injected_passed=None, failed_checks=[], injection_error=str(exc))
+        else:
+            checked = _check(snapshot, injected.manifest, injected.frames, tolerances)
+            item.update(
+                detail=injected.detail,
+                injected=checked,
+                injected_passed=checked["passed"],
+                failed_checks=checked["failed_checks"],
+            )
+        injections.append(item)
+    return {
+        "controls": controls,
+        "injections": injections,
+        "verdict": verdict(controls, injections),
+    }
+
+
+def _pilot(args: argparse.Namespace) -> int:
+    frozen = check_frozen()
+    if TOLERANCES_PATH.exists():
+        raise ValueError(f"{TOLERANCES_PATH} exists; the pilot sets it once")
+    check_not_run(RUNS, PILOT_RESULT)
+    task = _task()
+    env = ManiSkillPickCube(env_id=task[0], max_episode_steps=task[2], render=True)
+    with ledgered_run(
+        purpose="WO-021: ET-M3-1 tolerance pilot, block 10 seeds 10900-10919",
+        config={"frozen": frozen, "pilot_seeds": [PILOT_SEEDS[0], PILOT_SEEDS[-1]]},
+        seeds={str(seed): seed for seed in PILOT_SEEDS},
+        env_lock={"stack": env.stack_identity()},
+    ) as run:
+        if run.dirty:
+            raise ValueError("commit first, so the code note stays true")
+        started = time.perf_counter()
+        measured = run_pilot(env, task, run.directory)
+        report: dict[str, Any] = {
+            "run": run.directory.name,
+            "code": run.code_note,
+            "frozen": frozen,
+            "episodes": measured["episodes"],
+        }
+        try:
+            tolerances = pilot_tolerances(measured["candidates"])
+        except PilotStopError as exc:
+            report.update(stopped=str(exc), observed=exc.observed)
+            report["seconds"] = time.perf_counter() - started
+            _write_once(run.directory / PILOT_RESULT, report)
+            run.note = f"stopped, tell the owner: {exc}"
+            print(f"stopped, tell the owner: {exc}", file=sys.stderr)
+            return STOPPED
+        tolerances.update(run=run.directory.name, code=run.code_note)
+        report.update(tolerances=tolerances, seconds=time.perf_counter() - started)
+        _write_once(run.directory / PILOT_RESULT, report)
+        text = json.dumps(tolerances, indent=2, sort_keys=True, allow_nan=False) + "\n"
+        with TOLERANCES_PATH.open("x", encoding="utf-8") as stream:
+            stream.write(text)
+        digest = hashlib.sha256(TOLERANCES_PATH.read_bytes()).hexdigest()
+        run.note = f"{TOLERANCES_PATH} sha256 {digest}"
+        print(f"{TOLERANCES_PATH} sha256 {digest}")
+        print(run.directory)
+    return 0
+
+
+def _score(args: argparse.Namespace) -> int:
+    frozen = check_frozen()
+    digest = hashlib.sha256(TOLERANCES_PATH.read_bytes()).hexdigest()
+    check_recorded(digest)
+    tolerances = load_tolerances(TOLERANCES_PATH, digest)
+    check_not_run(RUNS, SCORE_RESULT)
+    task = _task()
+    env = ManiSkillPickCube(env_id=task[0], max_episode_steps=task[2], render=True)
+    with ledgered_run(
+        purpose="WO-021: ET-M3-1 scored once, 60 controls and 60 injections on block 10",
+        config={"frozen": frozen, "tolerances_sha256": digest},
+        seeds={"controls_first": CONTROL_SEEDS[0], "injections_first": FIRST_INJECTION_SEED},
+        env_lock={"stack": env.stack_identity()},
+    ) as run:
+        if run.dirty:
+            raise ValueError("commit first, so the code note stays true")
+        started = time.perf_counter()
+        report: dict[str, Any] = {
+            "run": run.directory.name,
+            "code": run.code_note,
+            "frozen": frozen,
+            "tolerances_sha256": digest,
+            **run_score(env, task, run.directory, tolerances),
+        }
+        report["seconds"] = time.perf_counter() - started
+        _write_once(run.directory / SCORE_RESULT, report)
+        result = report["verdict"]
+        run.note = (
+            f"ET-M3-1 passed {result['passed']}: {result['injections_rejected']}/60 injections "
+            f"rejected, {result['false_rejections']}/60 controls falsely rejected"
+        )
+        print(run.note)
+        print(run.directory)
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("pilot", help="the tolerance pilot, once")
+    commands.add_parser("score", help="ET-M3-1, scored once")
+    args = parser.parse_args(argv)
+    try:
+        require_code_root()
+        return _pilot(args) if args.command == "pilot" else _score(args)
+    except SimulatorUnavailableError as exc:
+        print(f"not run: {exc}", file=sys.stderr)
+        return 3
+    except (ReplayInvalidError, ValueError, OSError, KeyError) as exc:
+        print(f"refused: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

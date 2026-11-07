@@ -7,11 +7,11 @@
 **Files:** `evals/M3-protocol.md`, `evals/M3-exit-tests.json`, `evals/M3-checker-tolerances.json`, `config/phases.json`, `docs/PHASES.md`, `src/vishwaroop/synth/`, `tests/`, `artifacts/manifests/`, `work_orders/`, `reports/WO-021-m3-protocol-and-scene-engine.md`, ignored `runs/` and `data/derived/`.
 
 ## Objective
-Freeze M3's protocol and exit tests before any M3 data exists: seed blocks 10 to 19, the leak rules, ET-M3-1's details and the held-out-family test ET-M3-6 with `missed-grasp` as its target. Then build the scene engine and close ET-M3-1. The engine covers scene snapshots, the reproducibility gate, the operators, the consistency checker and the mismatch injector.
+Freeze M3's protocol and exit tests before any M3 data exists: seed blocks 10 to 19, the leak rules, ET-M3-1's details and the held-out-family test ET-M3-6 with `missed-grasp` as its target. Then build the scene engine and close ET-M3-1. The engine covers scene snapshots, the operators, the consistency checker and the mismatch injector. The reproducibility gate (protocol §4) is not needed for ET-M3-1, whose candidates are exempt, so it moves to the next work order with F2 and the evaluation family.
 
 ## Scope
 1. Freeze `evals/M3-protocol.md` and `evals/M3-exit-tests.json`, with their sha256 in the status ledger, before any scene is created.
-2. Build `src/vishwaroop/synth/`: M3 seed partitions; snapshots; renders; the two operators; the injector; the checker.
+2. Build `src/vishwaroop/synth/`: M3 seed partitions; snapshots; renders; the two operators; the injector; the checker. `make synth-test` runs the tests that need numpy and scipy, which the CPU tier skips.
 3. Run the tolerance pilot on block 10 seeds 10900 to 10919. Write `evals/M3-checker-tolerances.json` from it by the frozen rule, and record its sha256 in the status ledger.
 4. Generate the 60 controls and 60 injections, run the checker once, and report ET-M3-1.
 
