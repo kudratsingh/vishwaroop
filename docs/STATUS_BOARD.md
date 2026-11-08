@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-08 13:42 UTC · ledger records: 156
+Generated: 2026-11-08 13:55 UTC · ledger records: 159
 
 ## Phases
 
@@ -10,7 +10,7 @@ Generated: 2026-11-08 13:42 UTC · ledger records: 156
 |---|---|---|---|---|---|
 | M0 | Grounded development environment | **passed** | 6 / 6 / 6 | — | WO-001, WO-002, WO-003, WO-007, WO-008, WO-009, WO-010, WO-011 |
 | M1 | Compact predictor, latent planner, action-chunk scorer | **passed** | 5 / 5 / 5 | M0 | WO-004, WO-005, WO-006, WO-012, WO-013, WO-014, WO-015, WO-016 |
-| M2a | Closed-loop policy evaluator (simulation) | **not_started** | 0 / 0 / 5 | M1 | WO-017, WO-018 |
+| M2a | Closed-loop policy evaluator (simulation) | **not_started** | 0 / 0 / 5 | M1 | WO-017, WO-018, WO-024 |
 | M2b | Real-arm evaluator validation | **not_started** | 0 / 0 / 4 | M2a | WO-023 |
 | M3 | Synthetic-data engine (SFT route) | **not_started** | 0 / 2 / 6 | M0 | WO-020, WO-021, WO-022 |
 | M4 | Drone dynamics adaptation (offline and shadow only) | **not_started** | 1 / 2 / 4 | M1 | WO-019 |
@@ -87,4 +87,5 @@ Generated: 2026-11-08 13:42 UTC · ledger records: 156
 | WO-021 | M3: protocol, scene engine and the scene-consistency check (ET-M3-1) | M3 | **blocked** | 2026-11-08T07:43:37.149747Z | — |
 | WO-022 | M3: ET-M3-6's physics side on the Mac — reproducibility gate, evaluation family, arms F0, F_star, F1, F1s and F2 | M3 | **accepted** | 2026-11-08T10:16:18.551340Z | reports/WO-022-m3-et-m3-6-physics-arms.md |
 | WO-023 | Real SO-101 episodes: LeRobot v3.0 export → contract v1, on fixtures first | M2b | **accepted** | 2026-11-08T13:42:56.879468Z | reports/WO-023-so101-real-episode-importer.md |
+| WO-024 | CUDA-portable trainers, with the Mac path unchanged | M2a | **in_progress** | 2026-11-08T13:55:34.421897Z | — |
 

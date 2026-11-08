@@ -51,6 +51,12 @@ from .compute_pilot import (
     _torch,
 )
 from .cube_phases import WINDOW_PHASES, episode_window_phases, step_table
+from .device import (
+    accelerator_rng_state,
+    add_device_argument,
+    require,
+    set_accelerator_rng_state,
+)
 from .pilot_data import ACTION_SIZE, STATE_SIZE, load_train, split_family, split_holdout
 
 CUBE_FIRST, CUBE_LAST = STREAM_SLICES["object_position"]
@@ -310,8 +316,12 @@ def _save_checkpoint(
     times: list[float],
     losses: list[float],
 ) -> None:
-    """Replace the checkpoint in one step, so a crash leaves the last complete epoch."""
+    """Replace the checkpoint in one step, so a crash leaves the last complete epoch.
+
+    The accelerator's random-number state is saved with the CPU's, so a resumed MPS or CUDA run
+    continues the same stream."""
     torch = _torch()
+    device = layers[0][0].device.type
     partial_file = path.with_suffix(".partial")
     torch.save(
         {
@@ -319,6 +329,7 @@ def _save_checkpoint(
             "layers": [[item.detach().cpu() for item in layer] for layer in layers],
             "optimizer": optimizer.state_dict(),
             "rng": torch.get_rng_state(),
+            **accelerator_rng_state(device),
             "times": times,
             "losses": losses,
         },
@@ -359,6 +370,7 @@ def _train(
                     item.copy_(value.to(device))
         optimizer.load_state_dict(saved["optimizer"])
         torch.set_rng_state(saved["rng"])
+        set_accelerator_rng_state(device, saved)
         first_epoch = saved["epoch"]
         times, losses = list(saved["times"]), list(saved["losses"])
     for epoch in range(first_epoch, epochs):
@@ -614,8 +626,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--holdout-family", default="", help="hold out this whole train family, not the seed split"
     )
-    parser.add_argument("--device", choices=("mps", "cpu"), default="mps")
+    add_device_argument(parser, default="mps")
     args = parser.parse_args(argv)
+    require(args.device)
     try:
         require_code_root()
         unknown = set(args.variants.split(",")) - set(VARIANTS)

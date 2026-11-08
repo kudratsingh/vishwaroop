@@ -28,6 +28,7 @@ from ..sim.baseline import ScriptedPickPlace
 from ..sim.env import ManiSkillPickCube, SimulatorUnavailableError
 from ..sim.runlog import ledgered_run, require_code_root
 from .compute_pilot import _machine, _peak_tracker, _sync, _torch
+from .device import add_device_argument, require
 
 SEEDS = range(6000, 6020)
 RESOLUTION = 224
@@ -205,7 +206,7 @@ def load_frames(path: Path, expected_sha256: str | None) -> Any:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--device", choices=("mps", "cpu", "cuda"), default="mps")
+    add_device_argument(parser, default="mps")
     parser.add_argument("--seconds", type=float, default=TRAIN_SECONDS)
     parser.add_argument("--batch", type=int, default=BATCH)
     parser.add_argument("--bf16", action="store_true")
@@ -213,6 +214,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--frames", type=Path, default=None)
     parser.add_argument("--frames-sha256", default=None)
     args = parser.parse_args(argv)
+    require(args.device)
     if args.seconds > TRAIN_SECONDS:
         print(
             f"refused: at most {TRAIN_SECONDS} s, so a run stays under 30 minutes", file=sys.stderr
@@ -220,7 +222,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     try:
         require_code_root()
-        machine = _machine() if args.device != "cuda" else {"host": "gpu vm"}
+        machine = _machine()
         env = None if args.frames else ManiSkillPickCube(render=True)
         with ledgered_run(
             purpose="M2a observation-model pilot, a measurement for an estimate (WO-017, WO-018)",

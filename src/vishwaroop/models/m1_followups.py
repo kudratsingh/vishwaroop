@@ -34,6 +34,7 @@ from .cube_study import (
     _Kinematics,
     phase_masks,
 )
+from .device import add_device_argument, require
 from .family_sweep import BASELINES, SEED_HOLDOUT
 from .m1_evaluate import (
     ENSEMBLE_RUN,
@@ -348,9 +349,10 @@ def _dev_side(device: str, after_name: str) -> dict[str, Any]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--device", choices=("mps", "cpu"), default="mps")
+    add_device_argument(parser, default="mps")
     parser.add_argument("--design", choices=tuple(DESIGNS), default="first")
     args = parser.parse_args(argv)
+    require(args.device)
     plan_path, plan_sha256, result, after_name = DESIGNS[args.design]
     try:
         require_code_root()

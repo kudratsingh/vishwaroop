@@ -48,6 +48,7 @@ from .cube_study import (
     _rollout,
     phase_masks,
 )
+from .device import add_device_argument, require
 from .family_sweep import BASELINES, SEED_HOLDOUT
 from .m1_scoring import (
     MIN_DEV_EPISODES,
@@ -489,8 +490,9 @@ def _evaluate(inputs: Inputs, plan: dict[str, Any], machine: dict[str, Any]) -> 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--device", choices=("mps", "cpu"), default="mps")
+    add_device_argument(parser, default="mps")
     args = parser.parse_args(argv)
+    require(args.device)
     inputs = Inputs(
         train_manifest=TRAIN_MANIFEST,
         dev_manifests=tuple(FROZEN_DEV_MANIFESTS),

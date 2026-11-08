@@ -25,6 +25,7 @@ from typing import Any
 from ..sim.runlog import ledgered_run, require_code_root
 from .compute_pilot import HISTORY, _Data, _machine, _stats_of, _torch
 from .cube_study import EPOCHS, SEEDS, VARIANTS, _baseline_predictions, _Kinematics, phase_masks
+from .device import add_device_argument, require
 from .family_sweep import SEED_HOLDOUT
 from .m1_evaluate import ENSEMBLE_RUN, TRAIN_MANIFEST, _ensemble_on, _load_ensemble, _Windows
 from .m1_followups import BEFORE, NEVER_HELD, STAYS_PUT, _cube_by_phase
@@ -151,8 +152,9 @@ def _score(device: str) -> dict[str, Any]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--device", choices=("mps", "cpu"), default="mps")
+    add_device_argument(parser, default="mps")
     args = parser.parse_args(argv)
+    require(args.device)
     try:
         require_code_root()
         check_hash(RULE_PATH, RULE_SHA256)

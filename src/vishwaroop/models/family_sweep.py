@@ -35,6 +35,7 @@ from .cube_study import (
     largest_gap_m,
     phase_masks,
 )
+from .device import add_device_argument, require
 from .pilot_data import load_train, split_family, split_holdout
 
 SEED_HOLDOUT = "seed"
@@ -173,9 +174,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--variants", required=True)
     parser.add_argument("--seeds", default=",".join(str(seed) for seed in SEEDS))
     parser.add_argument("--epochs", type=int, default=EPOCHS)
-    parser.add_argument("--device", choices=("mps", "cpu"), default="mps")
+    add_device_argument(parser, default="mps")
     parser.add_argument("--resume-from", type=Path, default=None)
     args = parser.parse_args(argv)
+    require(args.device)
     config = {
         "manifest": str(args.manifest),
         "holdouts": args.holdouts,

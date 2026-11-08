@@ -21,6 +21,7 @@ from typing import Any
 
 from ..sim.runlog import ledgered_run, require_code_root
 from .compute_pilot import _machine
+from .device import add_device_argument, require
 from .m1_followups import TRAIN_FAMILIES, _train_side
 
 PROTOCOL = Path("evals/M3-remeasure.json")
@@ -105,8 +106,9 @@ def where(family: dict[str, Any], spot: dict[str, Any]) -> dict[str, Any]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--device", choices=("mps", "cpu"), default="mps")
+    add_device_argument(parser, default="mps")
     args = parser.parse_args(argv)
+    require(args.device)
     try:
         require_code_root()
         check_protocol()

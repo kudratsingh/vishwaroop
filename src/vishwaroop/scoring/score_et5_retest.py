@@ -21,6 +21,7 @@ from typing import Any
 
 from ..models.compute_pilot import MEMBERS, STREAM_SLICES, _Data, _machine, _stats_of, _torch
 from ..models.cube_study import EPOCHS, _Kinematics
+from ..models.device import add_device_argument, require
 from ..models.family_sweep import SEED_HOLDOUT
 from ..models.m1_evaluate import ENSEMBLE_RUN, TRAIN_MANIFEST, _load_ensemble, _scales
 from ..models.pilot_data import split_holdout
@@ -167,8 +168,9 @@ def _score(device: str) -> dict[str, Any]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--device", choices=("mps", "cpu"), default="mps")
+    add_device_argument(parser, default="mps")
     args = parser.parse_args(argv)
+    require(args.device)
     try:
         require_code_root()
         load_checked(RULES, RULES_SHA256)
