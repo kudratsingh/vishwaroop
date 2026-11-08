@@ -9,8 +9,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from goal_camera import CAMERA, GOAL, GOAL_POSITION, SHIFTS
 
+from goal_camera import CAMERA, GOAL, GOAL_POSITION, SHIFTS
 from vishwaroop.synth.checker import (
     MASK_RULES,
     PRESENCE_FLOOR,

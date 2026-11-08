@@ -13,8 +13,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from goal_camera import CAMERA, GOAL, GOAL_POSITION, SHIFTS
 
+from goal_camera import CAMERA, GOAL, GOAL_POSITION, SHIFTS
 from vishwaroop.sim.so100_kinematics import arm_segments, fingertips, segment_distance
 from vishwaroop.synth.checker import (
     CONTROL_SEEDS,
