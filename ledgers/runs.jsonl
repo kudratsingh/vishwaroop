@@ -159,3 +159,5 @@
 {"note":"arm F0 seed 0: 31031 windows, 30 epochs","record_id":"runs-20261108T091051627062Z-8d2320cd","run_dir":"runs/20261108T090800Z_53749cae","run_id":"20261108T090800Z_53749cae","status":"completed","ts":"2026-11-08T09:10:51.627088Z"}
 {"purpose":"WO-022: ET-M3-6 arm F0, seed 1","record_id":"runs-20261108T091052758073Z-11dc50b7","run_dir":"runs/20261108T091052Z_4f6b8366","run_id":"20261108T091052Z_4f6b8366","status":"started","ts":"2026-11-08T09:10:52.758133Z"}
 {"note":"arm F0 seed 1: 31031 windows, 30 epochs","record_id":"runs-20261108T091346430093Z-183761f7","run_dir":"runs/20261108T091052Z_4f6b8366","run_id":"20261108T091052Z_4f6b8366","status":"completed","ts":"2026-11-08T09:13:46.430120Z"}
+{"purpose":"WO-022: ET-M3-6 arm F0, seed 2","record_id":"runs-20261108T091347547518Z-98334954","run_dir":"runs/20261108T091347Z_a1527eba","run_id":"20261108T091347Z_a1527eba","status":"started","ts":"2026-11-08T09:13:47.547569Z"}
+{"note":"arm F0 seed 2: 31031 windows, 30 epochs","record_id":"runs-20261108T091649846827Z-feba2968","run_dir":"runs/20261108T091347Z_a1527eba","run_id":"20261108T091347Z_a1527eba","status":"completed","ts":"2026-11-08T09:16:49.846876Z"}
