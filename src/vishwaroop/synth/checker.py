@@ -80,6 +80,7 @@ GOAL_SHIFT_DIRECTIONS_DEG = tuple(range(360))
 # x in [-0.7245, 0.4845] and y in [-1.209, 1.209]. For reporting only.
 TABLE_TOP_X_M = (-0.12 - 1.209 / 2, -0.12 + 1.209 / 2)
 TABLE_TOP_Y_M = (-2.418 / 2, 2.418 / 2)
+RESTING_TOLERANCE_M = 0.005  # reporting only: a resting cube's centre is its half size above z = 0
 SIGHTLINE_CLEARANCE_M = 0.035
 MAX_PILOT_CUBE_DISPLACEMENT_M = 0.005
 PILOT_SIZE_PREMISE_BAND = (0.95, 1.05)
@@ -187,12 +188,19 @@ def visibility(ratio: float) -> str:
     return UNCERTAIN
 
 
-def on_table(position: Sequence[float]) -> bool:
-    """For reporting only: the cube centre is over the table top (z > 0) within its xy footprint."""
+def table_placement(position: Sequence[float], half_size_m: float) -> dict[str, Any]:
+    """For reporting only: whether the cube centre is over the table top (within its xy footprint,
+    z > 0, held or resting), whether it rests on it (also z within 0.005 m of the half size), and
+    its height above the table top."""
     x, y, z = _point(position, "cube position")
-    return (
+    over = (
         TABLE_TOP_X_M[0] <= x <= TABLE_TOP_X_M[1] and TABLE_TOP_Y_M[0] <= y <= TABLE_TOP_Y_M[1]
     ) and z > 0
+    return {
+        "over_table": over,
+        "resting_on_table": over and abs(z - half_size_m) <= RESTING_TOLERANCE_M,
+        "height_above_table_top_m": z,
+    }
 
 
 def candidate_manifest(snapshot_manifest: dict[str, Any]) -> dict[str, Any]:

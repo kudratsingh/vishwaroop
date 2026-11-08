@@ -36,6 +36,7 @@ from vishwaroop.synth.checker import (
     sightline_clearance,
     size_checkable_frames,
     size_checkable_summary,
+    table_placement,
     verdict,
     visibility,
 )
@@ -382,7 +383,7 @@ def test_the_verdict_reports_how_often_the_size_check_ran() -> None:
             "final_ratio": [1.0, 0.01, 0.0][n % 3],
             "final_visibility": [SHOWS, UNCERTAIN, NO_CUBE][n % 3],
             "longest_unseen_run": {"length": 0, "start": -1},
-            "final_cube": {"on_table": True},
+            "final_cube": {"over_table": True},
         }
         for n in range(60)
     ]
@@ -414,12 +415,24 @@ def test_the_verdict_reports_how_often_the_size_check_ran() -> None:
     shown = result["visibility"]["controls"]
     assert (shown["final_no_cube"], shown["final_uncertain"]) == (20, 20)
     assert shown["per_candidate"][1]["seed"] == 10581
-    assert shown["per_candidate"][1]["final_cube"] == {"on_table": True}
+    assert shown["per_candidate"][1]["final_cube"] == {"over_table": True}
+
     sources = result["visibility"]["injection_sources"]
     assert sources["final_not_measured"] == 60
     assert sources["per_candidate"][0]["seed"] == 10520
     assert "uncertain" in result["uncertain_visibility"]
     assert "ET-M3-2 has to judge presence and size" in result["limits"]
+
+
+def test_table_placement_tells_held_from_resting() -> None:
+    resting = table_placement((0.0, 0.0, 0.0125), 0.0125)
+    assert resting["over_table"] and resting["resting_on_table"]
+    held = table_placement((0.0, 0.0, 0.25), 0.0125)
+    assert held["over_table"] and not held["resting_on_table"]
+    fallen = table_placement((0.0, 0.0, -0.9), 0.0125)
+    assert not fallen["over_table"] and not fallen["resting_on_table"]
+    beyond = table_placement((0.6, 0.0, 0.0125), 0.0125)
+    assert not beyond["over_table"]
 
 
 def test_every_pinned_file_has_its_pinned_sha256() -> None:

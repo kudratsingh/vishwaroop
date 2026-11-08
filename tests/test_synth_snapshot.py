@@ -163,7 +163,8 @@ def test_the_pilot_and_scoring_flow_end_to_end(
     assert (tmp_path / "score" / "snapshots" / "seed-010770" / "snapshot.json").exists()
     shown = result["visibility"]["controls"]
     assert shown["candidates"] == 4 and shown["final_no_cube"] == shown["final_uncertain"] == 0
-    assert all(row["final_cube"]["on_table"] for row in shown["per_candidate"])
+    assert all(row["final_cube"]["over_table"] for row in shown["per_candidate"])
+    assert all("error" not in row["final_cube"] for row in shown["per_candidate"])
     assert result["visibility"]["injection_sources"]["candidates"] == 8
     json.dumps(report, allow_nan=False)
     with pytest.raises(SnapshotError, match="written once"):

@@ -47,3 +47,15 @@ A pilot that cannot fit a band inside the frozen limits (the owner is told); any
   - Every failure is on the every-frame presence band, whose 20-seed tails (0.129 to 1.190, widened to [0.116, 1.309]) fresh seeds exceeded (0.069 to 1.491).
   - The new size band falsely rejected nothing.
   - A revision needs `m3-protocol-3` and the owner's decision.
+- **2026-11-07, the owner approved `m3-protocol-3`; frozen before its pilot.**
+  - The approval is `approvals-20261108T033530354852Z-2a9dc4d3`. `evals/M3-protocol-3.json` (sha256 `1671e059…556c`) is the reviewed draft's rule text, unchanged. Only `status`, `frozen_before` and `decided_by` differ. Its sha256 was in the status ledger before any protocol-3 seed was simulated.
+  - The acceptance thresholds are unchanged. The protocol-1 and protocol-2 failures stay on record.
+  - If a frozen stop condition holds, the pilot is reported to the owner and everything pauses. Nothing is generated until the owner answers.
+  - **The claim stays limited to what the checker tests.** A pass shows that the checker catches:
+    - a removal that persists to the final frame;
+    - a duplicate;
+    - a resize that starts before the arm approaches;
+    - the manifest, asset and first-frame mismatches.
+
+    It does not show presence or size judged in the frames between.
+  - **For ET-M3-2 (owner's instruction, not yet acted on):** ET-M3-2's work order must explicitly audit temporary disappearances and late resizes in generated trajectories. A temporary disappearance is a cube that vanishes after the size-checkable frames and reappears before the end. A late resize starts after those frames. ET-M3-1's checker does not catch either. The frozen ET-M3-2 text in `evals/M3-exit-tests.json` is not edited. The audit is added by an amendment frozen before any ET-M3-2 data.

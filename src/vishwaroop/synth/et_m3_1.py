@@ -60,11 +60,11 @@ from .checker import (
     first_frame_difference,
     load_tolerances,
     measure,
-    on_table,
     pilot_tolerances,
     reference,
     sightline_clearance,
     size_checkable_frames,
+    table_placement,
     verdict,
 )
 from .operators import EpisodeKind, et_m3_1_episodes
@@ -191,25 +191,30 @@ def goal_shift_min(snapshot_manifest: dict[str, Any]) -> dict[str, float]:
 
 
 def final_cube(snapshot: Snapshot, rendered: RenderedEpisode) -> dict[str, Any]:
-    """For reporting only: the simulator's cube position at frame T, whether it is over the table
-    (``checker.on_table``), and whether it projects inside the image."""
+    """For reporting only: the simulator's cube position at frame T, where it is relative to the
+    table (``checker.table_placement``), and whether it projects inside the image. It never fails
+    a run: an error is recorded in the result instead, since nothing in the verdict reads it."""
     from .inject import InjectionError, project
 
-    position = [float(value) for value in rendered.cube_positions[-1]]
-    inside = False
     try:
-        row, col = project(
-            projection_matrix(snapshot.manifest), (position[0], position[1], position[2])
-        )
-    except InjectionError:
-        pixel = None
-    else:
-        pixel = [row, col]
-        height, width = snapshot.render.shape[:2]
-        inside = 0 <= row < height and 0 <= col < width
+        position = [float(value) for value in rendered.cube_positions[-1]]
+        placement = table_placement(position, float(snapshot.manifest["cube_half_size_m"]))
+        inside = False
+        try:
+            row, col = project(
+                projection_matrix(snapshot.manifest), (position[0], position[1], position[2])
+            )
+        except InjectionError:
+            pixel = None
+        else:
+            pixel = [row, col]
+            height, width = snapshot.render.shape[:2]
+            inside = 0 <= row < height and 0 <= col < width
+    except (ValueError, KeyError, IndexError, TypeError) as exc:
+        return {"error": f"{type(exc).__name__}: {exc}"}
     return {
         "position_m": position,
-        "on_table": on_table(position),
+        **placement,
         "pixel": pixel,
         "projects_inside_image": inside,
     }
@@ -226,10 +231,10 @@ def run_pilot(env: RenderingEnv, task: tuple[str, str, int], run_dir: Path) -> d
     for episode in et_m3_1_episodes(PILOT_SEEDS):
         print(f"pilot seed {episode.seed} {episode.kind}", file=sys.stderr, flush=True)
         snapshot = _scene(env, episode.seed, task, run_dir)
+        camera = camera_position(snapshot.manifest)  # refuses an unexposed camera before simulating
+        shift = goal_shift_min(snapshot.manifest)
         rendered = render_episode(env, snapshot, episode, task[2])
         start = rendered.initial_cube
-        camera = camera_position(snapshot.manifest)
-        shift = goal_shift_min(snapshot.manifest)
         candidates.append(
             PilotCandidate(
                 seed=episode.seed,
