@@ -611,6 +611,8 @@ def evaluate(
                     f"the final frame shows v_g {final_seen:.4g} of the goal, below "
                     f"{GOAL_FINAL_FLOOR}",
                 )
+    if len(stats) != len(frame_shapes):
+        result.goal_frames = []  # rows would not line up with frame indices; frame_shape fails
     if len(stats) == len(frame_shapes) and final_measured:
         if ratios:
             result.final_ratio = ratios[-1]
@@ -953,7 +955,7 @@ def size_checkable_summary(counts: Sequence[tuple[int, int]]) -> dict[str, Any]:
 
 def visibility_summary(candidates: Sequence[dict[str, Any]]) -> dict[str, Any]:
     """For reporting: how many candidates' final frames show no cube or are uncertain, how many
-    show less than 0.4 of the goal, and how many show 0.4 or more but less than their scene's
+    show less than 0.4 of the goal, and which show 0.4 or more but less than their scene's
     guarantee level; and each candidate's final r, final visibility, longest run of frames with
     r < 0.02, final v_g, largest goal excess, guarantee level and, where recorded, the simulator's
     final cube position (``final_cube``)."""

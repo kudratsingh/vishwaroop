@@ -525,6 +525,10 @@ def test_goal_envelope_follows_visibility() -> None:
     record = run([CUBE, far, FrameStats(CUBE.red, 0, None)], 1).to_json()["goal_frames"]
     assert record[1][1] == pytest.approx(7.0) and record[1][2] == pytest.approx(6.29, abs=0.01)
     assert record[2] == [0.0, None, None]
+    ref = reference(SNAPSHOT, CUBE, SHAPE, TOL)
+    shapes = [SHAPE, (10, 10, 3), SHAPE]
+    misaligned = evaluate(dict(MANIFEST), shapes, 0.0, [CUBE, CUBE], ref, TOL, 0).to_json()
+    assert misaligned["goal_frames"] == [] and "frame_shape" in misaligned["failed_checks"]
 
 
 def test_the_final_frame_must_show_enough_of_the_goal() -> None:
