@@ -1,6 +1,6 @@
 """ET-M3-1's deterministic scene-consistency checker, its tolerance pilot and its threshold.
 
-Frozen in ``evals/M3-protocol-3.json`` (``m3-protocol-3``), which replaces the ET-M3-1 of
+Frozen in ``evals/M3-protocol-4.json`` (``m3-protocol-4``), which replaces the ET-M3-1 of
 ``evals/M3-exit-tests.json``. A candidate is a candidate manifest, frames 0 to T, and, for frame
 eligibility only, its scene's initial joint and cube positions and its actions. For a frame, r is
 its merged red area (the red components whose centroids lie within the merge radius of the largest
@@ -18,11 +18,15 @@ cube when r >= 0.02, shows no cube when r = 0, and its visibility is uncertain o
   or whose visibility is uncertain fails. No other frame has a presence requirement, and no frame
   outside the size-checkable ones has an upper area bound;
 - ``extra_red``: in no frame does another red component of at least 0.25 x that area exist;
-- ``goal_centroid``: in every frame with at least the pilot's minimum count of green pixels (and at
-  least one), the green pixels' centroid is within the goal-centroid distance of the snapshot's.
+- ``goal_envelope``: in every frame with at least one green pixel, the green centroid's distance
+  from p is at most the frame's goal envelope E = rho(min(v_g, 1)) r_g + 1.5 px (``goal_geometry``,
+  ``goal_envelope_px``), v_g being the frame's green count over the goal's projected disc area;
+- ``goal_final``: the final frame T has v_g >= 0.4; a final frame below it, or with no green, fails.
 
-A snapshot render with no cube fails ``cube_size`` and ``cube_presence``. The tolerances come from
-``evals/M3-checker-tolerances-p3.json``, pinned by the sha256 the caller passes. The rules here
+The goal's projected centre p and radius r_g come from the snapshot manifest only. A snapshot render
+with no cube fails ``cube_size`` and ``cube_presence``, and one with no green pixel fails
+``goal_envelope`` and ``goal_final``. The tolerances come from
+``evals/M3-checker-tolerances-p4.json``, pinned by the sha256 the caller passes. The rules here
 are standard library only; ``measure`` and ``first_frame_difference`` need numpy and scipy and
 import them when called. Distances are in pixels, areas in pixel counts.
 """
@@ -41,7 +45,7 @@ from typing import Any
 from ..sim.so100_kinematics import arm_segments, segment_distance
 from .protocol import PROTOCOL_VERSION
 
-TOLERANCES_PATH = Path("evals/M3-checker-tolerances-p3.json")
+TOLERANCES_PATH = Path("evals/M3-checker-tolerances-p4.json")
 WIDENING = 0.10
 BAND_LIMITS = (0.36, 2.56)
 OTHER_COMPONENT_FRACTION = 0.25
@@ -67,15 +71,19 @@ CHECKS = (
     "cube_size",
     "cube_presence",
     "extra_red",
-    "goal_centroid",
+    "goal_envelope",
+    "goal_final",
 )
-PILOT_SEEDS = tuple(range(10920, 10940))
-CONTROL_SEEDS = tuple(range(10580, 10640))
+PILOT_SEEDS = tuple(range(10940, 10960))
+CONTROL_SEEDS = tuple(range(10320, 10380))
 PRESENCE_FLOOR = 0.02
 SHOWS, NO_CUBE, UNCERTAIN = "shows the cube", "no cube", "uncertain"
 SMALLEST_DUPLICATE_OFFSET_PX = 60.0  # min(hypot(*offset)) over inject.DUPLICATE_OFFSETS
 GOAL_MOVE_MIN_M = 0.03  # inject.GOAL_MOVE_M[0]
 GOAL_SHIFT_DIRECTIONS_DEG = tuple(range(360))
+GOAL_RADIUS_M = 0.0125 * 1.25  # mani_skill 3.0.1 PickCube "so100" goal_thresh: the goal sphere
+GOAL_MARGIN_PX = 1.5
+GOAL_FINAL_FLOOR = 0.4
 # The PickCube table's collision box (mani_skill 3.0.1 TableSceneBuilder): its top at z = 0 over
 # x in [-0.7245, 0.4845] and y in [-1.209, 1.209]. For reporting only.
 TABLE_TOP_X_M = (-0.12 - 1.209 / 2, -0.12 + 1.209 / 2)
@@ -97,8 +105,8 @@ PHYSICS_STATEMENT = (
 ZERO_SIZE_CHECKABLE_STATEMENT = (
     "A candidate with no size-checkable frame (n = 0) gets no cube_size check and still gets "
     "cube_presence and every other check; it is reported as size not checked. A cube-resize "
-    "source with no size-checkable frame 1 to T - 1 is replaced by the next seed from 10660 up "
-    "(to 10749) that has one."
+    "source with no size-checkable frame 1 to T - 1 is replaced by the next seed from 10260 up "
+    "(to 10299) that has one."
 )
 UNCERTAIN_STATEMENT = (
     "A frame shows the cube when r >= 0.02, shows no cube when r = 0, and its visibility is "
@@ -114,7 +122,19 @@ LIMITS_STATEMENT = (
     "caught by cube_presence, and a size error after those frames is not caught by cube_size; an "
     "enlarged cube is caught only in size-checkable frames. ET-M3-1 shows that the checker catches "
     "a removal that persists to the end, a duplicate, and a resize that starts before the arm "
-    "approaches. ET-M3-2 has to judge presence and size in the frames between."
+    "approaches. ET-M3-2 has to judge presence and size in the frames between. For the goal: a "
+    "goal change undone before the final frame is caught only in frames where enough of the goal "
+    "shows; a lasting change is judged at frame T, but is certain to be caught there only at or "
+    "above the scene's guarantee level, so between v_g 0.4 and that level a lasting 0.03 m move "
+    "whose moved-toward side is hidden at T can pass; extra green can pull a moved goal's centroid "
+    "back. ET-M3-2 has to audit lasting goal shifts with the goal partly occluded in the final "
+    "frame, temporary disappearances and late resizes."
+)
+GOAL_STATEMENT = (
+    "The goal is judged against its projected centre and disc from the snapshot manifest, not the "
+    "snapshot render. Every frame with green must have its green centroid within rho(min(v_g, 1)) "
+    "r_g + 1.5 px of the projected centre, and the final frame must show v_g >= 0.4 of the goal. "
+    "Hiding the goal at T fails; a lasting change is judged at T."
 )
 
 
@@ -203,6 +223,76 @@ def table_placement(position: Sequence[float], half_size_m: float) -> dict[str, 
     }
 
 
+def goal_geometry(snapshot_manifest: dict[str, Any]) -> tuple[tuple[float, float], float]:
+    """The goal's projected centre p (row, column) and projected radius r_g (px), from the snapshot
+    manifest's goal position and render camera only.
+
+    With (x, y, z) = intrinsic_cv @ extrinsic_cv @ (goal, 1), p = (y / z, x / z), with no half-pixel
+    correction; d is the norm of extrinsic_cv @ (goal, 1); r_g = f_x tan(asin(R / d)) with f_x =
+    intrinsic_cv[0][0] and R the goal sphere's radius. Refuses an unexposed camera."""
+    camera = snapshot_manifest.get("camera", {})
+    if not camera.get("exposed"):
+        raise ValueError(
+            "the snapshot records no render camera, so the goal's projection is unknown"
+        )
+    k, pose = camera["intrinsic_cv"], camera["extrinsic_cv"]
+    goal = _point(snapshot_manifest["goal_position"], "goal position")
+    local = [
+        sum(float(pose[i][j]) * goal[j] for j in range(3)) + float(pose[i][3]) for i in range(3)
+    ]
+    x, y, z = (sum(float(k[i][j]) * local[j] for j in range(3)) for i in range(3))
+    distance = math.sqrt(sum(value * value for value in local))
+    if z <= 0 or distance <= GOAL_RADIUS_M:
+        raise ValueError("the goal is behind or at the camera")
+    radius = float(k[0][0]) * math.tan(math.asin(GOAL_RADIUS_M / distance))
+    return (y / z, x / z), radius
+
+
+def segment_rho(fraction: float) -> float:
+    """rho(f): the largest distance, in units of the radius, from a disc's centre to the centroid
+    of a region covering ``fraction`` of the disc, which is the circular segment of that area;
+    0 for f >= 1 (and 1 for f <= 0). Bisection on (theta - sin theta) / (2 pi) = f."""
+    if fraction >= 1:
+        return 0.0
+    if fraction <= 0:
+        return 1.0
+    low, high = 0.0, 2 * math.pi
+    for _ in range(80):
+        theta = (low + high) / 2
+        if (theta - math.sin(theta)) / (2 * math.pi) < fraction:
+            low = theta
+        else:
+            high = theta
+    theta = (low + high) / 2
+    return 4 * math.sin(theta / 2) ** 3 / (3 * (theta - math.sin(theta)))
+
+
+def goal_visibility(green_count: int, radius_px: float) -> float:
+    """v_g: a frame's green-mask pixel count over the goal's projected disc area pi r_g^2."""
+    return green_count / (math.pi * radius_px * radius_px)
+
+
+def goal_envelope_px(visible: float, radius_px: float) -> float:
+    """E = rho(min(v_g, 1)) r_g + 1.5 px."""
+    return segment_rho(min(visible, 1.0)) * radius_px + GOAL_MARGIN_PX
+
+
+def guarantee_level(radius_px: float, smallest_shift_px: float) -> float | None:
+    """For reporting only: the smallest v with 2 (rho(v) r_g + 1.5) < s_min, s_min the scene's
+    smallest whole-pixel 0.03 m goal shift; a final frame at or above it certainly catches a
+    lasting 0.03 m move. ``None`` when even a fully visible goal would not (3 px >= s_min)."""
+    if smallest_shift_px <= 2 * GOAL_MARGIN_PX:
+        return None
+    low, high = 0.0, 1.0
+    for _ in range(60):
+        middle = (low + high) / 2
+        if 2 * goal_envelope_px(middle, radius_px) < smallest_shift_px:
+            high = middle
+        else:
+            low = middle
+    return high
+
+
 def candidate_manifest(snapshot_manifest: dict[str, Any]) -> dict[str, Any]:
     """The candidate manifest's fields, copied from a snapshot manifest."""
     return {name: json.loads(json.dumps(snapshot_manifest[name])) for name in CANDIDATE_FIELDS}
@@ -287,8 +377,6 @@ class Tolerances:
     a_hi: float
     merge_radius_px: float
     first_frame_tolerance: float
-    goal_centroid_px: float
-    min_green_pixels: int
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> Tolerances:
@@ -305,7 +393,18 @@ class Tolerances:
         if data.get("presence_floor") != PRESENCE_FLOOR:
             raise ValueError("the tolerances file's presence floor is not 0.02")
         if "presence_band" in data:
-            raise ValueError("m3-protocol-3 sets no presence band, and the tolerances file has one")
+            raise ValueError("m3-protocol-4 sets no presence band, and the tolerances file has one")
+        for name in ("goal_centroid_px", "min_green_pixels"):
+            if name in data:
+                raise ValueError(f"m3-protocol-4 sets no {name}, and the tolerances file has one")
+        frozen_goal = {
+            "goal_radius_m": GOAL_RADIUS_M,
+            "goal_margin_px": GOAL_MARGIN_PX,
+            "goal_final_floor": GOAL_FINAL_FLOOR,
+        }
+        for name, value in frozen_goal.items():
+            if data.get(name) != value:
+                raise ValueError(f"the tolerances file's {name} is not the frozen {value}")
         if not isinstance(data.get("size_band"), list) or len(data["size_band"]) != 2:
             raise ValueError("the tolerances file has no two-value size_band")
         a_lo, a_hi = (float(value) for value in data["size_band"])
@@ -316,8 +415,6 @@ class Tolerances:
             a_hi=a_hi,
             merge_radius_px=float(data["merge_radius_px"]),
             first_frame_tolerance=float(data["first_frame_tolerance"]),
-            goal_centroid_px=float(data["goal_centroid_px"]),
-            min_green_pixels=int(data["min_green_pixels"]),
         )
 
 
@@ -336,7 +433,9 @@ class Reference:
 
     manifest: dict[str, Any]
     cube_area: int
-    goal_centroid: tuple[float, float] | None
+    render_green: int
+    goal_centre: tuple[float, float]
+    goal_radius_px: float
     render_shape: tuple[int, ...]
 
 
@@ -346,13 +445,17 @@ def reference(
     render_shape: tuple[int, ...],
     tolerances: Tolerances,
 ) -> Reference:
-    """The reference for a scene: its candidate fields, and the snapshot render's cube area and
-    goal centroid under the tolerances' merge radius."""
+    """The reference for a scene: its candidate fields, the snapshot render's cube area under the
+    tolerances' merge radius and its green count, and the goal's projected centre and radius from
+    the snapshot manifest (``goal_geometry``)."""
     area, _ = cube_area(render_stats, tolerances.merge_radius_px)
+    centre, radius = goal_geometry(snapshot_manifest)
     return Reference(
         manifest=candidate_manifest(snapshot_manifest),
         cube_area=area,
-        goal_centroid=render_stats.green_centroid,
+        render_green=render_stats.green_count,
+        goal_centre=centre,
+        goal_radius_px=radius,
         render_shape=tuple(render_shape),
     )
 
@@ -367,6 +470,8 @@ class CheckResult:
     frames: int = 0
     final_ratio: float | None = None
     longest_unseen_run: dict[str, int] | None = None
+    final_goal_visibility: float | None = None
+    max_goal_excess: dict[str, Any] | None = None
 
     @property
     def passed(self) -> bool:
@@ -385,6 +490,8 @@ class CheckResult:
             "final_ratio": self.final_ratio,
             "final_visibility": None if self.final_ratio is None else visibility(self.final_ratio),
             "longest_unseen_run": self.longest_unseen_run,
+            "final_goal_visibility": self.final_goal_visibility,
+            "max_goal_excess": self.max_goal_excess,
             "failed_checks": [name for name in CHECKS if name in self.failed],
             "failures": {name: self.failed[name] for name in CHECKS if name in self.failed},
         }
@@ -404,9 +511,10 @@ def evaluate(
     ``size_checkable_frames`` for the candidate: the size band applies in frames 0 to
     ``size_frames - 1`` only (in none when it is 0). ``cube_presence`` reads the final frame T only,
     which is ``stats[-1]`` when frame T has the render's shape (``check_candidate`` measures only
-    such frames); otherwise frame T is not measured and ``cube_presence`` fails with
-    ``frame_shape``. The final frame's r and the longest run of frames with r < 0.02 are recorded
-    when every frame was measured."""
+    such frames); otherwise frame T is not measured and ``cube_presence`` and ``goal_final`` fail
+    with ``frame_shape``. ``goal_envelope`` reads every measured frame with a green pixel. The
+    final frame's r and v_g, the longest run of frames with r < 0.02 and the largest goal excess
+    (distance from p minus E) are recorded when every frame was measured."""
     if isinstance(size_frames, bool) or not isinstance(size_frames, int) or size_frames < 0:
         raise ValueError(f"size_frames is a non-negative integer, not {size_frames!r}")
     result = CheckResult(size_checkable_frames=min(size_frames, len(stats)), frames=len(stats))
@@ -431,9 +539,10 @@ def evaluate(
     if ref.cube_area <= 0:
         result.fail("cube_size", None, "the snapshot render shows no cube")
         result.fail("cube_presence", None, "the snapshot render shows no cube")
-    if ref.goal_centroid is None:
-        result.fail("goal_centroid", None, "the snapshot render shows no goal")
-    least_green = max(tolerances.min_green_pixels, 1)
+    if ref.render_green <= 0:
+        result.fail("goal_envelope", None, "the snapshot render shows no goal")
+        result.fail("goal_final", None, "the snapshot render shows no goal")
+    excess: tuple[float, int, float] | None = None
     ratios: list[float] = []
     for index, frame in enumerate(stats):
         if ref.cube_area > 0:
@@ -449,18 +558,18 @@ def evaluate(
                 )
             if outside >= OTHER_COMPONENT_FRACTION * ref.cube_area:
                 result.fail("extra_red", index, f"another red component of {outside} px")
-        if (
-            ref.goal_centroid is not None
-            and frame.green_count >= least_green
-            and frame.green_centroid is not None
-        ):
-            gap = _distance(frame.green_centroid, ref.goal_centroid)
-            if gap > tolerances.goal_centroid_px:
+        if frame.green_count >= 1 and frame.green_centroid is not None:
+            seen = goal_visibility(frame.green_count, ref.goal_radius_px)
+            envelope = goal_envelope_px(seen, ref.goal_radius_px)
+            gap = _distance(frame.green_centroid, ref.goal_centre)
+            if excess is None or gap - envelope > excess[0]:
+                excess = (gap - envelope, index, seen)
+            if gap > envelope:
                 result.fail(
-                    "goal_centroid",
+                    "goal_envelope",
                     index,
-                    f"goal centroid {gap:.4g} px from the snapshot's, "
-                    f"> {tolerances.goal_centroid_px}",
+                    f"green centroid {gap:.4g} px from the projected goal, > envelope "
+                    f"{envelope:.4g} px (v_g {seen:.4g})",
                 )
     final_measured = (
         bool(stats) and bool(frame_shapes) and tuple(frame_shapes[-1]) == ref.render_shape
@@ -475,9 +584,25 @@ def evaluate(
                 f"the final frame's area ratio {ratios[-1]:.4g} is below {PRESENCE_FLOOR} "
                 f"({visibility(ratios[-1])})",
             )
-    if ratios and len(stats) == len(frame_shapes) and final_measured:
-        result.final_ratio = ratios[-1]
-        result.longest_unseen_run = longest_unseen_run(ratios)
+    if ref.render_green > 0:
+        if not final_measured:
+            result.fail("goal_final", None, "the final frame was not measured")
+        else:
+            final_seen = goal_visibility(stats[-1].green_count, ref.goal_radius_px)
+            if final_seen < GOAL_FINAL_FLOOR:
+                result.fail(
+                    "goal_final",
+                    len(frame_shapes) - 1,
+                    f"the final frame shows v_g {final_seen:.4g} of the goal, below "
+                    f"{GOAL_FINAL_FLOOR}",
+                )
+    if len(stats) == len(frame_shapes) and final_measured:
+        if ratios:
+            result.final_ratio = ratios[-1]
+            result.longest_unseen_run = longest_unseen_run(ratios)
+        result.final_goal_visibility = goal_visibility(stats[-1].green_count, ref.goal_radius_px)
+        if excess is not None:
+            result.max_goal_excess = {"value": excess[0], "frame": excess[1], "v_g": excess[2]}
     return result
 
 
@@ -523,10 +648,10 @@ class PilotCandidate:
     """One pilot candidate's measurements: its snapshot render's, every frame's, frame 0's
     difference from the snapshot render, its ``size_checkable_frames``, the simulator's cube
     displacement from its initial position at every frame (frame 0's is 0), the sightline
-    clearance of the simulator's actual joint positions at every frame (for the record), and the
-    smallest image displacement, in pixels and unrounded, of the scene's goal moved 0.03 m in xy
-    over directions every 1 degree, from the render camera's projection (``None`` if not
-    measured, which stops the pilot)."""
+    clearance of the simulator's actual joint positions at every frame (for the record), the goal's
+    projected centre and radius (``goal_geometry``), and the whole-pixel image shift of a 0.03 m
+    goal move for each direction every 1 degree in xy, as a type-4 goal-pixel injection applies it
+    (``None`` or empty if not measured, which stops the pilot)."""
 
     seed: int
     snapshot: FrameStats
@@ -535,7 +660,8 @@ class PilotCandidate:
     size_frames: int
     cube_displacement_m: tuple[float, ...]
     actual_clearance_m: tuple[float, ...] = ()
-    goal_shift_min_px: float | None = None
+    goal: tuple[tuple[float, float], float] | None = None
+    goal_shifts: tuple[tuple[int, int], ...] = ()
 
 
 def _widen_up(value: float) -> float:
@@ -557,20 +683,21 @@ def pilot_tolerances(candidates: Sequence[PilotCandidate]) -> dict[str, Any]:
     """The tolerances by the frozen rule: each the pilot's observed extreme widened by 10%.
 
     Upper extremes (the size-checkable area ratios' maximum, the merge distance, the first-frame
-    difference, the goal-centroid distance) are multiplied by 1.1 and the size-checkable area
-    ratios' minimum by 0.9. The size band's extremes are over size-checkable frames only; the
-    merge radius, first-frame tolerance, goal-centroid distance and minimum green count are taken
-    over every frame. The minimum green count is the pilot's observed minimum. No presence band is
-    set.
+    difference) are multiplied by 1.1 and the size-checkable area ratios' minimum by 0.9. The size
+    band's extremes are over size-checkable frames only; the merge radius and first-frame
+    tolerance are taken over every frame. No presence band is set, and nothing of the goal check is
+    pilot-set (the 1.5 px margin and the 0.4 floor are frozen).
 
-    Every stop condition of ``evals/M3-protocol-3.json`` is evaluated, and ``PilotStopError``
+    Every stop condition of ``evals/M3-protocol-4.json`` is evaluated, and ``PilotStopError``
     lists all that hold, so that the owner is told: (1) more than 2 of the candidates without a
     size-checkable frame 1 to T - 1; (2) the simulator's cube more than 0.005 m from its start in a
     size-checkable frame; (3) a size-checkable frame's area ratio outside [0.95, 1.05]; (4) the
     widened size band not inside 0.36 < a_lo and a_hi < 2.56; (5) no size-checkable frame at all;
     (6) a snapshot render showing no cube or no goal; (7) a candidate's final frame not showing the
-    cube (r < 0.02); (8) the merge radius 60 px or more; (9) the goal-centroid distance at least
-    the smallest ``goal_shift_min_px`` of any candidate (or one not measured).
+    cube (r < 0.02); (8) the merge radius 60 px or more; (9) a frame with green whose centroid is
+    farther from p than its goal envelope, or a final frame with v_g < 0.4 (or a candidate whose
+    goal geometry was not measured); (10) a final frame where, for some direction, the centroid
+    plus the whole-pixel 0.03 m shift stays within the frame's envelope (or no shifts measured).
     """
     if not candidates:
         raise ValueError("the pilot has no candidates")
@@ -679,47 +806,85 @@ def pilot_tolerances(candidates: Sequence[PilotCandidate]) -> dict[str, Any]:
                 f"(4) the widened size band [{size[0]:.4g}, {size[1]:.4g}] is not inside "
                 "0.36 < a_lo and a_hi < 2.56"
             )
-    green = min(
-        (stats.green_count, item.seed, index)
-        for item in candidates
-        for index, stats in enumerate(item.frames)
-    )
-    observed["min_green_pixels"] = {"value": green[0], "seed": green[1], "frame": green[2]}
-    least_green = max(green[0], 1)
-    gaps = [(0.0, -1, -1)]
+    excesses: list[tuple[float, int, int, float]] = []
+    goal_finals: dict[str, dict[str, Any]] = {}
     for item in candidates:
-        centre = item.snapshot.green_centroid
-        if centre is None:
+        if item.snapshot.green_count <= 0 or item.snapshot.green_centroid is None:
             stops.append(f"(6) seed {item.seed}: the snapshot render shows no goal")
             continue
+        if item.goal is None:
+            stops.append(f"(9) seed {item.seed}: its goal geometry was not measured")
+            continue
+        goal_centre, goal_radius = item.goal
         for index, stats in enumerate(item.frames):
-            if stats.green_count >= least_green and stats.green_centroid is not None:
-                gaps.append((_distance(stats.green_centroid, centre), item.seed, index))
-    gap = max(gaps)
-    observed["goal_centroid_px"] = {"value": gap[0], "seed": gap[1], "frame": gap[2]}
-    goal_tolerance = _widen_up(gap[0])
-    unmeasured = [item.seed for item in candidates if item.goal_shift_min_px is None]
-    shifts = [
-        (float(item.goal_shift_min_px), item.seed)
-        for item in candidates
-        if item.goal_shift_min_px is not None
-    ]
-    smallest_shift = min(shifts) if shifts else None
-    observed["goal_shift_min_px"] = (
-        None if smallest_shift is None else {"value": smallest_shift[0], "seed": smallest_shift[1]}
+            if stats.green_count >= 1 and stats.green_centroid is not None:
+                seen = goal_visibility(stats.green_count, goal_radius)
+                gap = _distance(stats.green_centroid, goal_centre)
+                excesses.append((gap - goal_envelope_px(seen, goal_radius), item.seed, index, seen))
+        last = item.frames[-1]
+        final_seen = goal_visibility(last.green_count, goal_radius)
+        row: dict[str, Any] = {"v_g": final_seen, "projected_radius_px": goal_radius}
+        if final_seen < GOAL_FINAL_FLOOR:
+            stops.append(
+                f"(9) seed {item.seed}: the final frame shows v_g {final_seen:.4g} of the goal, "
+                f"below {GOAL_FINAL_FLOOR}"
+            )
+        if not item.goal_shifts:
+            stops.append(f"(10) seed {item.seed}: no goal-move shifts were measured")
+        elif last.green_centroid is not None:
+            envelope = goal_envelope_px(final_seen, goal_radius)
+            margin = min(
+                math.hypot(
+                    last.green_centroid[0] + dr - goal_centre[0],
+                    last.green_centroid[1] + dc - goal_centre[1],
+                )
+                - envelope
+                for dr, dc in item.goal_shifts
+            )
+            smallest = min(math.hypot(dr, dc) for dr, dc in item.goal_shifts)
+            row.update(
+                shifted_margin_px=margin,
+                smallest_shift_px=smallest,
+                guarantee_level=guarantee_level(goal_radius, smallest),
+            )
+            if margin <= 0:
+                stops.append(
+                    f"(10) seed {item.seed}: a whole-pixel 0.03 m goal shift leaves the final "
+                    f"frame's centroid {-margin:.4g} px inside its envelope, so a type-4 "
+                    "goal-pixel injection could pass at frame T"
+                )
+        goal_finals[str(item.seed)] = row
+    worst_excess = max(excesses) if excesses else None
+    observed["goal_max_excess_px"] = (
+        None
+        if worst_excess is None
+        else {
+            "value": worst_excess[0],
+            "seed": worst_excess[1],
+            "frame": worst_excess[2],
+            "v_g": worst_excess[3],
+        }
     )
-    observed["goal_centroid_tolerance_px"] = goal_tolerance
-    if unmeasured:
+    if worst_excess is not None and worst_excess[0] > 0:
+        beyond = [item for item in excesses if item[0] > 0]
         stops.append(
-            f"(9) seeds {unmeasured} have no measured goal-move shift, so stop (9) cannot be "
-            "evaluated"
+            f"(9) {len(beyond)} pilot frames have the green centroid outside the goal envelope "
+            f"(worst {worst_excess[0]:.4g} px beyond, seed {worst_excess[1]} frame "
+            f"{worst_excess[2]}, v_g {worst_excess[3]:.4g})"
         )
-    if smallest_shift is not None and goal_tolerance >= smallest_shift[0]:
-        stops.append(
-            f"(9) the goal-centroid distance {goal_tolerance:.4g} px is at least the smallest "
-            f"image displacement of a {GOAL_MOVE_MIN_M} m goal move, {smallest_shift[0]:.4g} px "
-            f"(seed {smallest_shift[1]}), so a type-4 pixel shift could pass"
-        )
+    observed["goal_final_frames"] = goal_finals
+    finals_seen = [(row["v_g"], seed) for seed, row in goal_finals.items()]
+    observed["goal_final_v_g_min"] = (
+        None if not finals_seen else {"value": min(finals_seen)[0], "seed": min(finals_seen)[1]}
+    )
+    margins = [
+        (row["shifted_margin_px"], seed)
+        for seed, row in goal_finals.items()
+        if "shifted_margin_px" in row
+    ]
+    observed["goal_final_shifted_margin_min_px"] = (
+        None if not margins else {"value": min(margins)[0], "seed": min(margins)[1]}
+    )
     first = max((item.first_difference, item.seed) for item in candidates)
     observed["first_frame_difference"] = {"value": first[0], "seed": first[1]}
     if stops:
@@ -727,11 +892,11 @@ def pilot_tolerances(candidates: Sequence[PilotCandidate]) -> dict[str, Any]:
     return {
         "protocol_version": PROTOCOL_VERSION,
         "rule": (
-            "ET-M3-1 tolerance pilot (m3-protocol-3): each tolerance is the pilot's observed "
+            "ET-M3-1 tolerance pilot (m3-protocol-4): each tolerance is the pilot's observed "
             "extreme widened by 10%; the size band over size-checkable frames, subject to "
-            "0.36 < a_lo and a_hi < 2.56; the merge radius, first-frame tolerance, goal-centroid "
-            "distance and minimum green count over every frame; no presence band (the presence "
-            "floor 0.02 is frozen)"
+            "0.36 < a_lo and a_hi < 2.56; the merge radius and first-frame tolerance over every "
+            "frame; no presence band (the presence floor 0.02 is frozen) and no goal tolerance "
+            "(the goal envelope's 1.5 px margin and the 0.4 final floor are frozen)"
         ),
         "pilot_seeds": [item.seed for item in candidates],
         "widening": WIDENING,
@@ -743,8 +908,9 @@ def pilot_tolerances(candidates: Sequence[PilotCandidate]) -> dict[str, Any]:
         "merge_radius_px": radius,
         "first_frame_metric": FIRST_FRAME_METRIC,
         "first_frame_tolerance": _widen_up(first[0]),
-        "goal_centroid_px": goal_tolerance,
-        "min_green_pixels": green[0],
+        "goal_radius_m": GOAL_RADIUS_M,
+        "goal_margin_px": GOAL_MARGIN_PX,
+        "goal_final_floor": GOAL_FINAL_FLOOR,
         "other_component_fraction": OTHER_COMPONENT_FRACTION,
         "observed": observed,
     }
@@ -772,10 +938,20 @@ def size_checkable_summary(counts: Sequence[tuple[int, int]]) -> dict[str, Any]:
 
 
 def visibility_summary(candidates: Sequence[dict[str, Any]]) -> dict[str, Any]:
-    """For reporting: how many candidates' final frames show no cube or are uncertain, and each
-    candidate's final r, final visibility, longest run of frames with r < 0.02 and where it starts,
-    and, where recorded, the simulator's final cube position (``final_cube``)."""
-    keys = ("final_ratio", "final_visibility", "longest_unseen_run", "final_cube")
+    """For reporting: how many candidates' final frames show no cube or are uncertain, how many
+    show less than 0.4 of the goal, and how many show 0.4 or more but less than their scene's
+    guarantee level; and each candidate's final r, final visibility, longest run of frames with
+    r < 0.02, final v_g, largest goal excess, guarantee level and, where recorded, the simulator's
+    final cube position (``final_cube``)."""
+    keys = (
+        "final_ratio",
+        "final_visibility",
+        "longest_unseen_run",
+        "final_goal_visibility",
+        "max_goal_excess",
+        "goal_guarantee_level",
+        "final_cube",
+    )
     rows = [
         {"seed": item.get("seed"), **{key: item.get(key) for key in keys}} for item in candidates
     ]
@@ -784,6 +960,19 @@ def visibility_summary(candidates: Sequence[dict[str, Any]]) -> dict[str, Any]:
         "final_no_cube": sum(1 for row in rows if row["final_visibility"] == NO_CUBE),
         "final_uncertain": sum(1 for row in rows if row["final_visibility"] == UNCERTAIN),
         "final_not_measured": sum(1 for row in rows if row["final_visibility"] is None),
+        "final_goal_below_floor": sum(
+            1
+            for row in rows
+            if row["final_goal_visibility"] is not None
+            and row["final_goal_visibility"] < GOAL_FINAL_FLOOR
+        ),
+        "final_goal_below_guarantee_level": sum(
+            1
+            for row in rows
+            if row["final_goal_visibility"] is not None
+            and row["goal_guarantee_level"] is not None
+            and GOAL_FINAL_FLOOR <= row["final_goal_visibility"] < row["goal_guarantee_level"]
+        ),
         "per_candidate": rows,
     }
 
@@ -888,6 +1077,7 @@ def verdict(
         },
         "zero_size_checkable": ZERO_SIZE_CHECKABLE_STATEMENT,
         "uncertain_visibility": UNCERTAIN_STATEMENT,
+        "goal_check": GOAL_STATEMENT,
         "limits": LIMITS_STATEMENT,
         "statement": PHYSICS_STATEMENT,
     }

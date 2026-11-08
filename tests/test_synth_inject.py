@@ -18,7 +18,9 @@ pytest.importorskip("scipy")
 from fake_scene import (  # noqa: E402
     BACKGROUND,
     CUBE_PX,
+    EXTRINSIC,
     GREEN,
+    INTRINSIC,
     PROJECTION,
     draw,
     episode_frames,
@@ -59,9 +61,15 @@ TOL = Tolerances(
     a_hi=1.25,
     merge_radius_px=20.0,
     first_frame_tolerance=0.0,
-    goal_centroid_px=3.0,
-    min_green_pixels=100,
 )
+
+
+def snapshot_manifest(seed: int) -> dict[str, Any]:
+    """The fabricated manifest with the fake camera exposed, as a snapshot manifest records it."""
+    camera = {"exposed": True, "intrinsic_cv": INTRINSIC, "extrinsic_cv": EXTRINSIC}
+    return {**manifest(seed), "camera": camera}
+
+
 OTHER = draw((100, 400), (400, 100))
 CUBE_AREA = CUBE_PX * CUBE_PX
 
@@ -72,7 +80,7 @@ def source(seed: int, steps: int = 8) -> tuple[list[Any], dict[str, Any]]:
 
 def checked(frames: list[Any], candidate: dict[str, Any], seed: int) -> Any:
     snapshot_render = episode_frames()[0]
-    ref = reference(manifest(seed), measure(snapshot_render), snapshot_render.shape, TOL)
+    ref = reference(snapshot_manifest(seed), measure(snapshot_render), snapshot_render.shape, TOL)
     return check_candidate(candidate, frames, ref, snapshot_render, TOL, len(frames))
 
 
@@ -89,21 +97,21 @@ def digest(frames: list[Any]) -> str:
 
 
 def test_the_injection_seeds_are_the_frozen_ones() -> None:
-    assert FIRST_SEED == 10520
-    assert injection_seed(1, 0) == 10520
-    assert injection_seed(3, 4) == 10544
-    assert injection_seed(6, 9) == 10579
+    assert FIRST_SEED == 10460
+    assert injection_seed(1, 0) == 10460
+    assert injection_seed(3, 4) == 10484
+    assert injection_seed(6, 9) == 10519
     plan = injection_plan()
-    assert [seed for _, _, seed in plan] == list(range(10520, 10580))
-    assert RENDER_SEED_OFFSET == 200
-    assert [injection_seed(6, i) + RENDER_SEED_OFFSET for i in (0, 9)] == [10770, 10779]
-    assert tuple(range(10660, 10750)) == RESIZE_REPLACEMENT_SEEDS
+    assert [seed for _, _, seed in plan] == list(range(10460, 10520))
+    assert RENDER_SEED_OFFSET == 270
+    assert [injection_seed(6, i) + RENDER_SEED_OFFSET for i in (0, 9)] == [10780, 10789]
+    assert tuple(range(10260, 10300)) == RESIZE_REPLACEMENT_SEEDS
     rule = json.loads(
-        (Path(__file__).resolve().parents[1] / "evals/M3-protocol-3.json").read_text("utf-8")
+        (Path(__file__).resolve().parents[1] / "evals/M3-protocol-4.json").read_text("utf-8")
     )["ET-M3-1"]["injections"]
-    assert "seed = 10520 + 10 x (t - 1) + i" in rule
-    assert "seed + 200 (10770 to 10779)" in rule
-    assert "10660 upward (to 10749)" in rule
+    assert "seed = 10460 + 10 x (t - 1) + i" in rule
+    assert "seed + 270 (10780 to 10789)" in rule
+    assert "10260 upward (to 10299)" in rule
 
 
 def test_the_pilot_stop_constants_match_the_injections() -> None:
@@ -179,7 +187,9 @@ def test_object_removed_fills_the_cube_with_the_ring_median() -> None:
 def test_a_removal_after_the_size_checkable_frames_is_caught_at_the_final_frame() -> None:
     injection, frames = build(1, 3)
     snapshot_render = episode_frames()[0]
-    ref = reference(manifest(injection.seed), measure(snapshot_render), snapshot_render.shape, TOL)
+    ref = reference(
+        snapshot_manifest(injection.seed), measure(snapshot_render), snapshot_render.shape, TOL
+    )
     result = check_candidate(injection.manifest, injection.frames, ref, snapshot_render, TOL, 1)
     assert result.to_json()["failed_checks"] == ["cube_presence"]
     assert result.to_json()["final_visibility"] == "no cube"
@@ -309,7 +319,8 @@ def test_goal_pixels_shift_by_the_projected_goal_move(i: int) -> None:
     assert injection.manifest == manifest(injection.seed)
     assert int(green_mask(injection.frames[step]).sum()) <= int(green_mask(frames[step]).sum())
     result = checked(injection.frames, injection.manifest, injection.seed)
-    assert result.to_json()["failed_checks"] == ["goal_centroid"]
+    assert result.to_json()["failed_checks"] == ["goal_envelope"]
+    assert result.failed["goal_envelope"]["frame"] == step
 
 
 def test_goal_pixel_shift_uses_the_projection() -> None:
@@ -340,12 +351,12 @@ def test_asset_hash_broken_changes_one_first_hex_digit(i: int) -> None:
 
 def test_initial_render_mismatch_replaces_frame_0_only() -> None:
     injection, frames = build(6, 0)
-    assert injection.detail["render_seed"] == injection.seed + 200
+    assert injection.detail["render_seed"] == injection.seed + 270
     assert (injection.frames[0] == OTHER).all()
     assert all(injection.frames[k] is frames[k] for k in range(1, len(frames)))
     result = checked(injection.frames, injection.manifest, injection.seed)
     assert "first_frame" in result.to_json()["failed_checks"]
-    with pytest.raises(InjectionError, match="seed \\+ 200"):
+    with pytest.raises(InjectionError, match="seed \\+ 270"):
         inject(6, 0, *source(injection_seed(6, 0)))
 
 
@@ -397,5 +408,5 @@ def test_a_cube_resize_without_a_checkable_frame_is_not_built(size_frames: int) 
 
 def reference_and_render(seed: int) -> tuple[Any, Any, Any]:
     snapshot_render = episode_frames()[0]
-    ref = reference(manifest(seed), measure(snapshot_render), snapshot_render.shape, TOL)
+    ref = reference(snapshot_manifest(seed), measure(snapshot_render), snapshot_render.shape, TOL)
     return ref, snapshot_render, TOL

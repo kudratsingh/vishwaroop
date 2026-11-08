@@ -1,6 +1,6 @@
 """M3's seed blocks, partitions and identities, as ``evals/M3-protocol.md`` sections 2 and 5 freeze
-them. ``m3-protocol-3`` (``evals/M3-protocol-3.json``) keeps them and replaces only ET-M3-1, as
-``m3-protocol-2`` did before it.
+them. ``m3-protocol-4`` (``evals/M3-protocol-4.json``) keeps them and replaces only ET-M3-1, as
+``m3-protocol-2`` and ``m3-protocol-3`` did before it.
 
 Blocks are 1,000 seeds. Blocks 10 to 15 are train, 16 and 17 dev, 18 and 19 reserved and never
 simulated. M3 never makes new data on blocks 0 to 9, which M0's protocol still governs. A training
@@ -13,7 +13,7 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 
-PROTOCOL_VERSION = "m3-protocol-3"
+PROTOCOL_VERSION = "m3-protocol-4"
 SEEDS_PER_BLOCK = 1000
 TRAIN_BLOCKS = range(10, 16)
 DEV_BLOCKS = (16, 17)

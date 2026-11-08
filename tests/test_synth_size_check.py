@@ -1,6 +1,7 @@
-"""m3-protocol-3's size-checkable frames (kept from m3-protocol-2), its final-frame presence rule,
-the pilot's stops and the zero-frame rule, on FABRICATED joint values and measurements. Standard
-library only, so these run on the CPU tier."""
+"""m3-protocol-4's size-checkable frames (kept from m3-protocol-2), its final-frame cube presence
+rule (kept from m3-protocol-3), its goal envelope and final goal floor, the pilot's stops and the
+zero-frame rule, on FABRICATED joint values and measurements. Standard library only, so these run on
+the CPU tier."""
 
 from __future__ import annotations
 
@@ -12,10 +13,13 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from goal_camera import CAMERA, GOAL, GOAL_POSITION, SHIFTS
 
 from vishwaroop.sim.so100_kinematics import arm_segments, fingertips, segment_distance
 from vishwaroop.synth.checker import (
     CONTROL_SEEDS,
+    GOAL_FINAL_FLOOR,
+    GOAL_MARGIN_PX,
     NO_CUBE,
     PILOT_SEEDS,
     PRESENCE_FLOOR,
@@ -31,8 +35,12 @@ from vishwaroop.synth.checker import (
     Tolerances,
     camera_position,
     evaluate,
+    goal_envelope_px,
+    goal_geometry,
+    guarantee_level,
     pilot_tolerances,
     reference,
+    segment_rho,
     sightline_clearance,
     size_checkable_frames,
     size_checkable_summary,
@@ -59,38 +67,40 @@ TOL = Tolerances(
     a_hi=1.1,
     merge_radius_px=30.0,
     first_frame_tolerance=0.5,
-    goal_centroid_px=3.0,
-    min_green_pixels=100,
 )
 MANIFEST = {
     "task_id": "PickCubeSO100-v1",
     "task_version": "m0-1",
-    "seed": 10580,
+    "seed": 10320,
     "asset_sha256s": ["a" * 64],
     "cube_half_size_m": 0.0125,
     "cube_colour": "red",
-    "goal_position": [0.0, 0.1, 0.1],
+    "goal_position": GOAL_POSITION,
 }
+SNAPSHOT = {**MANIFEST, "camera": CAMERA}
 
 
 def run(frames: list[FrameStats], size_frames: int) -> Any:
-    ref = reference(MANIFEST, CUBE, SHAPE, TOL)
+    ref = reference(SNAPSHOT, CUBE, SHAPE, TOL)
     return evaluate(dict(MANIFEST), [SHAPE] * len(frames), 0.0, frames, ref, TOL, size_frames)
 
 
 def test_the_frozen_numbers() -> None:
-    frozen = json.loads((ROOT / "evals/M3-protocol-3.json").read_text(encoding="utf-8"))
+    frozen = json.loads((ROOT / "evals/M3-protocol-4.json").read_text(encoding="utf-8"))
     rule = frozen["ET-M3-1"]
-    assert frozen["protocol_version"] == "m3-protocol-3"
+    assert frozen["protocol_version"] == "m3-protocol-4"
     assert "0.035 m" in rule["size_checkable_frames"]
     assert SIGHTLINE_CLEARANCE_M == 0.035
     assert "r >= 0.02" in rule["visibility"] and PRESENCE_FLOOR == 0.02
-    assert "10920 to 10939" in rule["tolerance_pilot"]
-    assert tuple(range(10920, 10940)) == PILOT_SEEDS
-    assert "10580 to 10639" in rule["controls"] and tuple(range(10580, 10640)) == CONTROL_SEEDS
-    assert "10520 + 10 x (t - 1) + i" in rule["injections"]
-    assert "evals/M3-checker-tolerances-p3.json" in rule["tolerance_pilot"]
-    assert Path("evals/M3-checker-tolerances-p3.json") == TOLERANCES_PATH
+    assert "10940 to 10959" in rule["tolerance_pilot"]
+    assert tuple(range(10940, 10960)) == PILOT_SEEDS
+    assert "10320 to 10379" in rule["controls"] and tuple(range(10320, 10380)) == CONTROL_SEEDS
+    assert "10460 + 10 x (t - 1) + i" in rule["injections"]
+    assert "evals/M3-checker-tolerances-p4.json" in rule["tolerance_pilot"]
+    assert Path("evals/M3-checker-tolerances-p4.json") == TOLERANCES_PATH
+    geometry = rule["goal_geometry"]
+    assert "R = 0.015625 m" in geometry and "+ 1.5 px" in geometry and GOAL_MARGIN_PX == 1.5
+    assert "v_g >= 0.4" in rule["checker"] and GOAL_FINAL_FLOOR == 0.4
     assert "No presence band is set" in rule["tolerance_pilot"]
 
 
@@ -138,17 +148,17 @@ def test_no_upper_area_bound_outside_the_checkable_frames() -> None:
 
 
 def test_a_snapshot_render_without_a_cube_fails_size_and_presence() -> None:
-    ref = reference(MANIFEST, GONE, SHAPE, TOL)
+    ref = reference(SNAPSHOT, GONE, SHAPE, TOL)
     result = evaluate(dict(MANIFEST), [SHAPE] * 2, 0.0, [CUBE, CUBE], ref, TOL, 0).to_json()
     assert result["failed_checks"] == ["cube_size", "cube_presence"]
     assert result["final_ratio"] is None
 
 
 def test_an_unmeasured_final_frame_fails_presence() -> None:
-    ref = reference(MANIFEST, CUBE, SHAPE, TOL)
+    ref = reference(SNAPSHOT, CUBE, SHAPE, TOL)
     shapes = [SHAPE, (256, 256, 3)]
     result = evaluate(dict(MANIFEST), shapes, 0.0, [CUBE], ref, TOL, 0).to_json()
-    assert result["failed_checks"] == ["frame_shape", "cube_presence"]
+    assert result["failed_checks"] == ["frame_shape", "cube_presence", "goal_final"]
     empty = evaluate(dict(MANIFEST), [], None, [], ref, TOL, 0).to_json()
     assert "cube_presence" in empty["failed_checks"]
 
@@ -234,12 +244,13 @@ def candidate(
     frames: tuple[FrameStats, ...],
     size_frames: int,
     moved: tuple[float, ...] | None = None,
-    shift: float | None = 50.0,
+    goal: Any = GOAL,
+    shifts: tuple[tuple[int, int], ...] = SHIFTS,
     snapshot: FrameStats = CUBE,
 ) -> PilotCandidate:
     displacement = moved if moved is not None else (0.0,) * len(frames)
     return PilotCandidate(
-        seed, snapshot, frames, 0.1, size_frames, displacement, goal_shift_min_px=shift
+        seed, snapshot, frames, 0.1, size_frames, displacement, goal=goal, goal_shifts=shifts
     )
 
 
@@ -253,7 +264,9 @@ def test_the_pilot_band_ignores_frames_that_are_not_size_checkable() -> None:
     result = pilot_tolerances(_pilot(3))
     assert result["size_band"] == pytest.approx([0.9, 1.1])
     assert "presence_band" not in result and result["presence_floor"] == PRESENCE_FLOOR
-    assert result["protocol_version"] == "m3-protocol-3"
+    assert result["protocol_version"] == "m3-protocol-4"
+    assert (result["goal_margin_px"], result["goal_final_floor"]) == (1.5, 0.4)
+    assert "goal_centroid_px" not in result and "min_green_pixels" not in result
     assert Tolerances.from_json(result).a_lo == pytest.approx(0.9)
     assert result["sightline_clearance_m"] == SIGHTLINE_CLEARANCE_M
     summary = result["observed"]["size_checkable"]
@@ -286,7 +299,7 @@ def test_the_pilot_reports_every_stop_that_holds() -> None:
     frames = (CUBE, MEDIUM, CUBE, CUBE)
     moved = (0.0, 0.01, 0.0, 0.0)
     with pytest.raises(PilotStopError) as stop:
-        pilot_tolerances([candidate(10920, (*frames, GONE), 3, (*moved, 0.0), shift=None)])
+        pilot_tolerances([candidate(10920, (*frames, GONE), 3, (*moved, 0.0), goal=None)])
     reasons = " ".join(stop.value.observed["stops"])
     for number in ("(2)", "(3)", "(7)", "(9)"):
         assert number in reasons
@@ -325,16 +338,33 @@ def test_the_pilot_stops_when_the_merge_radius_reaches_the_duplicate_offset() ->
         pilot_tolerances([candidate(10920, (CUBE, CUBE, split(55.0)), 1)])
 
 
-def test_the_pilot_stops_when_a_goal_shift_could_pass() -> None:
-    off = FrameStats(red=((600, 300.0, 200.0),), green_count=400, green_centroid=(150.0, 355.0))
-    frames = (CUBE, off, CUBE)
-    result = pilot_tolerances([candidate(10920, frames, 1, shift=5.51)])
-    assert result["goal_centroid_px"] == pytest.approx(5.5)
-    assert result["observed"]["goal_shift_min_px"] == {"value": 5.51, "seed": 10920}
-    with pytest.raises(PilotStopError, match=r"\(9\) the goal-centroid distance 5.5 px"):
-        pilot_tolerances([candidate(10920, frames, 1, shift=5.5)])
-    with pytest.raises(PilotStopError, match=r"\(9\) seeds \[10921\]"):
-        pilot_tolerances([candidate(10920, frames, 1), candidate(10921, frames, 1, shift=None)])
+def test_the_pilot_stops_when_a_normal_goal_breaks_its_envelope() -> None:
+    off = FrameStats(red=((600, 300.0, 200.0),), green_count=400, green_centroid=(150.0, 351.4))
+    result = pilot_tolerances([candidate(10940, (CUBE, off, CUBE), 1)])
+    assert result["observed"]["goal_max_excess_px"]["value"] == pytest.approx(-0.1, abs=1e-3)
+    beyond = FrameStats(red=((600, 300.0, 200.0),), green_count=400, green_centroid=(150.0, 351.6))
+    with pytest.raises(PilotStopError, match=r"\(9\) 1 pilot frames have the green centroid"):
+        pilot_tolerances([candidate(10940, (CUBE, beyond, CUBE), 1)])
+    low = FrameStats(red=((600, 300.0, 200.0),), green_count=150, green_centroid=(150.0, 350.0))
+    with pytest.raises(PilotStopError, match=r"\(9\) seed 10940: the final frame shows v_g 0.37"):
+        pilot_tolerances([candidate(10940, (CUBE, CUBE, low), 1)])
+    with pytest.raises(PilotStopError, match=r"\(9\) seed 10941: its goal geometry"):
+        pilot_tolerances(
+            [candidate(10940, (CUBE,) * 3, 1), candidate(10941, (CUBE,) * 3, 1, goal=None)]
+        )
+
+
+def test_the_pilot_stops_when_a_goal_shift_could_pass_at_the_final_frame() -> None:
+    result = pilot_tolerances([candidate(10940, (CUBE,) * 3, 1)])
+    margin = result["observed"]["goal_final_shifted_margin_min_px"]
+    assert margin == {"value": pytest.approx(22 - 1.5, abs=1e-3), "seed": "10940"}
+    tiny = ((0, 22), (1, 1))  # a made-up shift of 1.4 px stays inside a 1.5 px envelope
+    with pytest.raises(PilotStopError, match=r"\(10\) seed 10940: a whole-pixel 0.03 m goal"):
+        pilot_tolerances([candidate(10940, (CUBE,) * 3, 1, shifts=tiny)])
+    with pytest.raises(PilotStopError, match=r"\(10\) seed 10940: no goal-move shifts"):
+        pilot_tolerances([candidate(10940, (CUBE,) * 3, 1, shifts=())])
+    row = result["observed"]["goal_final_frames"]["10940"]
+    assert row["guarantee_level"] == pytest.approx(0.0788, abs=1e-3)  # 2 E < 22 px from v_g 0.079
 
 
 def test_the_pilot_stops_on_a_snapshot_without_cube_or_goal() -> None:
@@ -375,7 +405,7 @@ def test_the_size_check_summary() -> None:
 def test_the_verdict_reports_how_often_the_size_check_ran() -> None:
     controls = [
         {
-            "seed": 10580 + n,
+            "seed": 10320 + n,
             "passed": True,
             "failed_checks": [],
             "size_checkable_frames": 20,
@@ -391,7 +421,7 @@ def test_the_verdict_reports_how_often_the_size_check_ran() -> None:
         {
             "type": t,
             "name": f"t{t}",
-            "seed": 10520 + 10 * (t - 1) + i,
+            "seed": 10460 + 10 * (t - 1) + i,
             "source_passed": True,
             "injected_passed": False,
             "failed_checks": ["x"],
@@ -406,20 +436,20 @@ def test_the_verdict_reports_how_often_the_size_check_ran() -> None:
     assert result["size_check"]["controls"]["share_of_frames_checked"] == pytest.approx(0.2)
     assert len(result["size_check"]["cube_resized_steps"]) == 10
     assert result["size_check"]["cube_resized_steps"][0] == {
-        "seed": 10540,
-        "frozen_seed": 10540,
+        "seed": 10480,
+        "frozen_seed": 10480,
         "skipped_seeds": [],
         "step": 3,
         "T": 99,
     }
     shown = result["visibility"]["controls"]
     assert (shown["final_no_cube"], shown["final_uncertain"]) == (20, 20)
-    assert shown["per_candidate"][1]["seed"] == 10581
+    assert shown["per_candidate"][1]["seed"] == 10321
     assert shown["per_candidate"][1]["final_cube"] == {"over_table": True}
 
     sources = result["visibility"]["injection_sources"]
     assert sources["final_not_measured"] == 60
-    assert sources["per_candidate"][0]["seed"] == 10520
+    assert sources["per_candidate"][0]["seed"] == 10460
     assert "uncertain" in result["uncertain_visibility"]
     assert "ET-M3-2 has to judge presence and size" in result["limits"]
 
@@ -442,7 +472,66 @@ def test_every_pinned_file_has_its_pinned_sha256() -> None:
 
     for path, expected in FROZEN.items():
         assert hashlib.sha256((ROOT / path).read_bytes()).hexdigest() == expected, path
-    frozen = json.loads((ROOT / "evals/M3-protocol-3.json").read_text(encoding="utf-8"))
+    frozen = json.loads((ROOT / "evals/M3-protocol-4.json").read_text(encoding="utf-8"))
     for path, expected in frozen["builds_on"].items():
         assert FROZEN[Path(path)] == expected, path
-    assert Path("evals/M3-protocol-3.json") in FROZEN
+    assert Path("evals/M3-protocol-4.json") in FROZEN
+
+
+def test_goal_geometry_from_the_manifest_only() -> None:
+    centre, radius = goal_geometry(SNAPSHOT)
+    assert centre == pytest.approx((150.0, 350.0)) and radius == pytest.approx(11.284)
+    with pytest.raises(ValueError, match="no render camera"):
+        goal_geometry(MANIFEST)
+    behind = {**SNAPSHOT, "goal_position": [0.0, 0.0, -2.0]}
+    with pytest.raises(ValueError, match="behind"):
+        goal_geometry(behind)
+
+
+def test_segment_rho_and_the_envelope() -> None:
+    assert segment_rho(0.5) == pytest.approx(4 / (3 * math.pi), rel=1e-9)
+    assert segment_rho(1.0) == 0.0 == segment_rho(1.03)
+    assert segment_rho(0.4) == pytest.approx(0.5108, abs=1e-4)
+    assert goal_envelope_px(1.2, 12.0) == pytest.approx(1.5)
+    assert goal_envelope_px(0.5, 12.0) == pytest.approx(12.0 * 4 / (3 * math.pi) + 1.5)
+
+
+def test_the_guarantee_level() -> None:
+    level = guarantee_level(11.88, 11.0)
+    assert level == pytest.approx(0.6046, abs=1e-3)  # seed 10936's in-sample geometry
+    assert 2 * goal_envelope_px(level, 11.88) < 11.0
+    assert guarantee_level(11.88, 3.0) is None
+
+
+def test_goal_envelope_follows_visibility() -> None:
+    half = FrameStats(red=CUBE.red, green_count=200, green_centroid=(150.0, 354.0))
+    assert run([CUBE, half, CUBE], 1).passed  # 4 px from p, inside rho(0.5) r_g + 1.5 = 6.29 px
+    far = FrameStats(red=CUBE.red, green_count=200, green_centroid=(150.0, 357.0))
+    result = run([CUBE, far, CUBE], 1).to_json()
+    assert (
+        result["failed_checks"] == ["goal_envelope"]
+        and result["failures"]["goal_envelope"]["frame"] == 1
+    )
+    moved = FrameStats(red=CUBE.red, green_count=400, green_centroid=(150.0, 372.0))
+    assert run([CUBE, moved, moved], 1).to_json()["failed_checks"] == ["goal_envelope"]
+    assert run([CUBE, CUBE], 1).to_json()["max_goal_excess"]["value"] == pytest.approx(
+        -1.5, abs=1e-3
+    )
+
+
+def test_the_final_frame_must_show_enough_of_the_goal() -> None:
+    hidden = FrameStats(red=CUBE.red, green_count=0, green_centroid=None)
+    for last, expected in (
+        (hidden, ["goal_final"]),
+        (FrameStats(CUBE.red, 150, (150.0, 350.0)), ["goal_final"]),
+    ):
+        result = run([CUBE, CUBE, last], 1).to_json()
+        assert (
+            result["failed_checks"] == expected and result["failures"]["goal_final"]["frame"] == 2
+        )
+    assert run([CUBE, CUBE, FrameStats(CUBE.red, 161, (150.0, 350.0))], 1).passed  # v_g 0.4025
+    assert run([CUBE, hidden, CUBE], 1).passed  # a hidden goal before T is not a failure
+    no_goal = FrameStats(red=CUBE.red, green_count=0, green_centroid=None)
+    ref = reference(SNAPSHOT, no_goal, SHAPE, TOL)
+    snap = evaluate(dict(MANIFEST), [SHAPE] * 2, 0.0, [CUBE, CUBE], ref, TOL, 0).to_json()
+    assert snap["failed_checks"] == ["goal_envelope", "goal_final"]

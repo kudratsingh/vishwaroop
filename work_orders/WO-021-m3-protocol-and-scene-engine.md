@@ -91,3 +91,12 @@ A pilot that cannot fit a band inside the frozen limits (the owner is told); any
     - Seeds: pilot 10940–10959; controls 10320–10379; injections 10460–10519; type-6 renders 10780–10789; type-3 replacements 10260–10299. No earlier protocol named any of them.
   - **Review.** Three lenses plus a verifier found one blocker: at T, a lasting 3 cm move is guaranteed caught only above each scene's guarantee level (0.418 to 0.605). The draft now says so. It also states that requiring that level would reject 2 of 60 unmodified episodes. The recheck passed, and its nits are fixed.
   - Not frozen, not run.
+- **2026-11-07, the owner approved `m3-protocol-4` at the 0.4 floor; frozen before its pilot.**
+  - Approval `approvals-20261108T053104271892Z-9e6dbe4c`. `evals/M3-protocol-4.json` (sha256 `52508a87…5c2e`) is the reviewed draft's rule text, unchanged. Its sha256 was in the status ledger before any protocol-4 seed was simulated.
+  - The run is local on the Mac, at $0. If a frozen stop triggers or the test fails, the result is reported and everything pauses.
+  - **For ET-M3-2 (owner's instruction, carried with the protocol-3 one):** ET-M3-2's work order must explicitly audit:
+    - temporary disappearances;
+    - late resizes;
+    - lasting goal shifts with the goal partly occluded in the final frame. This is the known blind spot. Between v_g 0.4 and the scene's guarantee level, a lasting 0.03 m to 0.04 m move whose moved-toward side is hidden at T can pass `goal_envelope`.
+
+    The frozen ET-M3-2 text in `evals/M3-exit-tests.json` is not edited. The audit is added by an amendment frozen before any ET-M3-2 data.
