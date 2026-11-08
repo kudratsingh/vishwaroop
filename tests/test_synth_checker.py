@@ -1,4 +1,4 @@
-"""ET-M3-1's checker rules (m3-protocol-3), tolerance pilot, threshold and one-shot refusals, on
+"""ET-M3-1's checker rules (m3-protocol-4), tolerance pilot, threshold and one-shot refusals, on
 FABRICATED measurements. Standard library only, so these run on the CPU tier."""
 
 from __future__ import annotations
@@ -10,6 +10,7 @@ from typing import Any
 
 import pytest
 
+from goal_camera import CAMERA, GOAL, GOAL_POSITION, SHIFTS
 from vishwaroop.synth.checker import (
     MASK_RULES,
     PRESENCE_FLOOR,
@@ -48,8 +49,8 @@ def snapshot_manifest(seed: int = 10000) -> dict[str, Any]:
         "asset_sha256s": ["a" * 64, "b" * 64],
         "cube_half_size_m": 0.0125,
         "cube_colour": "red",
-        "goal_position": [-0.46, 0.0, 0.05],
-        "camera": {"exposed": False},
+        "goal_position": GOAL_POSITION,
+        "camera": CAMERA,
     }
 
 
@@ -59,8 +60,6 @@ def tolerances(**changes: Any) -> Tolerances:
         "a_hi": 1.25,
         "merge_radius_px": 20.0,
         "first_frame_tolerance": 0.5,
-        "goal_centroid_px": 3.0,
-        "min_green_pixels": 100,
     }
     values.update(changes)
     return Tolerances(**values)
@@ -103,7 +102,7 @@ def test_an_unmodified_candidate_passes() -> None:
 def test_each_check_rejects_its_own_mismatch() -> None:
     snap = snapshot_manifest()
     wrong = {key: snap[key] for key in ("task_id", "task_version", "seed", "asset_sha256s")}
-    wrong.update(cube_half_size_m=0.0125, cube_colour="red", goal_position=[-0.43, 0.0, 0.05])
+    wrong.update(cube_half_size_m=0.0125, cube_colour="red", goal_position=[0.03, 0.0, 0.0])
     assert run_evaluate([CUBE], manifest=wrong).to_json()["failed_checks"] == ["manifest"]
     assert run_evaluate([CUBE], first=0.6).to_json()["failed_checks"] == ["first_frame"]
     gone = run_evaluate([CUBE, frame(())])
@@ -121,14 +120,18 @@ def test_each_check_rejects_its_own_mismatch() -> None:
     twice = run_evaluate([frame(((600, 300.0, 200.0), (600, 300.0, 260.0)))])
     assert twice.to_json()["failed_checks"] == ["extra_red"]
     moved = run_evaluate([frame(((600, 300.0, 200.0),), at=360.0)])
-    assert moved.to_json()["failed_checks"] == ["goal_centroid"]
+    assert moved.to_json()["failed_checks"] == ["goal_envelope"]
+    hidden_at_end = run_evaluate([CUBE, frame(((600, 300.0, 200.0),), green=99)])
+    assert hidden_at_end.to_json()["failed_checks"] == ["goal_final"]
 
 
-def test_a_small_red_speck_or_a_hidden_goal_is_not_a_failure() -> None:
+def test_a_small_red_speck_or_a_partly_hidden_goal_is_not_a_failure() -> None:
     speck = frame(((600, 300.0, 200.0), (149, 50.0, 50.0)))
     assert run_evaluate([speck]).passed
-    hidden = frame(((600, 300.0, 200.0),), green=99, at=500.0)
-    assert run_evaluate([hidden]).passed
+    hidden = frame(((600, 300.0, 200.0),), green=99, at=357.0)  # v_g 0.25: envelope 9.3 px
+    assert run_evaluate([CUBE, hidden, CUBE]).passed
+    gone = frame(((600, 300.0, 200.0),), green=0)
+    assert run_evaluate([CUBE, gone, CUBE]).passed
 
 
 def test_band_ends_are_inside_the_band() -> None:
@@ -158,10 +161,10 @@ def pilot(
     size = len(frames) if size_frames is None else size_frames
     return [
         PilotCandidate(
-            10920, snapshot, tuple(frames), 0.2, size, (0.0,) * len(frames), goal_shift_min_px=50.0
+            10940, snapshot, tuple(frames), 0.2, size, (0.0,) * len(frames), (), GOAL, SHIFTS
         ),
         PilotCandidate(
-            10921, snapshot, tuple(frames), 0.4, size, (0.0,) * len(frames), goal_shift_min_px=50.0
+            10941, snapshot, tuple(frames), 0.4, size, (0.0,) * len(frames), (), GOAL, SHIFTS
         ),
     ]
 
@@ -169,11 +172,11 @@ def pilot(
 def test_the_pilot_widens_each_observed_extreme_by_ten_percent() -> None:
     result = pilot_tolerances(pilot(0.7, 1.2, merge=10.0, green=300, goal=2.0))
     assert result["merge_radius_px"] == pytest.approx(11.0)
-    assert result["goal_centroid_px"] == pytest.approx(2.2)
+    assert "goal_centroid_px" not in result and "min_green_pixels" not in result
+    assert (result["goal_margin_px"], result["goal_final_floor"]) == (1.5, 0.4)
     assert result["first_frame_tolerance"] == pytest.approx(0.44)
-    assert result["min_green_pixels"] == 300
     assert result["masks"] == MASK_RULES
-    assert result["observed"]["area_ratio_min"] == {"value": 0.7, "seed": 10920, "frame": 1}
+    assert result["observed"]["area_ratio_min"] == {"value": 0.7, "seed": 10940, "frame": 1}
     assert result["size_band"] == pytest.approx([0.9, 1.1])
     assert result["presence_floor"] == PRESENCE_FLOOR
     tol = Tolerances.from_json(result)
@@ -198,10 +201,10 @@ def test_the_pilot_sets_no_presence_band() -> None:
 def test_the_pilot_stops_when_a_snapshot_shows_no_cube() -> None:
     empty = FrameStats((), 400, (150.0, 350.0))
     with pytest.raises(
-        PilotStopError, match=r"\(6\) seed 10920: the snapshot render shows no cube"
+        PilotStopError, match=r"\(6\) seed 10940: the snapshot render shows no cube"
     ):
         pilot_tolerances(
-            [PilotCandidate(10920, empty, (CUBE,) * 3, 0.0, 3, (0.0,) * 3, goal_shift_min_px=50.0)]
+            [PilotCandidate(10940, empty, (CUBE,) * 3, 0.0, 3, (0.0,) * 3, (), GOAL, SHIFTS)]
         )
 
 
@@ -229,7 +232,7 @@ def injections(**overrides: Any) -> list[dict[str, Any]]:
             "seed": 10100 + n,
             "source_passed": True,
             "injected_passed": False,
-            "failed_checks": ["cube_presence"],
+            "failed_checks": ["goal_envelope"],
         }
         if n == 0:
             item.update(overrides)
@@ -242,7 +245,7 @@ def test_the_threshold_passes_with_all_rejected_and_three_false_rejections() -> 
     assert result["passed"]
     assert result["injections_rejected"] == 60
     assert result["false_rejections"] == 3
-    assert result["rejections_by_check"] == {"cube_presence": 60}
+    assert result["rejections_by_check"] == {"goal_envelope": 60}
     low, high = result["false_rejection_wilson95"]
     assert low < 0.05 < high
     assert "physics renders" in result["statement"]
@@ -277,7 +280,7 @@ def test_wilson_matches_a_known_interval() -> None:
 def tolerance_file(tmp_path: Path, **changes: Any) -> tuple[Path, str]:
     data = pilot_tolerances(pilot(0.7, 1.2))
     data.update(changes)
-    path = tmp_path / "M3-checker-tolerances-p3.json"
+    path = tmp_path / "M3-checker-tolerances-p4.json"
     path.write_text(json.dumps(data), encoding="utf-8")
     return path, hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -298,6 +301,12 @@ def test_tolerances_load_only_with_their_pinned_sha256(tmp_path: Path) -> None:
         ({"presence_band": [0.1, 1.2]}, "no presence band"),
         ({"presence_floor": 0.05}, "presence floor"),
         ({"presence_floor": None}, "presence floor"),
+        ({"goal_centroid_px": 3.0}, "sets no goal_centroid_px"),
+        ({"min_green_pixels": 0}, "sets no min_green_pixels"),
+        ({"goal_margin_px": 2.0}, "goal_margin_px"),
+        ({"goal_final_floor": 0.3}, "goal_final_floor"),
+        ({"goal_radius_m": 0.0125}, "goal_radius_m"),
+        ({"protocol_version": "m3-protocol-3"}, "protocol"),
         ({"size_band": [0.9]}, "size_band"),
         ({"protocol_version": "m3-protocol-1"}, "protocol"),
         ({"protocol_version": "m3-protocol-2"}, "protocol"),
@@ -314,7 +323,7 @@ def test_tolerances_off_the_frozen_rules_are_refused(
 
 
 def test_a_second_pilot_or_scoring_is_refused(tmp_path: Path) -> None:
-    assert (PILOT_RESULT, SCORE_RESULT) == ("et_m3_1_pilot_p3.json", "et_m3_1_score_p3.json")
+    assert (PILOT_RESULT, SCORE_RESULT) == ("et_m3_1_pilot_p4.json", "et_m3_1_score_p4.json")
     for name in (PILOT_RESULT, SCORE_RESULT):
         check_not_run(tmp_path, name)
         run = tmp_path / f"run-{name}"
@@ -337,6 +346,11 @@ def test_scoring_needs_the_tolerances_sha256_in_the_status_ledger(tmp_path: Path
         check_recorded(digest, ledger)  # protocol-2's file name does not count
     with ledger.open("a", encoding="utf-8") as stream:
         stream.write(json.dumps({"note": f"evals/M3-checker-tolerances-p3.json sha256 {digest}"}))
+        stream.write("\n")
+    with pytest.raises(ValueError, match="not recorded"):
+        check_recorded(digest, ledger)  # protocol-3's file name does not count either
+    with ledger.open("a", encoding="utf-8") as stream:
+        stream.write(json.dumps({"note": f"evals/M3-checker-tolerances-p4.json sha256 {digest}"}))
     check_recorded(digest, ledger)
     with pytest.raises(ValueError, match="not recorded"):
         check_recorded("cd" * 32, ledger)
@@ -366,7 +380,7 @@ def test_a_frame_of_the_wrong_shape_fails_frame_shape() -> None:
     ref = reference(snap, CUBE, SHAPE, tol)
     candidate = {key: snap[key] for key in ref.manifest}
     result = evaluate(candidate, [SHAPE, (256, 256, 3)], 0.0, [CUBE], ref, tol, 1)
-    assert result.to_json()["failed_checks"] == ["frame_shape", "cube_presence"]
+    assert result.to_json()["failed_checks"] == ["frame_shape", "cube_presence", "goal_final"]
     middle = evaluate(candidate, [SHAPE, (256, 256, 3), SHAPE], 0.0, [CUBE, CUBE], ref, tol, 1)
     assert middle.to_json()["failed_checks"] == ["frame_shape"]
     assert result.failed["frame_shape"]["frame"] == 1

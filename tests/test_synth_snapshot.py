@@ -138,15 +138,19 @@ def test_the_pilot_and_scoring_flow_end_to_end(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A shortened ET-M3-1 on fabricated scenes: 4 pilot seeds, 4 controls, 8 injections."""
-    monkeypatch.setattr(et_m3_1, "PILOT_SEEDS", (10920, 10921, 10922, 10923))
-    monkeypatch.setattr(et_m3_1, "CONTROL_SEEDS", (10580, 10581, 10582, 10583))
+    monkeypatch.setattr(et_m3_1, "PILOT_SEEDS", (10940, 10941, 10942, 10943))
+    monkeypatch.setattr(et_m3_1, "CONTROL_SEEDS", (10320, 10321, 10322, 10323))
     plan = [(t, 0, inject.injection_seed(t, 0)) for t in range(1, 7)]
     plan += [(4, 1, inject.injection_seed(4, 1)), (4, 2, inject.injection_seed(4, 2))]
     monkeypatch.setattr(inject, "injection_plan", lambda: sorted(plan, key=lambda x: x[2]))
     env: Any = FakeSceneEnv()
     measured = et_m3_1.run_pilot(env, TASK, tmp_path / "pilot")
-    assert [e["seed"] for e in measured["episodes"]] == [10920, 10921, 10922, 10923]
-    assert all(e["goal_shift_min_px"]["value"] > 0 for e in measured["episodes"])
+    assert [e["seed"] for e in measured["episodes"]] == [10940, 10941, 10942, 10943]
+    assert all(e["goal"]["smallest_whole_pixel_shift_px"] > 0 for e in measured["episodes"])
+    assert all(e["goal"]["projected_radius_px"] > 0 for e in measured["episodes"])
+    first = measured["episodes"][0]
+    assert len(first["goal_frames"]) == first["T"] + 1
+    assert all(row[1] is not None and row[1] <= row[2] for row in first["goal_frames"])
     assert all(e["final_cube"]["projects_inside_image"] for e in measured["episodes"])
     written = pilot_tolerances(measured["candidates"])
     tolerances = Tolerances.from_json(json.loads(json.dumps(written)))
@@ -160,10 +164,17 @@ def test_the_pilot_and_scoring_flow_end_to_end(
     assert result["injections_rejected"] == 8 and result["false_rejections"] == 0
     assert not result["passed"]  # 8 of the frozen 60: the shortened run cannot pass
     assert result["rejections_by_type"]["goal_or_task_changed"] == {"injected": 3, "rejected": 3}
-    assert (tmp_path / "score" / "snapshots" / "seed-010770" / "snapshot.json").exists()
+    assert (tmp_path / "score" / "snapshots" / "seed-010780" / "snapshot.json").exists()
     shown = result["visibility"]["controls"]
     assert shown["candidates"] == 4 and shown["final_no_cube"] == shown["final_uncertain"] == 0
     assert all(row["final_cube"]["over_table"] for row in shown["per_candidate"])
+    assert all(row["final_goal_visibility"] >= 0.4 for row in shown["per_candidate"])
+    assert all(row["goal_guarantee_level"] is not None for row in shown["per_candidate"])
+    assert shown["final_goal_below_floor"] == 0
+    assert shown["final_goal_below_guarantee_level"] == []
+    control = report["controls"][0]
+    assert len(control["goal_frames"]) == control["frames"]
+    assert all(len(row) == 3 for row in control["goal_frames"])
     assert all("error" not in row["final_cube"] for row in shown["per_candidate"])
     assert result["visibility"]["injection_sources"]["candidates"] == 8
     json.dumps(report, allow_nan=False)
@@ -213,11 +224,11 @@ def test_frame_t_is_rendered_after_exactly_t_steps_with_the_seed_as_noise_seed(
     assert seen == [10001]
 
 
-def test_a_short_resize_source_is_replaced_from_10660_up(
+def test_a_short_resize_source_is_replaced_from_10260_up(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """FABRICATED: the frozen type-3 source is made short; the scorer takes 10660 instead."""
-    monkeypatch.setattr(et_m3_1, "CONTROL_SEEDS", (10580,))
+    """FABRICATED: the frozen type-3 source is made short; the scorer takes 10260 instead."""
+    monkeypatch.setattr(et_m3_1, "CONTROL_SEEDS", (10320,))
     frozen = inject.injection_seed(3, 0)
     monkeypatch.setattr(inject, "injection_plan", lambda: [(3, 0, frozen)])
     real = et_m3_1._size_frames
@@ -233,7 +244,7 @@ def test_a_short_resize_source_is_replaced_from_10660_up(
     )
     report = et_m3_1.run_score(env, TASK, tmp_path / "score", tolerances)
     item = report["injections"][0]
-    assert item["frozen_seed"] == frozen and item["seed"] == 10660
+    assert item["frozen_seed"] == frozen and item["seed"] == 10260
     assert item["skipped_seeds"] == [{"seed": frozen, "size_checkable_frames": 1, "T": 15}]
     assert item["detail"]["step"] >= 1 and item["injected_passed"] is False
 

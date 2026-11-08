@@ -4,29 +4,29 @@
     python -m vishwaroop.synth.et_m3_1 score
 
 Run it from the repository root, in the robotics environment, at a clean commit. Both are ledgered
-runs and both refuse changed frozen files: ``evals/M3-protocol-3.json``, which replaces ET-M3-1,
-and what it builds on (``evals/M3-protocol.md``, ``evals/M3-exit-tests.json``,
-``evals/M3-protocol-2.json``, ``src/vishwaroop/sim/so100_kinematics.py``), and
-``evals/M0-exit-tests.json``.
+runs and both refuse changed frozen files: ``evals/M3-protocol-4.json``, which replaces ET-M3-1,
+and what it builds on (``evals/M3-protocol-3.json``, ``evals/M3-protocol.md``,
+``evals/M3-exit-tests.json``, ``evals/M3-protocol-2.json``,
+``src/vishwaroop/sim/so100_kinematics.py``), and ``evals/M0-exit-tests.json``.
 
-``pilot`` snapshots and renders block 10 seeds 10920 to 10939 (even seeds nominal, odd seeds the
-operators), measures every frame, finds each candidate's size-checkable frames, measures the
-smallest image shift of a 0.03 m goal move on each scene, and writes
-``evals/M3-checker-tolerances-p3.json`` once by the frozen rule, printing its sha256 for the
-status ledger. If any of the freeze's nine stop conditions holds (``checker.pilot_tolerances``
+``pilot`` snapshots and renders block 10 seeds 10940 to 10959 (even seeds nominal, odd seeds the
+operators), measures every frame, finds each candidate's size-checkable frames, computes each
+scene's goal geometry and the whole-pixel image shifts of a 0.03 m goal move, and writes
+``evals/M3-checker-tolerances-p4.json`` once by the frozen rule, printing its sha256 for the
+status ledger. If any of the freeze's ten stop conditions holds (``checker.pilot_tolerances``
 lists them all), it writes nothing to ``evals/`` and exits 4, so that the owner is told before any
 candidate is generated. A snapshot without an exposed render camera refuses the run (exit 2)
 before any result is written.
 
 ``score`` refuses unless the tolerances file's sha256 is recorded in ``work_orders/STATUS.jsonl``
-and no score exists. It builds the 60 controls (seeds 10580 to 10639) and the 60 injections (seeds
-10520 to 10579, each into its own unmodified source candidate; a cube-resize source without a
-size-checkable frame 1 to T - 1 is replaced from 10660 up to 10749; type 6 uses the render of
-seed + 200), runs the checker once on each source, injection and control, applies the threshold
-with the injection-credit rule, and writes ``et_m3_1_score_p3.json`` once. For every control and
+and no score exists. It builds the 60 controls (seeds 10320 to 10379) and the 60 injections (seeds
+10460 to 10519, each into its own unmodified source candidate; a cube-resize source without a
+size-checkable frame 1 to T - 1 is replaced from 10260 up to 10299; type 6 uses the render of
+seed + 270), runs the checker once on each source, injection and control, applies the threshold
+with the injection-credit rule, and writes ``et_m3_1_score_p4.json`` once. For every control and
 source it also records, for reporting only, the simulator's final cube position, whether it is over
-the table, and whether it projects inside the image. Snapshots are written once into the run
-directory; frames stay in memory, one candidate at a time.
+the table, whether it projects inside the image, and the scene's goal guarantee level. Snapshots
+are written once into the run directory; frames stay in memory, one candidate at a time.
 
 Exit codes: 0 done (whatever the verdict), 2 refused, 3 simulator not run, 4 the pilot stopped.
 """
@@ -58,6 +58,9 @@ from .checker import (
     camera_position,
     check_candidate,
     first_frame_difference,
+    goal_frame,
+    goal_geometry,
+    guarantee_level,
     load_tolerances,
     measure,
     pilot_tolerances,
@@ -80,6 +83,9 @@ from .snapshot import (
 )
 
 FROZEN = {
+    Path("evals/M3-protocol-4.json"): (
+        "52508a87852607ec4431d0bc70c8d36bca6b529b6115270373e769c2401f5c2e"
+    ),
     Path("evals/M3-protocol-3.json"): (
         "1671e0597251e0c85b2616bdf333c96d7f8635c526ea88df89dc7564de6c556c"
     ),
@@ -99,11 +105,11 @@ FROZEN = {
 M0_EXIT_TESTS = Path("evals/M0-exit-tests.json")
 STATUS_LEDGER = Path("work_orders/STATUS.jsonl")
 RUNS = Path("runs")
-PILOT_RESULT = "et_m3_1_pilot_p3.json"
-SCORE_RESULT = "et_m3_1_score_p3.json"
+PILOT_RESULT = "et_m3_1_pilot_p4.json"
+SCORE_RESULT = "et_m3_1_score_p4.json"
 SNAPSHOTS = "snapshots"
 STOPPED = 4
-FIRST_INJECTION_SEED = 10520  # inject.FIRST_SEED; inject needs numpy, so it is imported late
+FIRST_INJECTION_SEED = 10460  # inject.FIRST_SEED; inject needs numpy, so it is imported late
 
 
 def check_frozen(frozen: dict[Path, str] = FROZEN) -> dict[str, str]:
@@ -165,18 +171,19 @@ def _size_frames(snapshot: Snapshot, rendered: RenderedEpisode) -> int:
     )
 
 
-def goal_shift_min(snapshot_manifest: dict[str, Any]) -> dict[str, float]:
-    """The smallest image displacement, in pixels, of the scene's goal moved 0.03 m in the world xy
-    plane, over directions every 1 degree, from the render camera's projection: unrounded
-    (``value``, what stop 9 compares) and as the whole-pixel shift a type-4 injection would apply
-    (``rounded``, for the record). Refuses a snapshot without an exposed camera."""
+def goal_shifts(snapshot_manifest: dict[str, Any]) -> dict[str, Any]:
+    """The image shift of the scene's goal moved 0.03 m in the world xy plane, one per direction
+    every 1 degree, from the render camera's projection: as the whole-pixel (row, column) shift a
+    type-4 goal-pixel injection applies (``shifts``, rounded half up, as inject.goal_pixel_shift),
+    with the smallest whole-pixel and unrounded norms for the record. Refuses a snapshot without
+    an exposed camera."""
     from .inject import project
 
     projection = projection_matrix(snapshot_manifest)
     goal = [float(value) for value in snapshot_manifest["goal_position"]]
     row0, col0 = project(projection, (goal[0], goal[1], goal[2]))
+    shifts = []
     exact = []
-    rounded = []
     for degrees in GOAL_SHIFT_DIRECTIONS_DEG:
         angle = math.radians(degrees)
         moved = (
@@ -186,8 +193,24 @@ def goal_shift_min(snapshot_manifest: dict[str, Any]) -> dict[str, float]:
         )
         row1, col1 = project(projection, moved)
         exact.append(math.hypot(row1 - row0, col1 - col0))
-        rounded.append(math.hypot(math.floor(row1 - row0 + 0.5), math.floor(col1 - col0 + 0.5)))
-    return {"value": min(exact), "rounded": min(rounded)}
+        shifts.append((math.floor(row1 - row0 + 0.5), math.floor(col1 - col0 + 0.5)))
+    return {
+        "shifts": shifts,
+        "smallest_whole_pixel_px": min(math.hypot(dr, dc) for dr, dc in shifts),
+        "smallest_exact_px": min(exact),
+    }
+
+
+def goal_report(snapshot: Snapshot) -> dict[str, Any]:
+    """For reporting only: the scene's projected goal radius, smallest 0.03 m shift and guarantee
+    level (``checker.guarantee_level``)."""
+    _, radius = goal_geometry(snapshot.manifest)
+    smallest = goal_shifts(snapshot.manifest)["smallest_whole_pixel_px"]
+    return {
+        "goal_radius_px": radius,
+        "goal_smallest_shift_px": smallest,
+        "goal_guarantee_level": guarantee_level(radius, smallest),
+    }
 
 
 def final_cube(snapshot: Snapshot, rendered: RenderedEpisode) -> dict[str, Any]:
@@ -232,14 +255,16 @@ def run_pilot(env: RenderingEnv, task: tuple[str, str, int], run_dir: Path) -> d
         print(f"pilot seed {episode.seed} {episode.kind}", file=sys.stderr, flush=True)
         snapshot = _scene(env, episode.seed, task, run_dir)
         camera = camera_position(snapshot.manifest)  # refuses an unexposed camera before simulating
-        shift = goal_shift_min(snapshot.manifest)
+        goal = goal_geometry(snapshot.manifest)
+        shift = goal_shifts(snapshot.manifest)
         rendered = render_episode(env, snapshot, episode, task[2])
         start = rendered.initial_cube
+        measured_frames = tuple(measure(frame) for frame in rendered.frames)
         candidates.append(
             PilotCandidate(
                 seed=episode.seed,
                 snapshot=measure(snapshot.render),
-                frames=tuple(measure(frame) for frame in rendered.frames),
+                frames=measured_frames,
                 first_difference=first_frame_difference(rendered.frames[0], snapshot.render),
                 size_frames=_size_frames(snapshot, rendered),
                 cube_displacement_m=tuple(
@@ -249,7 +274,8 @@ def run_pilot(env: RenderingEnv, task: tuple[str, str, int], run_dir: Path) -> d
                     sightline_clearance(joints, camera, start)
                     for joints in rendered.joint_positions
                 ),
-                goal_shift_min_px=shift["value"],
+                goal=goal,
+                goal_shifts=tuple(shift["shifts"]),
             )
         )
         episodes.append(
@@ -258,7 +284,13 @@ def run_pilot(env: RenderingEnv, task: tuple[str, str, int], run_dir: Path) -> d
                 "size_checkable_frames": candidates[-1].size_frames,
                 "cube_positions": rendered.cube_positions,
                 "actual_clearance_m": list(candidates[-1].actual_clearance_m),
-                "goal_shift_min_px": shift,
+                "goal_frames": [goal_frame(stats, goal[0], goal[1]) for stats in measured_frames],
+                "goal": {
+                    "projected_centre": list(goal[0]),
+                    "projected_radius_px": goal[1],
+                    "smallest_whole_pixel_shift_px": shift["smallest_whole_pixel_px"],
+                    "smallest_exact_shift_px": shift["smallest_exact_px"],
+                },
                 "final_cube": final_cube(snapshot, rendered),
             }
         )
@@ -304,6 +336,7 @@ def run_score(
             {
                 **_episode_note(episode, rendered.steps, rendered.planning_error),
                 **result,
+                **goal_report(snapshot),
                 "final_cube": final_cube(snapshot, rendered),
             }
         )
@@ -340,7 +373,7 @@ def run_score(
                     "source_passed": False,
                     "injected_passed": None,
                     "failed_checks": [],
-                    "injection_error": "not built: replacement seeds 10660 to 10749 ran out",
+                    "injection_error": "not built: replacement seeds 10260 to 10299 ran out",
                 }
             )
             continue
@@ -356,6 +389,7 @@ def run_score(
             "source": {
                 **_episode_note(episode, rendered.steps, rendered.planning_error),
                 **source,
+                **goal_report(snapshot),
                 "final_cube": final_cube(snapshot, rendered),
             },
             "source_passed": source["passed"],
@@ -408,7 +442,7 @@ def _pilot(args: argparse.Namespace) -> int:
     task = _task()
     env = ManiSkillPickCube(env_id=task[0], max_episode_steps=task[2], render=True)
     with ledgered_run(
-        purpose="WO-021: ET-M3-1 tolerance pilot (m3-protocol-3), block 10 seeds 10920-10939",
+        purpose="WO-021: ET-M3-1 tolerance pilot (m3-protocol-4), block 10 seeds 10940-10959",
         config={"frozen": frozen, "pilot_seeds": [PILOT_SEEDS[0], PILOT_SEEDS[-1]]},
         seeds={str(seed): seed for seed in PILOT_SEEDS},
         env_lock={"stack": env.stack_identity()},
@@ -455,7 +489,7 @@ def _score(args: argparse.Namespace) -> int:
     task = _task()
     env = ManiSkillPickCube(env_id=task[0], max_episode_steps=task[2], render=True)
     with ledgered_run(
-        purpose="WO-021: ET-M3-1 (m3-protocol-3) scored once, 60 controls and 60 injections",
+        purpose="WO-021: ET-M3-1 (m3-protocol-4) scored once, 60 controls and 60 injections",
         config={"frozen": frozen, "tolerances_sha256": digest},
         seeds={"controls_first": CONTROL_SEEDS[0], "injections_first": FIRST_INJECTION_SEED},
         env_lock={"stack": env.stack_identity()},
@@ -468,11 +502,12 @@ def _score(args: argparse.Namespace) -> int:
             "code": run.code_note,
             "frozen": frozen,
             "tolerances_sha256": digest,
-            "pilot_against_stops_8_and_9": {
+            "pilot_against_stops_8_9_10": {
                 "merge_radius_px": tolerances.merge_radius_px,
                 "smallest_duplicate_offset_px": SMALLEST_DUPLICATE_OFFSET_PX,
-                "goal_centroid_px": tolerances.goal_centroid_px,
-                "goal_shift_min_px": observed["goal_shift_min_px"],
+                "goal_max_excess_px": observed["goal_max_excess_px"],
+                "goal_final_v_g_min": observed["goal_final_v_g_min"],
+                "goal_final_shifted_margin_min_px": observed["goal_final_shifted_margin_min_px"],
             },
             **run_score(env, task, run.directory, tolerances),
         }
