@@ -3,7 +3,7 @@
 **Exit tests advanced:** ET-M3-6
 **Size:** M
 **Prerequisites:** ET-M3-6 frozen (`evals/M3-exit-tests.json`; its `frozen` event in `work_orders/STATUS.jsonl`); WO-020 accepted (target family `m0-scripted-missed-grasp`); WO-021 hands this work to "the next work order" (its Scope and Out of scope). None of it depends on ET-M3-1, which is on hold (`approvals-20261108T074331649665Z-d15195a4`).
-**Authorization:** AGENTS §2.1 only. The Mac at $0: physics on the CPU, training on MPS, as `docs/M3-design-draft.md` §5 lists and the owner accepted with D1 to D8 (`approvals-20261107T065704456185Z-01953940`). Owner, 2026-11-07: prioritize SO-101 work that can proceed independently of ET-M3-1. Not authorized: M3 GPU work, renting for M3.
+**Authorization:** AGENTS §2.1 only. The Mac at $0: physics on the CPU, training on MPS, as `docs/M3-design-draft.md` §5 lists and the owner accepted with D1 to D8 (`approvals-20261107T065704456185Z-01953940`). Owner, 2026-11-07: prioritize SO-101 work that can proceed independently of ET-M3-1. Not authorized: M3 GPU work beyond the Mac's own MPS, renting for M3. Owner, 2026-11-08 (`approvals-20261108T081923998845Z-b8daa5a7`): approved scope is CPU simulation and local Mac MPS training at $0.
 **Files:** `src/vishwaroop/synth/`, `src/vishwaroop/models/` (read; new M3 entry points only), `tests/`, `work_orders/`, `reports/WO-022-m3-et-m3-6-physics-arms.md`, and the ignored `runs/` and `data/derived/`.
 
 ## Objective
@@ -40,16 +40,16 @@ F3 needs a generator (Pipeline A or B), a GPU and a filter whose step 4 is ET-M3
 7. **Scoring code.**
    - The helps rule, W with its 0.02 margin, the gap fraction and the report tables, exactly as frozen.
    - Tested on fixtures.
-   - Applied to block 16 only when the owner says so (see Stop conditions).
+   - Not applied to block 16 or to the no-harm set until F3's protocol is frozen (owner, 2026-11-08).
 
 ## Agent details, sent to the owner before any block-11 or block-16 seed is simulated
 The frozen text leaves these open. The owner may veto the agent-set ET-M3-6 details before any operator datum exists (`evals/M3-exit-tests.json`, `decided_by`).
-1. **Undecided labels.** `sim/replay.py` refuses a recorded `insufficient_evidence` label, but protocol §4 excludes a scene only for tolerance or a label mismatch. Proposed: follow §4. An episode whose undecided label repeats identically on all 3 replays, within tolerance, passes the gate. Planning failures are kept, as the evaluation family's text says.
+1. **Undecided labels.** `sim/replay.py` refuses a recorded `insufficient_evidence` label, but protocol §4 excludes a scene only for tolerance or a label mismatch. Proposed: follow §4. An episode whose undecided label repeats identically on all 3 replays, within tolerance, passes the gate. Planning failures are kept, as the evaluation family's text says. **Owner, 2026-11-08: vetoed.** The gate keeps the existing refusal of `insufficient_evidence`, and those exclusions are listed by reason. Definite failures, planning failures included, are kept when they pass replay.
 2. **Skipped F2 scenes.** Proposed: a skipped scene adds no episode. The lateral-miss/close-high alternation and the lateral-miss sign count advance over kept episodes only. Each episode's parameters still come from `random.Random(seed)` of its own seed.
-3. **F1s when a nominal demo fails the gate.** Proposed: that scene is skipped for F1s and listed, and F1s continues with the next F2 scene. If F2's scenes run out before W*, F1s is reported as unmatched. F1s is reported only and is not in the threshold.
+3. **F1s when a nominal demo fails the gate.** (Owner, 2026-11-08: details 2 and 3 approved. F1s also reports, separately, its scene overlap with F2 and its window count.) Proposed: that scene is skipped for F1s and listed, and F1s continues with the next F2 scene. If F2's scenes run out before W*, F1s is reported as unmatched. F1s is reported only and is not in the threshold.
 
 ## Out of scope
-- F3, any generator or IDM, any GPU or paid resource.
+- F3, any generator or IDM, any rented, remote or CUDA GPU, any paid resource.
 - ET-M3-1 and its held seeds.
 - ET-M3-2, ET-M3-3, ET-M3-4 and ET-M3-5.
 
@@ -65,7 +65,7 @@ The frozen text leaves these open. The owner may veto the agent-set ET-M3-6 deta
 - Recordings and training run at clean commits through `ledgered_run`.
 
 ## Exit criteria
-- Done when F0, F_star, F1, F1s and F2 are trained on all three seeds and their data and manifests are recorded. Scoring follows if the owner says so.
+- Done when F0, F_star, F1, F1s and F2 are trained on all three seeds, with their checkpoints saved and sha256-hashed, and their data and manifests recorded. Scoring waits for F3's protocol.
 - This WO advances ET-M3-6 and does not close it.
 - Before the first block-16 or block-11 recording, the code gets one independent review plus one recheck (`AGENTS.md` §13.8), because the evaluation family is one-shot.
 
@@ -74,10 +74,16 @@ The frozen text leaves these open. The owner may veto the agent-set ET-M3-6 deta
 - Fewer than 60 of seeds 16000 to 16099 pass the gate.
 - Block 11 runs out before F2 reaches W*.
 - Any need for a held seed, for block 10, or for blocks 18 to 19.
-- Any GPU or paid work.
-- **Scoring on block 16 waits for the owner.** The rule allows physics arms to be scored before F3, since F3's protocol must state which arms' results were known when it was frozen. But once scored, those results are known to whoever designs F3.
+- Any rented, remote or CUDA GPU work, or any paid work. Local Mac MPS training at $0 is in scope and is not a stop.
+- **No scoring before F3's protocol is frozen (owner, 2026-11-08).** No arm is scored on block 16 or on the no-harm set until F3's protocol is frozen. Training writes no evaluation-family or no-harm metric.
 
 ## Report
 `reports/WO-022-m3-et-m3-6-physics-arms.md`
 
 ## Progress (append-only)
+- **2026-11-08, the owner approved running WO-022 after the implementation review and recheck** (`approvals-20261108T081923998845Z-b8daa5a7`).
+  - **Scope:** CPU simulation and local Mac MPS training, at $0. The GPU stop now names rented, remote or CUDA GPU work only.
+  - **Detail 1 vetoed:** `insufficient_evidence` stays refused by the gate and is listed by reason. Definite failures, planning failures included, are kept when they pass replay.
+  - **Details 2 and 3 approved.** F1s also reports its scene overlap with F2 and its window count separately.
+  - **Checkpoints:** saved and sha256-hashed.
+  - **Not scored:** block 16 and the no-harm set stay unscored until F3's protocol is frozen.
