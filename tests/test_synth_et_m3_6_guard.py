@@ -6,6 +6,7 @@ is evidence for any exit test.
 
 from __future__ import annotations
 
+import datetime
 import json
 import random
 from pathlib import Path
@@ -16,10 +17,18 @@ import pytest
 from vishwaroop.models.compute_pilot import WINDOW as PILOT_WINDOW
 from vishwaroop.sim.baseline import VARIANTS, PlanSettings
 from vishwaroop.sim.replay import RepeatResult, ReplayReport, ReplayTolerance
+from vishwaroop.synth import et_m3_6_guard as guard
 from vishwaroop.synth import et_m3_6_record as rec
 from vishwaroop.synth.et_m3_6_guard import (
+    F3_PROTOCOL,
     FROZEN,
+    OWNER_WO_022,
+    RECORDING,
+    SCORING,
+    TRAINING,
+    Authorization,
     GuardRefusalError,
+    check_f3_protocol_frozen,
     check_frozen,
     check_not_run,
     check_not_started,
@@ -28,7 +37,7 @@ from vishwaroop.synth.et_m3_6_guard import (
 )
 from vishwaroop.synth.m3_gate import (
     REPLAY_UNDECIDED_REASON,
-    UNDECIDED_REPEATS_PASS,
+    UNDECIDED,
     GateResult,
     GateSpecificationError,
     decide,
@@ -70,44 +79,145 @@ def _approvals(tmp_path: Path, *records: dict[str, Any]) -> Path:
     return path
 
 
-def test_recording_waits_for_an_owner_approval_naming_wo_022(tmp_path: Path) -> None:
-    ledger = _approvals(
-        tmp_path,
-        {"record_id": "a-1", "approver": "owner", "gate": "ET-M3-1 hold"},
-        {"record_id": "a-2", "approver": "owner", "gate": "WO-022 recordings, agent details"},
-        {"record_id": "a-3", "approver": "agent", "gate": "WO-022"},
+REAL_LEDGER = ROOT / "ledgers" / "approvals.jsonl"
+
+
+def _real_owner_record() -> dict[str, Any]:
+    """The owner's actual WO-022 record, read from the repository's ledger (not fabricated)."""
+    records = [json.loads(line) for line in REAL_LEDGER.read_text().splitlines() if line]
+    (record,) = [record for record in records if record["record_id"] == OWNER_WO_022]
+    return record
+
+
+def _owner_ledger(tmp_path: Path, *extra: dict[str, Any]) -> tuple[Path, Path]:
+    """A ledger holding the owner's real WO-022 record (and ``extra``), and an empty status log."""
+    status = tmp_path / "STATUS.jsonl"
+    status.write_text("")
+    return _approvals(tmp_path, _real_owner_record(), *extra), status
+
+
+def test_the_owners_wo_022_record_approves_recording_and_training(tmp_path: Path) -> None:
+    ledger, status = _owner_ledger(tmp_path)
+    for authorization in (RECORDING, TRAINING):
+        record = require_owner_approval(OWNER_WO_022, authorization, ledger, status)
+        assert record["record_id"] == OWNER_WO_022
+
+
+def test_the_owners_wo_022_record_never_approves_scoring(tmp_path: Path) -> None:
+    """Regression: its gate says 'ET-M3-6 scoring NOT approved', which a substring match took for
+    an approval of ET-M3-6 scoring."""
+    record = _real_owner_record()
+    assert record["gate"] == (
+        "WO-022 recording and training (ET-M3-6 physics arms); ET-M3-6 scoring NOT approved"
     )
-    with pytest.raises(GuardRefusalError, match="required"):
-        require_owner_approval(None, ("WO-022",), ledger)
-    with pytest.raises(GuardRefusalError, match="does not mention"):
-        require_owner_approval("a-1", ("WO-022",), ledger)
-    with pytest.raises(GuardRefusalError, match="not the owner"):
-        require_owner_approval("a-3", ("WO-022",), ledger)
-    with pytest.raises(GuardRefusalError, match="no approvals record"):
-        require_owner_approval("a-9", ("WO-022",), ledger)
-    assert require_owner_approval("a-2", ("WO-022",), ledger)["record_id"] == "a-2"
+    ledger, status = _owner_ledger(tmp_path)
+    assert SCORING.record_ids == ()
+    with pytest.raises(GuardRefusalError, match="not an owner record this code accepts"):
+        require_owner_approval(OWNER_WO_022, SCORING, ledger, status)
+    # Even listed for scoring, its gate clause and its not_authorized entry deny scoring.
+    listed = Authorization("scoring", "scor", "WO-022", (OWNER_WO_022,))
+    with pytest.raises(GuardRefusalError, match="does not approve scoring"):
+        require_owner_approval(OWNER_WO_022, listed, ledger, status)
+    without_gate = {**record, "gate": "WO-022 recording and training"}
+    ledger = _approvals(tmp_path, without_gate)
+    with pytest.raises(GuardRefusalError, match="scoring any arm on block 16"):
+        require_owner_approval(OWNER_WO_022, listed, ledger, status)
 
 
-def test_scoring_needs_an_approval_naming_et_m3_6_scoring(tmp_path: Path) -> None:
-    ledger = _approvals(
-        tmp_path,
-        {"record_id": "s-1", "approver": "owner", "gate": "WO-022 recordings"},
-        {"record_id": "s-2", "approver": "owner", "gate": "ET-M3-6 scoring of physics arms"},
-    )
-    with pytest.raises(GuardRefusalError, match="does not mention"):
-        require_owner_approval("s-1", ("ET-M3-6", "scoring"), ledger)
-    require_owner_approval("s-2", ("ET-M3-6", "scoring"), ledger)
-
-
-def test_the_repository_has_no_wo_022_approval_yet() -> None:
-    """Nothing is recorded before the owner answers: no record in the real ledger names WO-022."""
-    ledger = ROOT / "ledgers" / "approvals.jsonl"
-    records = [json.loads(line) for line in ledger.read_text().splitlines() if line]
-    if any("wo-022" in str(record.get("gate", "")).lower() for record in records):
-        pytest.skip("an owner approval naming WO-022 exists; this guard test no longer applies")
+def test_no_record_in_the_real_ledger_approves_scoring() -> None:
+    records = [json.loads(line) for line in REAL_LEDGER.read_text().splitlines() if line]
     for record in records:
         with pytest.raises(GuardRefusalError):
-            require_owner_approval(record["record_id"], ("WO-022",), ledger)
+            require_owner_approval(record["record_id"], SCORING, REAL_LEDGER)
+
+
+def test_approvals_are_never_matched_by_substring(tmp_path: Path) -> None:
+    owner = {"approver": "owner", "work_order": "WO-022", "ts": "2026-11-08T08:19:23Z"}
+    ledger = _approvals(
+        tmp_path,
+        {**owner, "record_id": "a-1", "gate": "WO-022 recording and training"},
+        {**owner, "record_id": "a-2", "gate": "WO-022 recording NOT approved"},
+        {**owner, "record_id": "a-3", "gate": "WO-022 recording", "work_order": "WO-023"},
+        {**owner, "record_id": "a-4", "gate": "WO-022", "approver": "agent"},
+        {**owner, "record_id": "a-5", "gate": "WO-022 training on hold"},
+    )
+    status = tmp_path / "STATUS.jsonl"
+    status.write_text("")
+    ids = ("a-1", "a-2", "a-3", "a-4", "a-5", "a-9")
+    recording = Authorization("recording", "record", "WO-022", ids)
+    training = Authorization("training", "train", "WO-022", ids)
+    with pytest.raises(GuardRefusalError, match="required"):
+        require_owner_approval(None, recording, ledger, status)
+    with pytest.raises(GuardRefusalError, match="not an owner record this code accepts"):
+        require_owner_approval("a-8", recording, ledger, status)
+    with pytest.raises(GuardRefusalError, match="no approvals record"):
+        require_owner_approval("a-9", recording, ledger, status)
+    with pytest.raises(GuardRefusalError, match="does not approve recording"):
+        require_owner_approval("a-2", recording, ledger, status)
+    with pytest.raises(GuardRefusalError, match="not WO-022"):
+        require_owner_approval("a-3", recording, ledger, status)
+    with pytest.raises(GuardRefusalError, match="not the owner"):
+        require_owner_approval("a-4", recording, ledger, status)
+    with pytest.raises(GuardRefusalError, match="does not approve training"):
+        require_owner_approval("a-5", training, ledger, status)
+    assert require_owner_approval("a-1", recording, ledger, status)["record_id"] == "a-1"
+    assert require_owner_approval("a-5", recording, ledger, status)["record_id"] == "a-5"
+
+
+def test_a_later_owner_record_on_wo_022_stops_every_command(tmp_path: Path) -> None:
+    hold = {
+        "record_id": "approvals-later-hold",
+        "approver": "owner",
+        "work_order": "WO-022",
+        "gate": "WO-022 on hold",
+        "ts": "2026-11-09T00:00:00Z",
+    }
+    ledger, status = _owner_ledger(tmp_path, hold)
+    for authorization in (RECORDING, TRAINING):
+        with pytest.raises(GuardRefusalError, match="later owner records on WO-022"):
+            require_owner_approval(OWNER_WO_022, authorization, ledger, status)
+    unnamed = {**hold, "work_order": None, "gate": "WO-022 recording revoked"}
+    ledger, status = _owner_ledger(tmp_path, unnamed)
+    with pytest.raises(GuardRefusalError, match="later owner records"):
+        require_owner_approval(OWNER_WO_022, RECORDING, ledger, status)
+    elsewhere = {**hold, "work_order": "WO-023", "gate": "WO-023 recording"}
+    ledger, status = _owner_ledger(tmp_path, elsewhere)
+    require_owner_approval(OWNER_WO_022, RECORDING, ledger, status)
+
+
+def test_an_expired_approval_is_refused(tmp_path: Path) -> None:
+    ledger, status = _owner_ledger(tmp_path)
+    assert _real_owner_record()["expiry"] == "WO-022 accepted"
+    status.write_text(json.dumps({"wo": "WO-022", "event": "accepted"}) + "\n")
+    with pytest.raises(GuardRefusalError, match="expiry 'WO-022 accepted' has passed"):
+        require_owner_approval(OWNER_WO_022, RECORDING, ledger, status)
+    status.write_text(json.dumps({"wo": "WO-021", "event": "accepted"}) + "\n")
+    require_owner_approval(OWNER_WO_022, RECORDING, ledger, status)
+    dated = {**_real_owner_record(), "expiry": "2026-11-30"}
+    ledger = _approvals(tmp_path, dated)
+    require_owner_approval(OWNER_WO_022, RECORDING, ledger, status, datetime.date(2026, 11, 30))
+    with pytest.raises(GuardRefusalError, match="has passed"):
+        require_owner_approval(OWNER_WO_022, RECORDING, ledger, status, datetime.date(2026, 12, 1))
+    ledger = _approvals(tmp_path, {**dated, "expiry": "when the owner says"})
+    with pytest.raises(GuardRefusalError, match="not one this code reads"):
+        require_owner_approval(OWNER_WO_022, RECORDING, ledger, status)
+
+
+def test_scoring_waits_for_f3s_frozen_protocol(tmp_path: Path) -> None:
+    assert F3_PROTOCOL is None
+    with pytest.raises(GuardRefusalError, match="F3's protocol is not frozen"):
+        check_f3_protocol_frozen(guard.F3_PROTOCOL, ROOT / "work_orders" / "STATUS.jsonl")
+    protocol = tmp_path / "f3.json"
+    protocol.write_text("{}")
+    digest = guard.sha256_file(protocol)
+    status = tmp_path / "STATUS.jsonl"
+    status.write_text("")
+    with pytest.raises(GuardRefusalError, match="not " + "0" * 64):
+        check_f3_protocol_frozen((protocol, "0" * 64), status)
+    with pytest.raises(GuardRefusalError, match="records no freeze"):
+        check_f3_protocol_frozen((protocol, digest), status)
+    status.write_text(json.dumps({"event": "frozen", "note": f"F3 protocol sha256 {digest}"}))
+    assert check_f3_protocol_frozen((protocol, digest), status) == {str(protocol): digest}
 
 
 def test_a_second_result_and_a_fresh_restart_are_refused(tmp_path: Path) -> None:
@@ -238,27 +348,46 @@ def test_the_gate_needs_exactly_three_repeats() -> None:
     assert not decide(_report([0.0] * 2, ["never_lifted"] * 2)).passed
 
 
-def test_an_undecided_label_repeated_identically_passes_by_agent_detail_1() -> None:
-    assert UNDECIDED_REPEATS_PASS is True
+def test_an_undecided_label_repeated_identically_fails_by_the_owners_veto() -> None:
+    """Agent detail 1 was vetoed (approvals-20261108T081923998845Z-b8daa5a7): the gate keeps
+    sim/replay.py's refusal of a recorded insufficient_evidence label, listed by reason."""
     report = _report(
         [0.0] * 3,
         ["insufficient_evidence"] * 3,
         recorded="insufficient_evidence",
         reason=REPLAY_UNDECIDED_REASON,
     )
-    assert decide(report).passed and decide(report).undecided
-    vetoed = decide(report, undecided_pass=False)
-    assert not vetoed.passed and "vetoed" in vetoed.reason
+    result = decide(report)
+    assert not result.passed and result.undecided
+    assert result.category == UNDECIDED
+    assert "veto" in result.reason and OWNER_WO_022 in result.reason
+    assert result.to_json()["category"] == UNDECIDED
 
 
-def test_an_undecided_label_still_fails_for_any_other_reason() -> None:
-    report = _report(
-        [0.0] * 3,
-        ["insufficient_evidence"] * 3,
-        recorded="insufficient_evidence",
-        reason="state was restored 2 times over 3 repeats",
-    )
-    assert not decide(report).passed
+def test_an_undecided_label_fails_whatever_its_repeats_did() -> None:
+    for deviations, labels in (
+        ([0.0, 0.5, 0.0], ["insufficient_evidence"] * 3),
+        ([0.0] * 3, ["insufficient_evidence", "never_lifted", "insufficient_evidence"]),
+    ):
+        report = _report(deviations, labels, recorded="insufficient_evidence", reason="other")
+        result = decide(report)
+        assert not result.passed and result.category == UNDECIDED
+
+
+def test_definite_failures_planning_failures_included_are_kept_when_they_replay() -> None:
+    for label in ("never_lifted", "outside_target", "still_grasped", "not_settled"):
+        result = decide(_report([0.0] * 3, [label] * 3, recorded=label))
+        assert result.passed and result.category == "passed" and not result.undecided
+
+
+def test_each_failure_has_its_category() -> None:
+    assert decide(_report([0.0] * 2, ["never_lifted"] * 2)).category == "repeats"
+    assert decide(_report([0.0, 0.002, 0.0], ["never_lifted"] * 3)).category == "tolerance"
+    changed = _report([0.0] * 3, ["never_lifted", "not_settled", "never_lifted"])
+    assert decide(changed).category == "label_changed"
+    invalid = _report([0.0] * 3, ["never_lifted"] * 3, valid=False, reason="restored twice")
+    assert decide(invalid).category == "replay_invalid"
+    assert decide(invalid).reason == "restored twice"
 
 
 def test_the_gate_tolerance_is_m0s_with_the_m3_protocol(tmp_path: Path) -> None:
@@ -281,9 +410,16 @@ def test_the_gate_tolerance_is_m0s_with_the_m3_protocol(tmp_path: Path) -> None:
 class _Fakes:
     """A recorder that writes nothing and a gate that fails the listed seeds."""
 
-    def __init__(self, tmp_path: Path, failing: set[int], steps: int = 1000) -> None:
+    def __init__(
+        self,
+        tmp_path: Path,
+        failing: set[int],
+        steps: int = 1000,
+        undecided: set[int] = frozenset(),
+    ) -> None:
         self.tmp_path = tmp_path
-        self.failing = failing
+        self.failing = failing | undecided
+        self.undecided = undecided
         self.steps = steps
         self.recorded: list[tuple[str, int, PlanSettings]] = []
 
@@ -295,8 +431,12 @@ class _Fakes:
     def gate(self, path: Path, *_: Any) -> GateResult:
         seed = int(path.name.rsplit("-", 1)[1])
         passed = seed not in self.failing
-        reason = "ok" if passed else "repeat 1 deviated"
-        return GateResult(path.name, passed, reason, "never_lifted", [], [], False)
+        if passed:
+            return GateResult(path.name, True, "ok", "never_lifted", [], [], False, "passed")
+        if seed in self.undecided:
+            return GateResult(path.name, False, "undecided", UNDECIDED, [], [], True, UNDECIDED)
+        reason = "repeat 1 deviated"
+        return GateResult(path.name, False, reason, "never_lifted", [], [], False, "tolerance")
 
 
 def _run(sequence: Any, fakes: _Fakes, progress: Path) -> dict[str, Any]:
@@ -325,9 +465,34 @@ def test_the_evaluation_family_stops_at_60_passing_and_lists_the_skipped(tmp_pat
     summary = rec.summary("eval", outcome)
     assert "label" not in summary["kept"][0] and "windows" not in summary["kept"][0]
     assert summary["skipped"] == [
-        {"seed": 16003, "family": EVAL_FAMILY, "reason": "repeat 1 deviated"},
-        {"seed": 16010, "family": EVAL_FAMILY, "reason": "repeat 1 deviated"},
+        {
+            "seed": 16003,
+            "family": EVAL_FAMILY,
+            "reason": "repeat 1 deviated",
+            "category": "tolerance",
+        },
+        {
+            "seed": 16010,
+            "family": EVAL_FAMILY,
+            "reason": "repeat 1 deviated",
+            "category": "tolerance",
+        },
     ]
+    assert summary["skipped_by_reason"] == {"tolerance": 2}
+
+
+def test_an_undecided_episode_is_skipped_and_listed_by_reason(tmp_path: Path) -> None:
+    fakes = _Fakes(tmp_path, failing={16002}, undecided={16000, 16005})
+    outcome = _run(rec.eval_sequence(), fakes, tmp_path / "p.jsonl")
+    assert outcome["complete"] and len(outcome["kept"]) == 60
+    assert 16000 not in [line["seed"] for line in outcome["kept"]]
+    summary = rec.summary("eval", outcome)
+    assert [(item["seed"], item["category"]) for item in summary["skipped"]] == [
+        (16000, UNDECIDED),
+        (16002, "tolerance"),
+        (16005, UNDECIDED),
+    ]
+    assert summary["skipped_by_reason"] == {UNDECIDED: 2, "tolerance": 1}
 
 
 def test_the_evaluation_family_stops_when_16099_is_reached(tmp_path: Path) -> None:
@@ -383,6 +548,45 @@ def test_f1s_follows_f2s_scenes_skips_failures_and_reports_unmatched(tmp_path: P
     assert all(s == VARIANTS["nominal"] and f == NOMINAL_FAMILY for f, _, s in fakes.recorded)
 
 
+def _f2_result(seeds: list[int], windows: int) -> dict[str, Any]:
+    return {
+        "kept": [{"seed": seed} for seed in seeds],
+        "windows_total": windows * len(seeds),
+        "windows_used_total": rec.W_STAR,
+    }
+
+
+def test_f1s_reports_its_scene_overlap_and_windows_beside_f2s(tmp_path: Path) -> None:
+    """The owner's addition to detail 3: overlap and window counts, reported separately."""
+    scenes = [11000, 11003, 11004, 11005, 11006, 11008, 11009]
+    fakes = _Fakes(tmp_path, failing={11003}, steps=1012)  # 1000 windows each
+    outcome = _run(rec.f1s_sequence(scenes), fakes, tmp_path / "p.jsonl")
+    assert outcome["complete"]
+    summary = rec.summary("f1s", outcome, _f2_result(scenes, 1000))
+    overlap = summary["overlap_with_f2"]
+    assert overlap["f2_scene_count"] == 7
+    assert overlap["f1s_scenes_used"] == [11000, 11004, 11005, 11006, 11008]
+    assert overlap["f1s_scenes_skipped"] == [11003]
+    assert overlap["f1s_scenes_unreached"] == [11009]
+    assert (overlap["f1s_scenes_used_count"], overlap["f1s_scenes_skipped_count"]) == (5, 1)
+    assert overlap["f1s_scenes_unreached_count"] == 1
+    assert overlap["scene_overlap_fraction"] == pytest.approx(5 / 7)
+    assert overlap["f2_windows_total"] == 7000 and overlap["f2_windows_used_total"] == rec.W_STAR
+    assert overlap["f1s_windows_total"] == 5000
+    assert overlap["f1s_windows_used_total"] == rec.W_STAR and overlap["f1s_matched"]
+    with pytest.raises(GuardRefusalError, match="needs F2's"):
+        rec.summary("f1s", outcome)
+
+
+def test_an_unmatched_f1s_reports_its_shortfall(tmp_path: Path) -> None:
+    scenes = [11000, 11003, 11004]
+    fakes = _Fakes(tmp_path, failing={11003}, steps=1012)
+    outcome = _run(rec.f1s_sequence(scenes), fakes, tmp_path / "p.jsonl")
+    overlap = rec.summary("f1s", outcome, _f2_result(scenes, 1400))["overlap_with_f2"]
+    assert overlap["f1s_scenes_used"] == [11000, 11004] and overlap["f1s_scenes_unreached"] == []
+    assert overlap["f1s_windows_used_total"] == 2000 and not overlap["f1s_matched"]
+
+
 def test_a_stopped_sequence_resumes_without_repeating_a_seed(tmp_path: Path) -> None:
     progress = tmp_path / "p.jsonl"
     first = _Fakes(tmp_path, failing={11001}, steps=1012)
@@ -434,14 +638,21 @@ def test_f1s_needs_one_completed_f2_and_eval_needs_no_training(tmp_path: Path) -
 # --- the command lines refuse before any simulator or training --------------------------------
 
 
-def _owner(tmp_path: Path, gate: str) -> Path:
-    return _approvals(tmp_path, {"record_id": "ok-1", "approver": "owner", "gate": gate})
+def _use_owner_ledger(module: Any, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    ledger, status = _owner_ledger(tmp_path)
+    monkeypatch.setattr(module, "APPROVALS", ledger)
+    monkeypatch.setattr(module, "STATUS", status)
 
 
-def test_recording_without_an_approval_is_refused(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_recording_without_an_approval_is_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     monkeypatch.chdir(ROOT)
+    monkeypatch.setattr(rec, "RUNS", tmp_path / "runs")
     assert rec.main(["eval"]) == 2
+    assert "--owner-approval is required" in capsys.readouterr().err
     assert rec.main(["f2", "--owner-approval", "approvals-not-a-record"]) == 2
+    assert "not an owner record this code accepts" in capsys.readouterr().err
 
 
 def test_a_second_recording_of_the_evaluation_family_is_refused(
@@ -452,8 +663,8 @@ def test_a_second_recording_of_the_evaluation_family_is_refused(
     (runs / "r1").mkdir(parents=True)
     (runs / "r1" / rec.result_name("eval")).write_text("{}")
     monkeypatch.setattr(rec, "RUNS", runs)
-    monkeypatch.setattr(rec, "APPROVALS", _owner(tmp_path, "WO-022 recordings"))
-    assert rec.main(["eval", "--owner-approval", "ok-1"]) == 2
+    _use_owner_ledger(rec, tmp_path, monkeypatch)
+    assert rec.main(["eval", "--owner-approval", OWNER_WO_022]) == 2
     assert "already run" in capsys.readouterr().err
 
 
@@ -465,8 +676,8 @@ def test_a_started_evaluation_family_is_resumed_not_restarted(
     (runs / "r1").mkdir(parents=True)
     (runs / "r1" / rec.plan_name("eval")).write_text("{}")
     monkeypatch.setattr(rec, "RUNS", runs)
-    monkeypatch.setattr(rec, "APPROVALS", _owner(tmp_path, "WO-022 recordings"))
-    assert rec.main(["eval", "--owner-approval", "ok-1"]) == 2
+    _use_owner_ledger(rec, tmp_path, monkeypatch)
+    assert rec.main(["eval", "--owner-approval", OWNER_WO_022]) == 2
     assert "resume it" in capsys.readouterr().err
 
 
@@ -479,32 +690,93 @@ def test_training_refuses_f3_a_second_training_and_a_missing_evaluation_family(
     runs = tmp_path / "runs"
     (runs / "r1").mkdir(parents=True)
     monkeypatch.setattr(train, "RUNS", runs)
-    assert train.main(["--arm", "F3", "--seed", "0"]) == 2
+    _use_owner_ledger(train, tmp_path, monkeypatch)
+    approval = ["--owner-approval", OWNER_WO_022]
+    assert train.main(["--arm", "F3", "--seed", "0", *approval]) == 2
     assert "out of WO-022's scope" in capsys.readouterr().err
-    assert train.main(["--arm", "F0", "--seed", "3"]) == 2
-    assert train.main(["--arm", "F0", "--seed", "0"]) == 2
+    assert train.main(["--arm", "F0", "--seed", "3", *approval]) == 2
+    assert train.main(["--arm", "F0", "--seed", "0", *approval]) == 2
     assert "0 et_m3_6_eval.json results" in capsys.readouterr().err
     (runs / "r1" / train.result_name("F1", 2)).write_text("{}")
-    assert train.main(["--arm", "F1", "--seed", "2"]) == 2
+    assert train.main(["--arm", "F1", "--seed", "2", *approval]) == 2
     assert "already run" in capsys.readouterr().err
     (runs / "r1" / train.plan_name("F2", 1)).write_text("{}")
-    assert train.main(["--arm", "F2", "--seed", "1"]) == 2
+    assert train.main(["--arm", "F2", "--seed", "1", *approval]) == 2
     assert "resume it" in capsys.readouterr().err
 
 
-def test_scoring_without_an_et_m3_6_scoring_approval_is_refused(
+def test_training_needs_the_owners_approval_and_offers_no_other_device(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from vishwaroop.models import et_m3_6_train as train
+
+    monkeypatch.chdir(ROOT)
+    monkeypatch.setattr(train, "RUNS", tmp_path / "runs")
+    _use_owner_ledger(train, tmp_path, monkeypatch)
+    assert train.main(["--arm", "F0", "--seed", "0"]) == 2
+    assert "--owner-approval is required" in capsys.readouterr().err
+    assert train.main(["--arm", "F0", "--seed", "0", "--owner-approval", "other"]) == 2
+    assert "not an owner record this code accepts for training" in capsys.readouterr().err
+    with pytest.raises(SystemExit):
+        train.main(["--arm", "F0", "--seed", "0", "--device", "cpu"])
+    assert train.DEVICE == "mps"
+
+
+def test_scoring_is_refused_in_wo_022_and_runs_once_at_most(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     from vishwaroop.models import et_m3_6_score as scoring
 
     monkeypatch.chdir(ROOT)
-    monkeypatch.setattr(scoring, "APPROVALS", _owner(tmp_path, "WO-022 recordings"))
-    monkeypatch.setattr(scoring, "RUNS", tmp_path / "runs")
-    assert scoring.main([]) == 2
-    assert scoring.main(["--owner-approval", "ok-1"]) == 2
-    assert "does not mention" in capsys.readouterr().err
-    monkeypatch.setattr(scoring, "APPROVALS", _owner(tmp_path, "ET-M3-6 scoring"))
-    (tmp_path / "runs" / "r1").mkdir(parents=True)
-    (tmp_path / "runs" / "r1" / scoring.RESULT).write_text("{}")
-    assert scoring.main(["--owner-approval", "ok-1"]) == 2
+    runs = tmp_path / "runs"
+    monkeypatch.setattr(scoring, "RUNS", runs)
+    _use_owner_ledger(scoring, tmp_path, monkeypatch)
+    # F3's protocol is not frozen: refused whatever the approval.
+    for argv in ([], ["--owner-approval", OWNER_WO_022]):
+        assert scoring.main(argv) == 2
+        assert "F3's protocol is not frozen" in capsys.readouterr().err
+    # A FABRICATED frozen F3 protocol: the owner's real WO-022 record still refuses scoring.
+    protocol = tmp_path / "f3.json"
+    protocol.write_text("{}")
+    digest = guard.sha256_file(protocol)
+    status = tmp_path / "STATUS.jsonl"
+    status.write_text(json.dumps({"event": "frozen", "note": f"F3 {digest}"}) + "\n")
+    monkeypatch.setattr(guard, "F3_PROTOCOL", (protocol, digest))
+    assert scoring.main(["--owner-approval", OWNER_WO_022]) == 2
+    assert "not an owner record this code accepts for scoring" in capsys.readouterr().err
+    monkeypatch.setattr(scoring, "SCORING", Authorization("scoring", "scor", "WO-022", ("sc-1",)))
+    monkeypatch.setattr(
+        scoring,
+        "APPROVALS",
+        _approvals(
+            tmp_path,
+            {
+                "record_id": "sc-1",
+                "approver": "owner",
+                "work_order": "WO-022",
+                "gate": "ET-M3-6 scoring",
+            },
+        ),
+    )
+    (runs / "r1").mkdir(parents=True)
+    (runs / "r1" / scoring.PLAN).write_text("{}")
+    assert scoring.main(["--owner-approval", "sc-1"]) == 2
+    assert "a scoring started there" in capsys.readouterr().err
+    (runs / "r1" / scoring.RESULT).write_text("{}")
+    assert scoring.main(["--owner-approval", "sc-1"]) == 2
     assert "already run" in capsys.readouterr().err
+
+
+def test_scoring_refuses_arms_trained_on_another_device(tmp_path: Path) -> None:
+    from vishwaroop.models import et_m3_6_score as scoring
+    from vishwaroop.models import et_m3_6_train as train
+
+    run = tmp_path / "r1"
+    run.mkdir()
+    for arm in scoring.ARMS:
+        for seed in train.SEEDS:
+            (run / train.result_name(arm, seed)).write_text(json.dumps({"device": "mps"}))
+    assert len(scoring.trained(tmp_path)) == len(scoring.ARMS)
+    (run / train.result_name("F2", 1)).write_text(json.dumps({"device": "cpu"}))
+    with pytest.raises(GuardRefusalError, match="trained on 'cpu', not mps"):
+        scoring.trained(tmp_path)

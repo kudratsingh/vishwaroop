@@ -3,10 +3,15 @@
     python -m vishwaroop.models.et_m3_6_score --owner-approval <record_id>
 
 Run it from the repository root, in the robotics environment, at a clean commit, only when the
-owner says so: it refuses unless ``--owner-approval`` names an owner's record in
-``ledgers/approvals.jsonl`` whose gate mentions ET-M3-6 scoring, and once a score exists. It needs
-every arm F0, F_star, F1, F1s and F2 trained on seeds 0, 1 and 2, each checkpoint matching its
-recorded sha256 and the shared normalization statistics. Each model is evaluated as its 3-member
+owner says so. In WO-022 it always refuses: the owner refused scoring on block 16 and on the
+no-harm set until F3's protocol is frozen (``approvals-20261108T081923998845Z-b8daa5a7``), so
+``et_m3_6_guard.F3_PROTOCOL`` is ``None`` and ``et_m3_6_guard.SCORING`` lists no approval record.
+A later reviewed work order names both. Even then it refuses unless ``--owner-approval`` names that
+record (``require_owner_approval``: no substring matching), once a score exists, and once a scoring
+has started (its start marker is written before any arm is evaluated, so a crashed scoring is never
+run again without an owner decision). It needs every arm F0, F_star, F1, F1s and F2 trained on
+seeds 0, 1 and 2, all on ``et_m3_6_train.DEVICE``, each checkpoint matching its recorded sha256 and
+the shared normalization statistics. Each model is evaluated as its 3-member
 ensemble mean under plain A (``carry-contact-beta-fall-still-reach``) with the predicted flag; the
 five baselines are computed once with the base statistics and shared by every arm. The arithmetic
 is ``et_m3_6_rule``'s. ET-M3-6 itself is F3's, which is out of WO-022's scope, so this decides no
@@ -27,11 +32,14 @@ from pathlib import Path
 from typing import Any
 
 from ..sim.runlog import ledgered_run, require_code_root
+from ..synth import et_m3_6_guard as guard
 from ..synth.et_m3_6_guard import (
     APPROVALS,
     RUNS,
-    SCORING_GATE,
+    SCORING,
+    STATUS,
     GuardRefusalError,
+    check_f3_protocol_frozen,
     check_frozen,
     check_not_run,
     require_owner_approval,
@@ -41,11 +49,12 @@ from ..synth.et_m3_6_record import find_result
 from .compute_pilot import HISTORY, WINDOW, _Data, _machine, _stats_of
 from .et_m3_6_data import ARMS, M0_MANIFEST, base_split, load_m3_eval, m0_train_entries
 from .et_m3_6_rule import score
-from .et_m3_6_train import EPOCHS, SEEDS, result_name, stats_digest
+from .et_m3_6_train import DEVICE, EPOCHS, SEEDS, result_name, stats_digest
 
 PLAIN_A = "carry-contact-beta-fall-still-reach"
 BASELINES = ("constant", "linear", "nominal_hold", "nominal_carry", "nominal_carry_fall")
 RESULT = "et_m3_6_score.json"
+PLAN = "et_m3_6_score.plan.json"
 STREAMS = ("joint_position", "object_position")
 
 
@@ -58,7 +67,13 @@ def trained(runs_root: Path = RUNS) -> dict[str, dict[str, dict[str, Any]]]:
             found = sorted(Path(runs_root).glob(f"*/{result_name(arm, seed)}"))
             if len(found) != 1:
                 raise GuardRefusalError(f"{len(found)} trainings of {arm} on seed {seed}, not 1")
-            out[arm][str(seed)] = json.loads(found[0].read_text(encoding="utf-8"))
+            result = json.loads(found[0].read_text(encoding="utf-8"))
+            if result.get("device") != DEVICE:
+                raise GuardRefusalError(
+                    f"{arm} seed {seed} was trained on {result.get('device')!r}, not {DEVICE}; "
+                    "arms trained on different devices are not compared"
+                )
+            out[arm][str(seed)] = result
     return out
 
 
@@ -132,8 +147,15 @@ def main(argv: list[str] | None = None) -> int:
     try:
         require_code_root()
         frozen = check_frozen()
-        approval = require_owner_approval(args.owner_approval, SCORING_GATE, APPROVALS)
+        f3_protocol = check_f3_protocol_frozen(guard.F3_PROTOCOL, STATUS)
+        approval = require_owner_approval(args.owner_approval, SCORING, APPROVALS, STATUS)
         check_not_run(RUNS, RESULT)
+        started_before = sorted(Path(RUNS).glob(f"*/{PLAN}"))
+        if started_before:
+            raise GuardRefusalError(
+                f"{started_before[0]} exists: a scoring started there; block 16 is evaluated once, "
+                "so it is not run again without the owner's decision"
+            )
         results = trained(RUNS)
         eval_kept = find_result("eval", RUNS)["kept"]
         machine = _machine()
@@ -141,6 +163,7 @@ def main(argv: list[str] | None = None) -> int:
             purpose="WO-022: ET-M3-6 physics arms scored once on block 16 (owner-approved)",
             config={
                 "frozen": frozen,
+                "f3_protocol": f3_protocol,
                 "owner_approval": approval["record_id"],
                 "device": args.device,
             },
@@ -149,6 +172,8 @@ def main(argv: list[str] | None = None) -> int:
         ) as run:
             if run.dirty:
                 raise GuardRefusalError("commit first, so the code note stays true")
+            # Written before any arm is evaluated: a scoring that stops is not started again.
+            write_once(run.directory / PLAN, {"commit": run.commit, "device": args.device})
             started = time.perf_counter()
             measured = _evaluate(args.device, results, eval_kept)
             rmse = measured["rmse"]
@@ -157,7 +182,9 @@ def main(argv: list[str] | None = None) -> int:
                 "code": run.code_note,
                 "machine": machine,
                 "frozen": frozen,
+                "f3_protocol": f3_protocol,
                 "owner_approval": approval["record_id"],
+                "training_device": DEVICE,
                 "model": f"{PLAIN_A} with the predicted flag, 3-member ensemble mean",
                 "window": WINDOW,
                 **measured,

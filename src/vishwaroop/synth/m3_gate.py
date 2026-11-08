@@ -10,11 +10,15 @@ The tolerance is built here from ``evals/M0-exit-tests.json`` with the M3 protoc
 ``sim.replay.load_frozen``, whose protocol stamp is M0's; the frozen files' sha256s are checked by
 ``et_m3_6_guard.check_frozen``, not through ET-M3-1's or M0's ledger state.
 
-``sim.replay.replay_episode`` refuses a recorded ``insufficient_evidence`` label, but section 4
-excludes a scene only for the tolerance or a label that differs between repeats. WO-022's agent
-detail 1 proposes following section 4: an undecided label that repeats identically, within the
-tolerance, passes. That choice is the single constant ``UNDECIDED_REPEATS_PASS``, so the owner's
-veto is a one-line change.
+``sim.replay.replay_episode`` refuses a recorded ``insufficient_evidence`` label. WO-022's agent
+detail 1 proposed letting an undecided label that repeats identically pass; the owner vetoed it on
+2026-11-08 (``approvals-20261108T081923998845Z-b8daa5a7``). So an episode whose recorded label is
+``insufficient_evidence`` always fails the gate, with the reason category ``insufficient_evidence``,
+and is listed among the skipped by that reason. Definite failures, planning failures included, are
+kept when they pass the replay.
+
+Every verdict carries a ``category`` (``CATEGORIES``), so a recording's exclusions are counted by
+reason.
 """
 
 from __future__ import annotations
@@ -30,12 +34,18 @@ from ..sim.env import SimEnv
 from ..sim.replay import ReplayReport, ReplayTolerance, replay_episode
 from .protocol import PROTOCOL_VERSION
 
-# WO-022 agent detail 1 (owner may veto): an undecided label repeated identically passes the gate.
-UNDECIDED_REPEATS_PASS = True
 UNDECIDED = "insufficient_evidence"
+# Agent detail 1 was vetoed by the owner: an undecided label never passes the gate.
+UNDECIDED_POLICY = (
+    "insufficient_evidence refused and listed by reason "
+    "(owner veto of WO-022 agent detail 1, approvals-20261108T081923998845Z-b8daa5a7)"
+)
+PASSED = "passed"
+CATEGORIES = (PASSED, UNDECIDED, "repeats", "tolerance", "label_changed", "replay_invalid")
 GATE_REPEATS = 3
 GATE_MAX_DEVIATION = 0.001
-# sim/replay.py's reason for a valid replay of an undecided recording; checked by a test.
+# sim/replay.py's reason for refusing a faithful replay of an undecided recording, which the gate
+# keeps refusing (owner veto of agent detail 1); a test checks the text still matches sim/replay.py.
 REPLAY_UNDECIDED_REASON = "the recorded outcome is undecided, so there is nothing to confirm"
 
 
@@ -54,12 +64,14 @@ class GateResult:
     labels: list[str]
     max_deviations: list[float]
     undecided: bool
+    category: str = ""
 
     def to_json(self) -> dict[str, Any]:
         return {
             "episode_id": self.episode_id,
             "passed": self.passed,
             "reason": self.reason,
+            "category": self.category,
             "recorded_label": self.recorded_label,
             "labels": list(self.labels),
             "max_deviations": [
@@ -98,50 +110,54 @@ def gate_tolerance(
     return tolerance, PlaceRubric.from_mapping(frozen["place_rubric"])
 
 
-def decide(report: ReplayReport, undecided_pass: bool = UNDECIDED_REPEATS_PASS) -> GateResult:
+def decide(report: ReplayReport) -> GateResult:
     """The gate's verdict from a replay report.
 
-    Fails when the replay did not run ``GATE_REPEATS`` times, any repeat exceeds the tolerance, or
-    any repeat's label differs from the recorded one. A replay that ``sim.replay`` declares valid
-    passes. One it declares invalid only because the recorded label is undecided passes when
-    ``undecided_pass`` holds; any other invalid replay fails with ``sim.replay``'s reason.
+    Fails, in this order: a recorded ``insufficient_evidence`` label (the owner's veto of agent
+    detail 1), whatever its repeats did; a replay that did not run ``GATE_REPEATS`` times; a repeat
+    past the tolerance; a repeat whose label differs from the recorded one; and any other replay
+    ``sim.replay`` declares invalid, with its reason. Only a replay ``sim.replay`` declares valid
+    passes, so a definite failure, a planning failure included, is kept when it replays faithfully.
     """
     tolerance = report.tolerance
     labels = [result.outcome_label for result in report.repeats]
     deviations = [result.max_deviation for result in report.repeats]
     undecided = report.recorded_label == UNDECIDED
 
-    def result(passed: bool, reason: str) -> GateResult:
+    def result(passed: bool, reason: str, category: str) -> GateResult:
         return GateResult(
-            report.episode_id, passed, reason, report.recorded_label, labels, deviations, undecided
+            report.episode_id,
+            passed,
+            reason,
+            report.recorded_label,
+            labels,
+            deviations,
+            undecided,
+            category,
         )
 
+    if undecided:
+        return result(False, f"recorded label {UNDECIDED}: {UNDECIDED_POLICY}", UNDECIDED)
     if len(report.repeats) != GATE_REPEATS:
-        return result(False, f"{len(report.repeats)} repeats, not {GATE_REPEATS}")
+        return result(False, f"{len(report.repeats)} repeats, not {GATE_REPEATS}", "repeats")
     for repeat in report.repeats:
         if not repeat.max_deviation <= tolerance.max_state_deviation:
             return result(
                 False,
                 f"repeat {repeat.repeat} deviated {repeat.max_deviation} on {repeat.worst_stream} "
                 f"at step {repeat.worst_step}; tolerance {tolerance.max_state_deviation}",
+                "tolerance",
             )
         if repeat.outcome_label != report.recorded_label:
             return result(
                 False,
                 f"repeat {repeat.repeat} gave {repeat.outcome_label}; "
                 f"recorded {report.recorded_label}",
+                "label_changed",
             )
     if report.claim_valid:
-        return result(True, "3 repeats within tolerance, each with the recorded label")
-    if undecided and report.reason == REPLAY_UNDECIDED_REASON:
-        if undecided_pass:
-            return result(
-                True,
-                "3 repeats within tolerance, each with the recorded undecided label "
-                "(protocol section 4; WO-022 agent detail 1)",
-            )
-        return result(False, "undecided label; agent detail 1 vetoed")
-    return result(False, report.reason)
+        return result(True, "3 repeats within tolerance, each with the recorded label", PASSED)
+    return result(False, report.reason, "replay_invalid")
 
 
 def run_gate(

@@ -27,7 +27,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
-from ..synth.m3_record import EVAL_FAMILY, NOMINAL_FAMILY, OPERATOR_FAMILIES
+from ..synth.m3_record import EVAL_FAMILY, NOMINAL_FAMILY, OPERATOR_FAMILIES, check_seed
 from ..synth.protocol import (
     ProtocolRefusalError,
     block_of,
@@ -207,10 +207,15 @@ def _m3_episode(
 def load_m3_train(
     kept: Sequence[dict[str, Any]], families: Iterable[str], root: Path = Path()
 ) -> list[EpisodeArrays]:
-    """A recording's kept episodes, in order, as training data: train blocks only. Unlike
+    """A recording's kept episodes, in order, as training data: block 11 only. Unlike
     ``pilot_data.load_train`` it does not refuse seeds of 8000 and up, since M3's train blocks are
-    10 to 15; ``check_training_seeds`` refuses every dev and reserved seed instead."""
+    10 to 15; ``check_training_seeds`` refuses every dev and reserved seed instead, and
+    ``m3_record.check_seed`` then refuses a seed held for ET-M3-1, a block-10 seed, and any seed
+    off its family's block (WO-022 records its training families on block 11 only), whoever
+    recorded the episode."""
     check_training_seeds(int(item["seed"]) for item in kept)
+    for item in kept:
+        check_seed(str(item["family"]), int(item["seed"]))
     names = tuple(families)
     return [_m3_episode(item, names, root, "train") for item in kept]
 

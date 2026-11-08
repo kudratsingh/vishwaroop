@@ -2,15 +2,20 @@
 ``runs/20261102T041509Z_93dd348c``: ``carry-contact-beta-fall``, 30 epochs, a 3-member ensemble
 seeded by the arm's seed (0, 1 or 2), ``cube_study._train`` unchanged.
 
-    python -m vishwaroop.models.et_m3_6_train --arm F0 --seed 0
+    python -m vishwaroop.models.et_m3_6_train --arm F0 --seed 0 --owner-approval <record_id>
 
 Run it from the repository root, in the robotics environment, at a clean commit, after the
-evaluation family is recorded (and F2's or F1s's recording, for those arms). It refuses F3, a dev
-seed in a training set, a base other than 207 episodes and 31,031 windows, and a second training of
-the same arm on the same seed. Every epoch is saved; a stopped training is continued with
-``--resume-from <its first run>`` from its last completed epoch (AGENTS.md section 13.9), with the
-same settings and code. Normalization statistics are ``compute_pilot._Data``'s on the base alone;
-an arm's windows are the base windows in manifest order, then its added windows in order.
+evaluation family is recorded (and F2's or F1s's recording, for those arms). It refuses unless
+``--owner-approval`` names the owner's record that ``et_m3_6_guard.TRAINING`` lists, which is
+recorded in the run's ledger config and its result. It trains on the Mac's MPS only: the owner's
+approved scope is local Mac MPS training, and WO-004's run, whose hyperparameters every arm matches,
+used MPS, so arms trained on different devices are never compared (``--device`` is not offered,
+and scoring checks every training's device). It refuses F3, a dev seed in a training set, a base
+other than 207 episodes and 31,031 windows, and a second training of the same arm on the same seed.
+Every epoch is saved; a stopped training is continued with ``--resume-from <its first run>`` from
+its last completed epoch (AGENTS.md section 13.9), with the same settings and code. Normalization
+statistics are ``compute_pilot._Data``'s on the base alone; an arm's windows are the base windows
+in manifest order, then its added windows in order.
 
 Exit codes: 0 trained, 2 refused.
 """
@@ -27,13 +32,17 @@ from typing import Any
 
 from ..sim.runlog import ledgered_run, require_code_root
 from ..synth.et_m3_6_guard import (
+    APPROVALS,
     RUNS,
+    STATUS,
+    TRAINING,
     GuardRefusalError,
     check_frozen,
     check_not_run,
     check_not_started,
     check_resume,
     code_changed,
+    require_owner_approval,
     write_once,
 )
 from ..synth.et_m3_6_record import find_result
@@ -62,6 +71,8 @@ TRAINED_VARIANT = "carry-contact-beta-fall"
 EPOCHS = 30
 SEEDS = (0, 1, 2)
 WO004_RUN = "runs/20261102T041509Z_93dd348c"
+# WO-004's device and the owner's approved scope (local Mac MPS training); every arm uses it.
+DEVICE = "mps"
 
 
 def result_name(arm: str, seed: int) -> str:
@@ -156,23 +167,28 @@ def arm_data(arm: str, device: str, recordings: dict[str, Any], root: Path = Pat
     return data, info
 
 
-def _device(requested: str) -> str:
+def _device() -> str:
+    """The one training device, ``DEVICE``; refused when this machine has no MPS."""
     torch = _torch()
-    if requested == "mps" and not torch.backends.mps.is_available():
-        raise GuardRefusalError("MPS is not available; pass --device cpu to train on the CPU")
-    return requested
+    if not torch.backends.mps.is_available():
+        raise GuardRefusalError(
+            f"{DEVICE} is not available; every ET-M3-6 arm trains on {DEVICE} (WO-004's device, "
+            "the owner's approved scope), so nothing is trained here"
+        )
+    return DEVICE
 
 
 def _run(args: argparse.Namespace) -> int:
     from .cube_study import VARIANTS, _Kinematics, _train
 
     frozen = check_frozen()
+    approval = require_owner_approval(args.owner_approval, TRAINING, APPROVALS, STATUS)
     arm = check_arm(args.arm)
     seed = check_seed(args.seed)
     check_not_run(RUNS, result_name(arm, seed))
     check_not_started(RUNS, plan_name(arm, seed), args.resume_from)
     recordings = prerequisites(arm, RUNS)
-    device = _device(args.device)
+    device = _device()
     config = {
         "arm": arm,
         "seed": seed,
@@ -186,7 +202,11 @@ def _run(args: argparse.Namespace) -> int:
     machine = _machine()
     with ledgered_run(
         purpose=f"WO-022: ET-M3-6 arm {arm}, seed {seed}",
-        config={**config, "resume_from": str(args.resume_from)},
+        config={
+            **config,
+            "owner_approval": approval["record_id"],
+            "resume_from": str(args.resume_from),
+        },
         seeds={"torch": seed},
         env_lock={"machine": machine},
     ) as run:
@@ -211,6 +231,7 @@ def _run(args: argparse.Namespace) -> int:
             "started_in": home.name,
             "code": run.code_note,
             "machine": machine,
+            "owner_approval": approval["record_id"],
             **config,
             "checkpoint": str(checkpoint),
             "checkpoint_sha256": hashlib.sha256(checkpoint.read_bytes()).hexdigest(),
@@ -229,7 +250,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--arm", required=True)
     parser.add_argument("--seed", type=int, required=True)
-    parser.add_argument("--device", choices=("mps", "cpu"), default="mps")
+    parser.add_argument("--owner-approval", default=None, help="approvals record id")
     parser.add_argument("--resume-from", type=Path, default=None)
     args = parser.parse_args(argv)
     try:

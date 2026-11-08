@@ -5,11 +5,16 @@
     python -m vishwaroop.synth.et_m3_6_record f1s --owner-approval <record_id>
 
 Run each from the repository root, in the robotics environment, at a clean commit. Each refuses
-unless ``--owner-approval`` names an owner's record in ``ledgers/approvals.jsonl`` whose gate
-mentions WO-022, unless the frozen files have their frozen sha256s, and once its result exists. A
-command that stopped is resumed with ``--resume-from <its first run>``: seeds already gated are
-not repeated, and an episode recorded but not yet gated is gated, not recorded again. Every episode
-is replayed 3 times by the protocol section 4 gate (``m3_gate``) right after it is recorded.
+unless ``--owner-approval`` names the owner's record that ``et_m3_6_guard.RECORDING`` lists
+(``approvals-20261108T081923998845Z-b8daa5a7``), checked by ``require_owner_approval``; unless the
+frozen files have their frozen sha256s; and once its result exists. A command that stopped is
+resumed with ``--resume-from <its first run>``: seeds already gated are not repeated, and an
+episode recorded but not yet gated is gated, not recorded again, once its saved initial state is
+checked against its scene snapshot. Every episode is replayed 3 times by the protocol section 4
+gate (``m3_gate``) right after it is recorded. A recorded ``insufficient_evidence`` label fails the
+gate (the owner vetoed agent detail 1); every skipped seed is listed with its reason, and the
+result counts the skipped by reason. Definite failures, planning failures included, are kept when
+they pass the replay.
 
 ``eval``: ``m3-eval-missed-grasp`` on block 16, ascending from 16000 with exactly
 ``VARIANTS['missed-grasp']``, until 60 episodes pass the gate, at most to 16099; planning failures
@@ -27,9 +32,12 @@ drops the last episode's windows past W* from its end. If block 11 runs out firs
 ``f1s``: the nominal scripted demo (``VARIANTS['nominal']``, family ``m3-synth-nominal``) of each of
 F2's kept scenes, in F2's order, until the windows reach W*. Under agent detail 3, a scene whose
 nominal demo fails the gate is skipped and listed; if F2's scenes run out first, F1s is reported as
-unmatched (exit 0; F1s is reported only and is not in the threshold).
+unmatched (exit 0; F1s is reported only and is not in the threshold). As the owner asked when
+approving detail 3, the result reports F1s's scene overlap with F2 (F2's scenes that F1s used,
+skipped and never reached) and F1s's window counts beside F2's.
 
-Exit codes: 0 done, 2 refused, 3 simulator not run, 4 stopped by a WO-022 stop condition.
+Exit codes: 0 done, 2 refused, 3 simulator not run, 4 stopped: a WO-022 stop condition, or an
+episode whose scene differs from its saved snapshot (``SceneMismatchError``; the seed is named).
 """
 
 from __future__ import annotations
@@ -40,6 +48,7 @@ import json
 import random
 import sys
 import time
+from collections import Counter
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -53,8 +62,9 @@ from ..sim.runlog import ledgered_run, require_code_root
 from .et_m3_6_guard import (
     APPROVALS,
     M0_EXIT_TESTS,
-    RECORDING_GATE,
+    RECORDING,
     RUNS,
+    STATUS,
     GuardRefusalError,
     append_line,
     check_frozen,
@@ -66,7 +76,7 @@ from .et_m3_6_guard import (
     require_owner_approval,
     write_once,
 )
-from .m3_gate import UNDECIDED_REPEATS_PASS, GateResult, gate_tolerance, run_gate
+from .m3_gate import UNDECIDED_POLICY, GateResult, gate_tolerance, run_gate
 from .m3_record import (
     CLOSE_HIGH_FAMILY,
     EVAL_FAMILY,
@@ -75,6 +85,7 @@ from .m3_record import (
     Recorded,
     SceneMismatchError,
     Task,
+    check_initial_state,
     check_seed,
     episode_id,
     record,
@@ -178,13 +189,17 @@ def _settings_note(settings: PlanSettings, info: dict[str, Any]) -> str:
     )
 
 
-def recorded_from_disk(path: Path, family: str, seed: int, note: str) -> Recorded:
-    """An episode recorded before a stop but not yet gated, read back, refused if it is not the
-    one this step would record."""
+def recorded_from_disk(path: Path, family: str, seed: int, note: str, out: Path) -> Recorded:
+    """An episode recorded before a stop but not yet gated, read back. Stops (SceneMismatchError)
+    if it is not the one this step would record, or if its saved initial state is not its scene
+    snapshot's: the check ``m3_record.record`` makes after recording is made again here, so a
+    resume never keeps an episode that stopped the first run."""
     manifest = json.loads((path / "episode.json").read_text(encoding="utf-8"))
     if manifest["episode_id"] != episode_id(family, seed) or note not in manifest["notes"]:
         raise SceneMismatchError(f"{path} is not the episode this step records")
     state = (path / manifest["simulator"]["initial_state_artifact"]["path"]).read_bytes()
+    state_sha = hashlib.sha256(state).hexdigest()
+    check_initial_state(path, seed, state_sha, out)
     notes = str(manifest["notes"])
     error = notes.split("planning_failed: ", 1)[1] if "planning_failed: " in notes else None
     return Recorded(
@@ -195,7 +210,7 @@ def recorded_from_disk(path: Path, family: str, seed: int, note: str) -> Recorde
         int(manifest["data"]["record_count"]),
         str(manifest["outcome"]["reason"]).split(":", 1)[0],
         error,
-        hashlib.sha256(state).hexdigest(),
+        state_sha,
         None,
     )
 
@@ -236,7 +251,7 @@ def run_sequence(
         path = Path(out) / episode_id(family, seed)
         print(f"{sequence.kind} seed {seed}", file=sys.stderr, flush=True)
         if path.exists():
-            recorded = recorded_from_disk(path, family, seed, note)
+            recorded = recorded_from_disk(path, family, seed, note, out)
         else:
             recorded = recorder(env, family, seed, settings, run_id, out, task, rubric, note)
         result = gate(recorded.path, env, tolerance, rubric)
@@ -266,8 +281,38 @@ def windows_used(kept: list[dict[str, Any]], target: int = W_STAR) -> list[int]:
     return used
 
 
-def summary(kind: str, outcome: dict[str, Any]) -> dict[str, Any]:
-    """The result's lists: kept episodes in order with the windows each adds, skipped seeds."""
+def f1s_overlap(
+    f2: dict[str, Any], kept: list[dict[str, Any]], skipped: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """How closely F1s matches F2 (owner, 2026-11-08, approving detail 3): F2's kept scenes that
+    F1s used, skipped and never reached, and both arms' window counts, reported separately."""
+    f2_seeds = [int(item["seed"]) for item in f2["kept"]]
+    used = windows_used(kept)
+    used_seeds = [int(line["seed"]) for line, take in zip(kept, used, strict=True) if take > 0]
+    skipped_seeds = [int(line["seed"]) for line in skipped]
+    tried = {int(line["seed"]) for line in kept} | set(skipped_seeds)
+    unreached = [seed for seed in f2_seeds if seed not in tried]
+    return {
+        "f2_scene_count": len(f2_seeds),
+        "f1s_scenes_used": used_seeds,
+        "f1s_scenes_used_count": len(used_seeds),
+        "f1s_scenes_skipped": skipped_seeds,
+        "f1s_scenes_skipped_count": len(skipped_seeds),
+        "f1s_scenes_unreached": unreached,
+        "f1s_scenes_unreached_count": len(unreached),
+        "scene_overlap_fraction": len(used_seeds) / len(f2_seeds) if f2_seeds else 0.0,
+        "f2_windows_total": f2.get("windows_total"),
+        "f2_windows_used_total": f2.get("windows_used_total"),
+        "f1s_windows_total": kept_windows(kept),
+        "f1s_windows_used_total": sum(used),
+        "w_star": W_STAR,
+        "f1s_matched": sum(used) == W_STAR,
+    }
+
+
+def summary(kind: str, outcome: dict[str, Any], f2: dict[str, Any] | None = None) -> dict[str, Any]:
+    """The result's lists: kept episodes in order with the windows each adds, skipped seeds with
+    their reasons and a count by reason; for F1s, its overlap with ``f2``, F2's result."""
     kept, skipped = outcome["kept"], outcome["skipped"]
     out: dict[str, Any] = {
         "kind": kind,
@@ -275,9 +320,17 @@ def summary(kind: str, outcome: dict[str, Any]) -> dict[str, Any]:
         "kept_count": len(kept),
         "skipped_count": len(skipped),
         "skipped": [
-            {"seed": item["seed"], "family": item["family"], "reason": item["gate"]["reason"]}
+            {
+                "seed": item["seed"],
+                "family": item["family"],
+                "reason": item["gate"]["reason"],
+                "category": item["gate"].get("category", ""),
+            }
             for item in skipped
         ],
+        "skipped_by_reason": dict(
+            sorted(Counter(item["gate"].get("category", "") for item in skipped).items())
+        ),
         "kept": [
             {
                 "seed": item["seed"],
@@ -305,6 +358,10 @@ def summary(kind: str, outcome: dict[str, Any]) -> dict[str, Any]:
         out["windows_total"] = kept_windows(kept)
         out["windows_used_total"] = sum(used)
         out["w_star"] = W_STAR
+    if kind == "f1s":
+        if f2 is None:
+            raise GuardRefusalError("F1s's result reports its overlap with F2, so needs F2's")
+        out["overlap_with_f2"] = f1s_overlap(f2, kept, skipped)
     return out
 
 
@@ -342,10 +399,11 @@ def _run(args: argparse.Namespace) -> int:
     from ..sim.env import ManiSkillPickCube
 
     frozen = check_frozen()
-    approval = require_owner_approval(args.owner_approval, RECORDING_GATE, APPROVALS)
+    approval = require_owner_approval(args.owner_approval, RECORDING, APPROVALS, STATUS)
     check_not_run(RUNS, result_name(args.kind))
     check_not_started(RUNS, plan_name(args.kind), args.resume_from)
     sequence = sequence_for(args.kind, RUNS)
+    f2 = find_result("f2", RUNS) if args.kind == "f1s" else None
     task = Task.from_frozen(json.loads(M0_EXIT_TESTS.read_text(encoding="utf-8")))
     tolerance, rubric = gate_tolerance(M0_EXIT_TESTS)
     config = {"kind": args.kind, "out": str(args.out), "frozen": frozen}
@@ -382,8 +440,8 @@ def _run(args: argparse.Namespace) -> int:
             "code": run.code_note,
             "frozen": frozen,
             "owner_approval": approval["record_id"],
-            "undecided_repeats_pass": UNDECIDED_REPEATS_PASS,
-            **summary(args.kind, outcome),
+            "undecided_policy": UNDECIDED_POLICY,
+            **summary(args.kind, outcome, f2),
             "seconds_this_process": time.perf_counter() - started,
         }
         write_once(run.directory / result_name(args.kind), report)
@@ -411,6 +469,11 @@ def main(argv: list[str] | None = None) -> int:
     except SimulatorUnavailableError as exc:
         print(f"not run: {exc}", file=sys.stderr)
         return 3
+    except SceneMismatchError as exc:
+        # A designed stop, not a refusal: the run is recorded as failed by ledgered_run, its
+        # progress log ends before the seed named here, and nothing about that seed was kept.
+        print(f"stopped: SceneMismatchError: {exc}", file=sys.stderr)
+        return STOPPED
     except (ReplayInvalidError, ValueError, OSError, KeyError) as exc:
         print(f"refused: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 2

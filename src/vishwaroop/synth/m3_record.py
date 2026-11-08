@@ -7,7 +7,8 @@ any block other than the one its family is recorded on: the evaluation family on
 operator and nominal families on block 11.
 
 The snapshot follows ``evals/M3-protocol.md`` section 3 (``snapshot.take_snapshot``). It is written
-once per seed under ``<out>/snapshots/seed-<seed>``; a later episode on the same scene (F1s's
+once per seed under ``<out>/snapshots/seed-<seed>``, through a partial sibling renamed into place
+so an interruption never leaves half a snapshot; a later episode on the same scene (F1s's
 nominal demo of an F2 scene) reads it back and refuses a scene whose fresh snapshot differs from
 it in any field but the render's sha256, which is recorded. The episode is then recorded by
 ``sim.export.record_episode``, which saves the initial state right after ``reset`` and runs from
@@ -21,6 +22,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -130,16 +132,47 @@ def episode_spec(
 RENDER_FIELD = "initial_render"
 
 
+def snapshot_dir(out: Path, seed: int) -> Path:
+    return Path(out) / SNAPSHOTS / f"seed-{seed:06d}"
+
+
+def check_initial_state(episode_dir: Path, seed: int, state_sha256: str, out: Path) -> None:
+    """Stop unless an episode's saved initial state is its scene snapshot's, byte for byte.
+
+    ``record`` makes this comparison right after recording; a resumed run makes it before gating an
+    episode it finds on disk, so an episode of another scene is never kept by resuming.
+    """
+    directory = snapshot_dir(out, seed)
+    try:
+        saved = read_snapshot(directory)
+    except (SnapshotError, OSError, ValueError, KeyError) as exc:
+        raise SceneMismatchError(
+            f"{Path(episode_dir).name}: no readable snapshot at {directory}: {exc}"
+        ) from exc
+    expected = saved.manifest["initial_state"]["sha256"]
+    if state_sha256 != expected:
+        raise SceneMismatchError(
+            f"{Path(episode_dir).name}: initial state {state_sha256} is not the snapshot's "
+            f"{expected}"
+        )
+
+
 def scene(env: RenderingEnv, seed: int, task: Task, out: Path) -> tuple[dict[str, Any], bool]:
     """Snapshot the scene, written once; if already written, refuse a fresh snapshot that differs.
 
     Returns the saved snapshot's manifest and whether the fresh render's sha256 equals the saved
     one (always true for a first snapshot).
     """
-    directory = Path(out) / SNAPSHOTS / f"seed-{seed:06d}"
+    directory = snapshot_dir(out, seed)
     fresh = take_snapshot(env, seed, task.env_id, task.version)
     if not directory.exists():
-        write_snapshot(fresh, directory)
+        # Written whole into a new sibling, then renamed into place, so an interruption leaves
+        # either no snapshot or a complete one; a stale partial sibling is never read or reused.
+        partial = directory.with_name(f".{directory.name}.partial-{uuid.uuid4().hex}")
+        write_snapshot(fresh, partial)
+        if directory.exists():
+            raise SceneMismatchError(f"seed {seed}: {directory} appeared while it was written")
+        partial.rename(directory)
         return fresh.manifest, True
     try:
         saved = read_snapshot(directory)

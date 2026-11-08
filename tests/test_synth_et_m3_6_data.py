@@ -216,6 +216,27 @@ def test_a_dev_seed_in_a_training_set_is_refused(tmp_path: Path) -> None:
         load_m3_train([{"seed": 18000}], (LATERAL_FAMILY,), tmp_path)
 
 
+@pytest.mark.parametrize(
+    ("seed", "match"),
+    [
+        (10265, "held for ET-M3-1"),  # a held seed, whoever recorded it
+        (10789, "held for ET-M3-1"),
+        (10000, "block 10"),  # block 10, unheld
+        (10999, "block 10"),
+        (12000, "recorded on block 11"),  # a train block, but not WO-022's
+    ],
+)
+def test_the_m3_loader_refuses_held_block_10_and_off_block_seeds(
+    tmp_path: Path, seed: int, match: str
+) -> None:
+    kept = [
+        _write_episode(tmp_path, LATERAL_FAMILY, 11000, 20),
+        _write_episode(tmp_path, LATERAL_FAMILY, seed, 20),
+    ]
+    with pytest.raises(ProtocolRefusalError, match=match):
+        load_m3_train(kept, (LATERAL_FAMILY,), tmp_path)
+
+
 def test_the_m3_loader_refuses_an_imagined_record(tmp_path: Path) -> None:
     kept = [_write_episode(tmp_path, LATERAL_FAMILY, 11000, 20, environment_kind="imagined")]
     with pytest.raises(DataRefusalError, match="imagined"):

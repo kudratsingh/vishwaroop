@@ -12,8 +12,14 @@ np = pytest.importorskip("numpy")
 
 from fake_m3 import FakeM3Env  # noqa: E402
 from vishwaroop.sim.baseline import VARIANTS  # noqa: E402
+from vishwaroop.sim.replay import replay_episode  # noqa: E402
 from vishwaroop.synth import et_m3_6_record as rec  # noqa: E402
-from vishwaroop.synth.m3_gate import gate_tolerance, run_gate  # noqa: E402
+from vishwaroop.synth.m3_gate import (  # noqa: E402
+    REPLAY_UNDECIDED_REASON,
+    UNDECIDED,
+    gate_tolerance,
+    run_gate,
+)
 from vishwaroop.synth.m3_record import (  # noqa: E402
     EVAL_FAMILY,
     LATERAL_FAMILY,
@@ -114,12 +120,35 @@ def test_the_gate_rejects_a_label_that_changes_between_repeats(tmp_path: Path) -
     assert not result.passed and "still_grasped" in result.reason
 
 
-def test_an_undecided_episode_repeated_identically_passes(tmp_path: Path) -> None:
+def test_an_undecided_episode_repeated_identically_fails_the_gate(tmp_path: Path) -> None:
+    """The owner vetoed agent detail 1: sim/replay.py's refusal of insufficient_evidence stands."""
     env = FakeM3Env(grasp_stream=False)  # the rubric cannot decide
     recorded = _record(env, tmp_path)
+    report = replay_episode(recorded.path, env, TOLERANCE, RUBRIC)
+    assert not report.claim_valid and report.reason == REPLAY_UNDECIDED_REASON
     result = run_gate(recorded.path, env, TOLERANCE, RUBRIC)
     assert recorded.label == "insufficient_evidence"
-    assert result.undecided and result.passed  # sim.replay's reason text is still the one matched
+    assert result.undecided and not result.passed and result.category == UNDECIDED
+
+
+def test_an_undecided_episode_is_skipped_and_listed_by_reason(tmp_path: Path) -> None:
+    env = FakeM3Env(grasp_stream=False)
+    sequence = rec.Recording("eval", [16000, 16001], rec.eval_choice, lambda kept: len(kept) >= 1)
+    outcome = rec.run_sequence(
+        sequence, env, tmp_path, "run", TASK, RUBRIC, TOLERANCE, tmp_path / "p.jsonl"
+    )
+    assert not outcome["complete"] and outcome["kept"] == []
+    summary = rec.summary("eval", outcome)
+    assert [item["seed"] for item in summary["skipped"]] == [16000, 16001]
+    assert {item["category"] for item in summary["skipped"]} == {UNDECIDED}
+    assert summary["skipped_by_reason"] == {UNDECIDED: 2}
+
+
+def test_a_planning_failure_that_replays_faithfully_is_kept(tmp_path: Path) -> None:
+    env = FakeM3Env()  # the cube is out of reach: the plan fails, the label is never_lifted
+    recorded = _record(env, tmp_path)
+    assert recorded.planning_error is not None and recorded.label == "never_lifted"
+    assert run_gate(recorded.path, env, TOLERANCE, RUBRIC).passed
 
 
 def test_the_eval_sequence_records_and_gates_with_the_real_recorder(tmp_path: Path) -> None:
@@ -147,3 +176,79 @@ def test_an_episode_recorded_before_a_stop_is_gated_not_recorded_again(tmp_path:
         sequence, env, tmp_path, "run", TASK, RUBRIC, TOLERANCE, tmp_path / "p.jsonl", no_recording
     )
     assert outcome["complete"] and outcome["kept"][0]["recorded"]["steps"] == 15
+
+
+class _ShiftsOnSecondReset(FakeM3Env):
+    """FABRICATED: the recording's reset gives another initial state than the snapshot's reset."""
+
+    def __init__(self) -> None:
+        super().__init__(lift=True)
+        self.resets = 0
+
+    def reset(self, seed: int):  # type: ignore[no-untyped-def]
+        packet = super().reset(seed)
+        self.resets += 1
+        if self.resets == 2:
+            self._object = [self._object[0] + 0.001, self._object[1], self._object[2]]
+            packet = self._packet()
+        return packet
+
+
+def test_a_resume_never_keeps_an_episode_that_is_not_of_its_snapshot(tmp_path: Path) -> None:
+    sequence = rec.Recording("eval", [16000, 16001], rec.eval_choice, lambda kept: len(kept) >= 1)
+    progress = tmp_path / "p.jsonl"
+    shifting = _ShiftsOnSecondReset()
+    with pytest.raises(SceneMismatchError, match="is not the snapshot's"):
+        rec.run_sequence(sequence, shifting, tmp_path, "run", TASK, RUBRIC, TOLERANCE, progress)
+    assert (tmp_path / "m3-eval-missed-grasp-seed-016000").exists()  # left on disk by the stop
+    assert rec.read_lines(progress) == []
+    faithful = FakeM3Env(lift=True)
+    with pytest.raises(SceneMismatchError, match="is not the snapshot's"):
+        rec.run_sequence(sequence, faithful, tmp_path, "run", TASK, RUBRIC, TOLERANCE, progress)
+    assert rec.read_lines(progress) == []  # nothing gated, nothing kept
+
+
+def test_a_resume_without_a_readable_snapshot_stops(tmp_path: Path) -> None:
+    env = FakeM3Env(lift=True)
+    _, settings, info = rec.eval_choice(16000, [])
+    note = rec._settings_note(settings, info)
+    recorded = record(env, EVAL_FAMILY, 16000, settings, "run", tmp_path, TASK, RUBRIC, note)
+    (tmp_path / SNAPSHOTS / "seed-016000").rename(tmp_path / "elsewhere")
+    with pytest.raises(SceneMismatchError, match="no readable snapshot"):
+        rec.recorded_from_disk(recorded.path, EVAL_FAMILY, 16000, note, tmp_path)
+
+
+def test_a_snapshot_is_renamed_into_place_whole(tmp_path: Path) -> None:
+    """A stale partial sibling from an interrupted write is never read or reused, and the seed's
+    own snapshot directory only ever holds a whole snapshot."""
+    snapshots = tmp_path / SNAPSHOTS
+    snapshots.mkdir()
+    stale = snapshots / ".seed-016000.partial-stale"
+    stale.mkdir()
+    (stale / "manifest.json").write_text("{")  # a FABRICATED interrupted write
+    recorded = _record(FakeM3Env(), tmp_path)
+    saved = read_snapshot(snapshots / "seed-016000")
+    assert saved.manifest["initial_state"]["sha256"] == recorded.snapshot_state_sha256
+    names = sorted(path.name for path in snapshots.iterdir())
+    assert names[-1] == "seed-016000"
+    assert all(name.startswith(".seed-016000.partial-") for name in names[:-1])
+
+
+def test_an_interrupted_snapshot_write_leaves_no_snapshot(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from vishwaroop.synth import m3_record
+
+    def interrupted(_snapshot: object, directory: Path) -> Path:
+        directory.mkdir(parents=True)
+        (directory / "initial-state.bin").write_bytes(b"half")
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(m3_record, "write_snapshot", interrupted)
+    with pytest.raises(KeyboardInterrupt):
+        _record(FakeM3Env(), tmp_path)
+    assert not (tmp_path / SNAPSHOTS / "seed-016000").exists()
+    monkeypatch.undo()
+    recorded = _record(FakeM3Env(), tmp_path)  # the resume snapshots the scene afresh
+    saved = read_snapshot(tmp_path / SNAPSHOTS / "seed-016000")
+    assert saved.manifest["initial_state"]["sha256"] == recorded.snapshot_state_sha256
