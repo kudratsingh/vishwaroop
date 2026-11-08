@@ -77,3 +77,17 @@ A pilot that cannot fit a band inside the frozen limits (the owner is told); any
     - minimum green count: 0.
   - **Final frames.** Every candidate's final frame shows the cube, with final r from 0.607 to 1.206. No candidate has a run of frames with r < 0.02. Every final cube rests on the table, inside the image.
   - Nothing was written to `evals/`. No control or injection was generated: seeds 10520 to 10579, 10580 to 10639, 10660 to 10749 and 10770 to 10779 remain unsimulated. Seeds 10920 to 10939 are spent.
+- **2026-11-07, ET-M3-1 recorded as failed under `m3-protocol-3` (pilot stop 9); `m3-protocol-4` drafted for the owner (goal check only).**
+  - The report is `reports/WO-021-et-m3-1-protocol-3.md`.
+  - **Diagnostics.** The owner's approval is `approvals-20261108T043859003982Z-5837a2ac`. All runs were on spent pilot seeds only:
+    - `20261108T044149Z_1a94815d` and `20261108T044845Z_616d515d` (simulation);
+    - `20261108T045902Z_f0336752` (analysis only).
+  - **Cause of the drift: occlusion of the frame's goal and of the snapshot's own goal.** At seed 10936 frame 114, 2.9% of the goal was visible. The snapshot render's goal there was half hidden.
+  - **The 90%-of-snapshot candidate does not separate** normal drift from a 3 cm goal move.
+  - **Draft `docs/M3-protocol-4-draft.json`.** It measures the goal against its projected disc from the frozen manifest.
+    - `goal_envelope`: in every frame with green, the centroid lies within the circular-segment bound plus 1.5 px.
+    - `goal_final`: the final frame shows at least 40% of the goal.
+    - Stops (9) and (10) replace protocol-3's stop (9).
+    - Seeds: pilot 10940–10959; controls 10320–10379; injections 10460–10519; type-6 renders 10780–10789; type-3 replacements 10260–10299. No earlier protocol named any of them.
+  - **Review.** Three lenses plus a verifier found one blocker: at T, a lasting 3 cm move is guaranteed caught only above each scene's guarantee level (0.418 to 0.605). The draft now says so. It also states that requiring that level would reject 2 of 60 unmodified episodes. The recheck passed, and its nits are fixed.
+  - Not frozen, not run.
