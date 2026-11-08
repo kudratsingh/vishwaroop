@@ -49,6 +49,12 @@ from .cube_study import (
     fall_displacement,
     phase_masks,
 )
+from .device import (
+    accelerator_rng_state,
+    add_device_argument,
+    require,
+    set_accelerator_rng_state,
+)
 from .family_sweep import PLAN_FILE, _code_changed, _write_new, check_resume
 from .pilot_data import ACTION_SIZE, STATE_SIZE, load_train, split_holdout
 
@@ -187,8 +193,7 @@ def train(
         modules.load_state_dict(saved["modules"])
         optimizer.load_state_dict(saved["optimizer"])
         torch.set_rng_state(saved["rng"].cpu())
-        if "mps_rng" in saved:
-            torch.mps.set_rng_state(saved["mps_rng"].cpu())
+        set_accelerator_rng_state(device, saved)
         first_epoch = saved["epoch"]
         times, losses = list(saved["times"]), list(saved["losses"])
     modules.train()
@@ -224,7 +229,7 @@ def train(
                     "modules": modules.state_dict(),
                     "optimizer": optimizer.state_dict(),
                     "rng": torch.get_rng_state(),
-                    **({"mps_rng": torch.mps.get_rng_state()} if device == "mps" else {}),
+                    **accelerator_rng_state(device),
                     "times": times,
                     "losses": losses,
                 },
@@ -316,9 +321,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--seeds", default=",".join(str(seed) for seed in SEEDS))
     parser.add_argument("--epochs", type=int, default=EPOCHS)
-    parser.add_argument("--device", choices=("mps", "cpu"), default="mps")
+    add_device_argument(parser, default="mps")
     parser.add_argument("--resume-from", type=Path, default=None)
     args = parser.parse_args(argv)
+    require(args.device)
     config = {
         "manifest": str(args.manifest),
         "seeds": args.seeds,

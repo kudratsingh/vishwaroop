@@ -19,7 +19,6 @@ import itertools
 import json
 import math
 import os
-import platform
 import re
 import statistics
 import subprocess
@@ -41,6 +40,7 @@ from ..sim.so100_kinematics import (
     BASE_YAW,
     tool_point,
 )
+from . import device as device_module
 from .pilot_data import ACTION_SIZE, STATE_SIZE, load_train, split_holdout
 
 HISTORY = 3
@@ -70,25 +70,12 @@ def _torch() -> Any:
 
 
 def _sync(device: str) -> None:
-    if device == "mps":
-        _torch().mps.synchronize()
-    elif device == "cuda":
-        _torch().cuda.synchronize()
+    device_module.sync(device)
 
 
 def _peak_tracker(device: str) -> Callable[[], float]:
-    """A function that samples Metal's allocation and returns the highest seen, in bytes."""
-    torch = _torch()
-    peak = [0.0]
-
-    def sample() -> float:
-        if device == "mps":
-            peak[0] = max(peak[0], float(torch.mps.driver_allocated_memory()))
-        elif device == "cuda":
-            peak[0] = max(peak[0], float(torch.cuda.max_memory_allocated()))
-        return peak[0]
-
-    return sample
+    """Sample the accelerator's allocation; return the highest seen, in bytes."""
+    return device_module.peak_tracker(device)
 
 
 class _Data:
@@ -913,29 +900,8 @@ OPTION_DEFAULTS = {
 
 
 def _machine() -> dict[str, Any]:
-    torch = _torch()
-    chip = subprocess.run(
-        [
-            "/usr/sbin/sysctl",
-            "-n",
-            "machdep.cpu.brand_string",
-            "hw.memsize",
-            "hw.perflevel0.physicalcpu",
-        ],
-        capture_output=True,
-        text=True,
-        check=True,
-    ).stdout.split("\n")
-    return {
-        "chip": chip[0],
-        "memory_bytes": int(chip[1]),
-        "performance_cores": int(chip[2]),
-        "platform": platform.platform(),
-        "python": platform.python_version(),
-        "torch": str(torch.__version__),
-        "mps_available": bool(torch.backends.mps.is_available()),
-        "torch_threads": int(torch.get_num_threads()),
-    }
+    """The host's identity (``device.machine``): sysctl on macOS, /proc on Linux."""
+    return device_module.machine()
 
 
 def _parent(args: argparse.Namespace) -> int:

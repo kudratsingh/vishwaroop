@@ -32,6 +32,7 @@ from ..models.compute_pilot import (
     _torch,
 )
 from ..models.cube_study import EPOCHS, VARIANTS, _Kinematics, _rollout
+from ..models.device import add_device_argument, require
 from ..models.family_sweep import SEED_HOLDOUT
 from ..models.m1_evaluate import (
     ENSEMBLE_RUN,
@@ -326,8 +327,9 @@ def _score(device: str) -> dict[str, Any]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--device", choices=("mps", "cpu"), default="mps")
+    add_device_argument(parser, default="mps")
     args = parser.parse_args(argv)
+    require(args.device)
     try:
         require_code_root()
         _check(PLAN, PLAN_SHA256)

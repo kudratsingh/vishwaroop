@@ -24,6 +24,7 @@ from typing import Any
 
 from ..models.compute_pilot import _Data, _machine, _stats_of, _torch
 from ..models.cube_study import EPOCHS, _Kinematics
+from ..models.device import add_device_argument, require
 from ..models.family_sweep import PLAN_FILE, SEED_HOLDOUT, _code_changed, _write_new, check_resume
 from ..models.m1_evaluate import ENSEMBLE_RUN, TRAIN_MANIFEST, _load_ensemble
 from ..models.pilot_data import split_holdout, state_vector
@@ -221,9 +222,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--settings", type=Path, default=SETTINGS)
     parser.add_argument("--seeds", default="")
     parser.add_argument("--no-penalty", action="store_true")
-    parser.add_argument("--device", choices=("mps", "cpu"), default="cpu")
+    add_device_argument(parser, default="cpu")
     parser.add_argument("--resume-from", type=Path, default=None)
     args = parser.parse_args(argv)
+    require(args.device)
     try:
         require_code_root()
         seeds = parse_seeds(args.seeds, args.tuning)
