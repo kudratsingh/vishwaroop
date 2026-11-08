@@ -56,6 +56,7 @@ from .et_m3_6_data import (
     W_STAR,
     DataRefusalError,
     array_digest,
+    audit_recordings,
     base_split,
     check_arm,
     f1_augment,
@@ -167,6 +168,36 @@ def arm_data(arm: str, device: str, recordings: dict[str, Any], root: Path = Pat
     return data, info
 
 
+def checkpoint_record(checkpoint: Path) -> dict[str, str]:
+    """The saved checkpoint's path and sha256, as the result records them (owner, 2026-11-08)."""
+    return {
+        "checkpoint": str(checkpoint),
+        "checkpoint_sha256": hashlib.sha256(Path(checkpoint).read_bytes()).hexdigest(),
+    }
+
+
+def check_same_data(
+    arm: str, seed: int, info: dict[str, Any], stats_sha256: str, runs_root: Path = RUNS
+) -> None:
+    """Every seed of an arm trains on the same windows (F1's are "drawn once and shared by all
+    seeds"): refuse unless this seed's added-window digest, episodes and normalization digest equal
+    those of every earlier seed's result for the arm."""
+    for other in range(3):
+        if other == seed:
+            continue
+        for path in sorted(Path(runs_root).glob(f"*/{result_name(arm, other)}")):
+            done = json.loads(path.read_text(encoding="utf-8"))
+            for key in ("windows_sha256", "episodes", "total_windows"):
+                if done["data"].get(key) != info.get(key):
+                    raise GuardRefusalError(
+                        f"arm {arm} seed {seed}: {key} differs from seed {other}'s ({path})"
+                    )
+            if done["stats_sha256"] != stats_sha256:
+                raise GuardRefusalError(
+                    f"arm {arm} seed {seed}: normalization differs from seed {other}'s ({path})"
+                )
+
+
 def _device() -> str:
     """The one training device, ``DEVICE``; refused when this machine has no MPS."""
     torch = _torch()
@@ -221,8 +252,10 @@ def _run(args: argparse.Namespace) -> int:
             check_resume(plan, config, code_changed(plan["commit"]))
         work = home / "work" / f"{arm}-seed-{seed}"
         work.mkdir(parents=True, exist_ok=True)
+        audit = audit_recordings(recordings)
         data, info = arm_data(arm, device, recordings)
         stats = {**_stats_of(data), "kinematics": _Kinematics(device)}
+        check_same_data(arm, seed, info, stats_digest(stats), RUNS)
         started = time.perf_counter()
         checkpoint = work / "checkpoint.pt"
         _, training = _train(data, stats, VARIANTS[TRAINED_VARIANT], seed, EPOCHS, checkpoint)
@@ -233,11 +266,11 @@ def _run(args: argparse.Namespace) -> int:
             "machine": machine,
             "owner_approval": approval["record_id"],
             **config,
-            "checkpoint": str(checkpoint),
-            "checkpoint_sha256": hashlib.sha256(checkpoint.read_bytes()).hexdigest(),
+            **checkpoint_record(checkpoint),
             "stats_sha256": stats_digest(stats),
             "training": training,
             "data": info,
+            "split_audit": audit,
             "seconds_this_process": time.perf_counter() - started,
         }
         write_once(run.directory / result_name(arm, seed), report)

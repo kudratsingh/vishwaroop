@@ -117,6 +117,31 @@ def m0_train_entries(
     return entries
 
 
+def audit_recordings(
+    recordings: dict[str, Any], manifest_path: Path = M0_MANIFEST, root: Path = Path()
+) -> dict[str, Any]:
+    """``audit_splits`` (protocol section 2: it runs on every M3 manifest) over the whole M0 dataset
+    and every kept episode of the given recordings, with scene groups as a holdout axis too.
+    Refuses (``DataRefusalError``) on any leakage, so no arm trains on an unaudited set."""
+    from ironclad.contracts.v1.audit_splits import DEFAULT_GROUPS, audit
+    from ironclad.contracts.v1.validate import ContractError
+
+    raw = (Path(root) / manifest_path).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != M0_MANIFEST_SHA256:
+        raise DataRefusalError(f"{manifest_path} is not the frozen M0 manifest")
+    paths = [Path(root) / entry["path"] / "episode.json" for entry in json.loads(raw)["episodes"]]
+    listed = {"m0": len(paths)}
+    for key in sorted(recordings):
+        kept = recordings[key]["kept"]
+        paths += [Path(root) / item["path"] / "episode.json" for item in kept]
+        listed[key] = len(kept)
+    try:
+        result = audit(paths, (*DEFAULT_GROUPS, "scene_group_id"))
+    except (ContractError, KeyError, TypeError) as exc:
+        raise DataRefusalError(f"split audit failed: {exc}") from exc
+    return {**result, "episodes_by_source": listed}
+
+
 def split_m0(entries: Sequence[dict[str, Any]]) -> M0Split:
     """Base, no-harm holdout, F_star and the three excluded target episodes, in manifest order."""
     base: list[dict[str, Any]] = []
