@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-08 10:14 UTC · ledger records: 151
+Generated: 2026-11-08 10:16 UTC · ledger records: 152
 
 ## Phases
 
@@ -85,5 +85,5 @@ Generated: 2026-11-08 10:14 UTC · ledger records: 151
 | WO-019 | M4: import banshee's D1 simulation episodes, read-only, and validate them | M4 | **accepted** | 2026-11-07T12:27:12.479099Z | reports/WO-019-m4-import-banshee-d1.md |
 | WO-020 | M3: re-measure the family-holdout gaps under plain A, and pick M3's target family | M3 | **accepted** | 2026-11-07T07:13:29.084289Z | reports/WO-020-m3-remeasure-family-gaps.md |
 | WO-021 | M3: protocol, scene engine and the scene-consistency check (ET-M3-1) | M3 | **blocked** | 2026-11-08T07:43:37.149747Z | — |
-| WO-022 | M3: ET-M3-6's physics side on the Mac — reproducibility gate, evaluation family, arms F0, F_star, F1, F1s and F2 | M3 | **in_progress** | 2026-11-08T10:14:54.816600Z | — |
+| WO-022 | M3: ET-M3-6's physics side on the Mac — reproducibility gate, evaluation family, arms F0, F_star, F1, F1s and F2 | M3 | **accepted** | 2026-11-08T10:16:18.551340Z | reports/WO-022-m3-et-m3-6-physics-arms.md |
 
