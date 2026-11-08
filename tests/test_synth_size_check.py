@@ -1,5 +1,6 @@
-"""m3-protocol-2's size-checkable frames, the pilot's added stops and the zero-frame rule, on
-FABRICATED joint values and measurements. Standard library only, so these run on the CPU tier."""
+"""m3-protocol-3's size-checkable frames (kept from m3-protocol-2), its final-frame presence rule,
+the pilot's stops and the zero-frame rule, on FABRICATED joint values and measurements. Standard
+library only, so these run on the CPU tier."""
 
 from __future__ import annotations
 
@@ -14,7 +15,15 @@ import pytest
 
 from vishwaroop.sim.so100_kinematics import arm_segments, fingertips, segment_distance
 from vishwaroop.synth.checker import (
+    CONTROL_SEEDS,
+    NO_CUBE,
+    PILOT_SEEDS,
+    PRESENCE_FLOOR,
+    SHOWS,
     SIGHTLINE_CLEARANCE_M,
+    TOLERANCES_PATH,
+    UNCERTAIN,
+    UNCERTAIN_STATEMENT,
     ZERO_SIZE_CHECKABLE_STATEMENT,
     FrameStats,
     PilotCandidate,
@@ -27,7 +36,9 @@ from vishwaroop.synth.checker import (
     sightline_clearance,
     size_checkable_frames,
     size_checkable_summary,
+    table_placement,
     verdict,
+    visibility,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,11 +51,12 @@ TWICE = FrameStats(
 HOME = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 MEDIUM = FrameStats(red=((420, 300.0, 200.0),), green_count=400, green_centroid=(150.0, 350.0))
 GONE = FrameStats(red=(), green_count=400, green_centroid=(150.0, 350.0))
+FAINT = FrameStats(red=((11, 300.0, 200.0),), green_count=400, green_centroid=(150.0, 350.0))
+FLOOR = FrameStats(red=((12, 300.0, 200.0),), green_count=400, green_centroid=(150.0, 350.0))
+BIG = FrameStats(red=((1800, 300.0, 200.0),), green_count=400, green_centroid=(150.0, 350.0))
 TOL = Tolerances(
     a_lo=0.9,
     a_hi=1.1,
-    p_lo=0.5,
-    p_hi=2.0,
     merge_radius_px=30.0,
     first_frame_tolerance=0.5,
     goal_centroid_px=3.0,
@@ -53,7 +65,7 @@ TOL = Tolerances(
 MANIFEST = {
     "task_id": "PickCubeSO100-v1",
     "task_version": "m0-1",
-    "seed": 10400,
+    "seed": 10580,
     "asset_sha256s": ["a" * 64],
     "cube_half_size_m": 0.0125,
     "cube_colour": "red",
@@ -67,13 +79,28 @@ def run(frames: list[FrameStats], size_frames: int) -> Any:
 
 
 def test_the_frozen_numbers() -> None:
-    frozen = json.loads((ROOT / "evals/M3-protocol-2.json").read_text(encoding="utf-8"))
-    assert frozen["protocol_version"] == "m3-protocol-2"
-    assert "0.035 m" in frozen["ET-M3-1"]["size_checkable_frames"]
+    frozen = json.loads((ROOT / "evals/M3-protocol-3.json").read_text(encoding="utf-8"))
+    rule = frozen["ET-M3-1"]
+    assert frozen["protocol_version"] == "m3-protocol-3"
+    assert "0.035 m" in rule["size_checkable_frames"]
     assert SIGHTLINE_CLEARANCE_M == 0.035
-    assert "10300 to 10319" in frozen["ET-M3-1"]["tolerance_pilot"]
-    assert "10400 to 10459" in frozen["ET-M3-1"]["controls"]
-    assert "10200 + 10 x (t - 1) + i" in frozen["ET-M3-1"]["injections"]
+    assert "r >= 0.02" in rule["visibility"] and PRESENCE_FLOOR == 0.02
+    assert "10920 to 10939" in rule["tolerance_pilot"]
+    assert tuple(range(10920, 10940)) == PILOT_SEEDS
+    assert "10580 to 10639" in rule["controls"] and tuple(range(10580, 10640)) == CONTROL_SEEDS
+    assert "10520 + 10 x (t - 1) + i" in rule["injections"]
+    assert "evals/M3-checker-tolerances-p3.json" in rule["tolerance_pilot"]
+    assert Path("evals/M3-checker-tolerances-p3.json") == TOLERANCES_PATH
+    assert "No presence band is set" in rule["tolerance_pilot"]
+
+
+def test_visibility_classes() -> None:
+    assert visibility(0.0) == NO_CUBE
+    assert visibility(1e-9) == UNCERTAIN
+    assert visibility(0.0199999) == UNCERTAIN
+    assert visibility(0.02) == SHOWS
+    assert visibility(12 / 600) == SHOWS
+    assert visibility(3.0) == SHOWS
 
 
 def test_the_size_band_applies_only_in_size_checkable_frames() -> None:
@@ -84,18 +111,55 @@ def test_the_size_band_applies_only_in_size_checkable_frames() -> None:
     assert failed["size_checkable_frames"] == 2 and failed["frames"] == 3
 
 
-def test_the_presence_band_applies_in_every_frame() -> None:
-    for size_frames in (0, 1, 3):
+def test_the_final_frame_must_show_the_cube() -> None:
+    for size_frames in (0, 1, 2):
         result = run([CUBE, CUBE, GONE], size_frames).to_json()
-        assert "cube_area" in result["failed_checks"]
-        assert result["failures"]["cube_area"]["frame"] == 2
-    assert run([CUBE, SMALL], 1).to_json()["failed_checks"] == ["cube_area"]
+        assert result["failed_checks"] == ["cube_presence"]
+        assert result["failures"]["cube_presence"]["frame"] == 2
+        assert result["final_visibility"] == NO_CUBE
+    assert run([CUBE, CUBE, GONE], 3).to_json()["failed_checks"] == ["cube_size", "cube_presence"]
+    uncertain = run([CUBE, CUBE, FAINT], 1).to_json()
+    assert uncertain["failed_checks"] == ["cube_presence"]
+    assert uncertain["final_visibility"] == UNCERTAIN
+    assert run([CUBE, CUBE, FLOOR], 1).passed
+
+
+def test_no_presence_requirement_before_the_final_frame_after_the_checkable_ones() -> None:
+    result = run([CUBE, GONE, FAINT, GONE, SMALL], 1).to_json()
+    assert result["passed"]
+    assert result["final_ratio"] == pytest.approx(216 / 600)
+    assert result["longest_unseen_run"] == {"length": 3, "start": 1}
+    assert run([CUBE, CUBE], 1).to_json()["longest_unseen_run"] == {"length": 0, "start": -1}
+
+
+def test_no_upper_area_bound_outside_the_checkable_frames() -> None:
+    assert run([CUBE, BIG, BIG], 1).passed
+    assert run([CUBE, BIG, BIG], 2).to_json()["failed_checks"] == ["cube_size"]
+
+
+def test_a_snapshot_render_without_a_cube_fails_size_and_presence() -> None:
+    ref = reference(MANIFEST, GONE, SHAPE, TOL)
+    result = evaluate(dict(MANIFEST), [SHAPE] * 2, 0.0, [CUBE, CUBE], ref, TOL, 0).to_json()
+    assert result["failed_checks"] == ["cube_size", "cube_presence"]
+    assert result["final_ratio"] is None
+
+
+def test_an_unmeasured_final_frame_fails_presence() -> None:
+    ref = reference(MANIFEST, CUBE, SHAPE, TOL)
+    shapes = [SHAPE, (256, 256, 3)]
+    result = evaluate(dict(MANIFEST), shapes, 0.0, [CUBE], ref, TOL, 0).to_json()
+    assert result["failed_checks"] == ["frame_shape", "cube_presence"]
+    empty = evaluate(dict(MANIFEST), [], None, [], ref, TOL, 0).to_json()
+    assert "cube_presence" in empty["failed_checks"]
 
 
 def test_a_candidate_with_no_size_checkable_frame_gets_no_size_check_only() -> None:
     result = run([CUBE, MEDIUM], 0).to_json()
     assert result["passed"] and result["size_checkable_frames"] == 0
     assert "gets no cube_size check" in ZERO_SIZE_CHECKABLE_STATEMENT
+    assert run([CUBE, GONE], 0).to_json()["failed_checks"] == ["cube_presence"]
+    assert "still gets cube_presence" in ZERO_SIZE_CHECKABLE_STATEMENT
+    assert "uncertain visibility counts as not seen" in UNCERTAIN_STATEMENT
 
 
 def test_the_other_checks_still_apply_in_every_frame() -> None:
@@ -165,19 +229,32 @@ def test_camera_position_needs_an_exposed_camera() -> None:
         sightline_clearance(HOME, (math.nan, 0, 0), (0, 0, 0))
 
 
+def candidate(
+    seed: int,
+    frames: tuple[FrameStats, ...],
+    size_frames: int,
+    moved: tuple[float, ...] | None = None,
+    shift: float | None = 50.0,
+    snapshot: FrameStats = CUBE,
+) -> PilotCandidate:
+    displacement = moved if moved is not None else (0.0,) * len(frames)
+    return PilotCandidate(
+        seed, snapshot, frames, 0.1, size_frames, displacement, goal_shift_min_px=shift
+    )
+
+
 def _pilot(size_frames: int, moved: float = 0.0, moved_at: int = 1) -> list[PilotCandidate]:
     frames = (CUBE, CUBE, CUBE, SMALL)
     displacement = tuple(moved if k == moved_at else 0.0 for k in range(len(frames)))
-    return [
-        PilotCandidate(10300, CUBE, frames, 0.1, size_frames, displacement),
-        PilotCandidate(10301, CUBE, frames, 0.1, 3, (0.0,) * 4),
-    ]
+    return [candidate(10920, frames, size_frames, displacement), candidate(10921, frames, 3)]
 
 
 def test_the_pilot_band_ignores_frames_that_are_not_size_checkable() -> None:
     result = pilot_tolerances(_pilot(3))
     assert result["size_band"] == pytest.approx([0.9, 1.1])
-    assert result["presence_band"] == pytest.approx([0.324, 1.1])
+    assert "presence_band" not in result and result["presence_floor"] == PRESENCE_FLOOR
+    assert result["protocol_version"] == "m3-protocol-3"
+    assert Tolerances.from_json(result).a_lo == pytest.approx(0.9)
     assert result["sightline_clearance_m"] == SIGHTLINE_CLEARANCE_M
     summary = result["observed"]["size_checkable"]
     assert summary["min"] == 3 and summary["with_none"] == 0
@@ -186,32 +263,92 @@ def test_the_pilot_band_ignores_frames_that_are_not_size_checkable() -> None:
 
 def test_the_pilot_stops_when_more_than_two_candidates_lack_a_checkable_frame() -> None:
     frames = (CUBE, CUBE, CUBE, CUBE)
-    short = [PilotCandidate(10300 + k, CUBE, frames, 0.1, 1, (0.0,) * 4) for k in range(3)]
-    full = PilotCandidate(10310, CUBE, frames, 0.1, 4, (0.0,) * 4)
+    short = [candidate(10920 + k, frames, 1) for k in range(3)]
+    full = candidate(10930, frames, 4)
     assert pilot_tolerances([*short[:2], full])
-    with pytest.raises(PilotStopError, match="more than 2") as stop:
+    with pytest.raises(PilotStopError, match=r"\(1\).*more than 2") as stop:
         pilot_tolerances([*short, full])
     assert stop.value.observed["without_size_checkable_frame_1_to_T_minus_1"] == [
-        10300,
-        10301,
-        10302,
+        10920,
+        10921,
+        10922,
     ]
 
 
 def test_the_pilot_stops_when_a_checkable_frame_is_not_full_size() -> None:
     frames = (CUBE, MEDIUM, CUBE, CUBE)
-    with pytest.raises(PilotStopError, match="not knowable"):
-        pilot_tolerances([PilotCandidate(10300, CUBE, frames, 0.1, 3, (0.0,) * 4)])
-    assert pilot_tolerances([PilotCandidate(10300, CUBE, frames, 0.1, 1, (0.0,) * 4)])
+    with pytest.raises(PilotStopError, match=r"\(3\).*not knowable"):
+        pilot_tolerances([candidate(10920, frames, 3)])
+    assert pilot_tolerances([candidate(10920, frames, 1)])
 
 
 def test_the_pilot_reports_every_stop_that_holds() -> None:
     frames = (CUBE, MEDIUM, CUBE, CUBE)
     moved = (0.0, 0.01, 0.0, 0.0)
     with pytest.raises(PilotStopError) as stop:
-        pilot_tolerances([PilotCandidate(10300, CUBE, frames, 0.1, 3, moved)])
+        pilot_tolerances([candidate(10920, (*frames, GONE), 3, (*moved, 0.0), shift=None)])
     reasons = " ".join(stop.value.observed["stops"])
+    for number in ("(2)", "(3)", "(7)", "(9)"):
+        assert number in reasons
     assert "moved" in reasons and "not knowable" in reasons
+
+
+def test_the_pilot_stops_when_a_final_frame_does_not_show_the_cube() -> None:
+    for last in (GONE, FAINT):
+        with pytest.raises(PilotStopError, match=r"\(7\) seed 10921: the final frame 3") as stop:
+            pilot_tolerances(
+                [candidate(10920, (CUBE,) * 4, 4), candidate(10921, (CUBE,) * 3 + (last,), 1)]
+            )
+        finals = stop.value.observed["final_frames"]
+        assert finals["10921"]["final_visibility"] == visibility(
+            last.red[0][0] / 600 if last.red else 0.0
+        )
+        assert finals["10920"]["final_visibility"] == SHOWS
+    hidden_then_seen = (CUBE, GONE, GONE, FLOOR)
+    result = pilot_tolerances([candidate(10920, hidden_then_seen, 1)])
+    assert result["observed"]["final_frames"]["10920"]["longest_unseen_run"] == {
+        "length": 2,
+        "start": 1,
+    }
+
+
+def test_the_pilot_stops_when_the_merge_radius_reaches_the_duplicate_offset() -> None:
+    def split(gap: float) -> FrameStats:
+        return FrameStats(
+            red=((500, 300.0, 200.0), (100, 300.0, 200.0 + gap)),
+            green_count=400,
+            green_centroid=(150.0, 350.0),
+        )
+
+    assert pilot_tolerances([candidate(10920, (CUBE, CUBE, split(54.0)), 1)])
+    with pytest.raises(PilotStopError, match=r"\(8\) the merge radius 60.5"):
+        pilot_tolerances([candidate(10920, (CUBE, CUBE, split(55.0)), 1)])
+
+
+def test_the_pilot_stops_when_a_goal_shift_could_pass() -> None:
+    off = FrameStats(red=((600, 300.0, 200.0),), green_count=400, green_centroid=(150.0, 355.0))
+    frames = (CUBE, off, CUBE)
+    result = pilot_tolerances([candidate(10920, frames, 1, shift=5.51)])
+    assert result["goal_centroid_px"] == pytest.approx(5.5)
+    assert result["observed"]["goal_shift_min_px"] == {"value": 5.51, "seed": 10920}
+    with pytest.raises(PilotStopError, match=r"\(9\) the goal-centroid distance 5.5 px"):
+        pilot_tolerances([candidate(10920, frames, 1, shift=5.5)])
+    with pytest.raises(PilotStopError, match=r"\(9\) seeds \[10921\]"):
+        pilot_tolerances([candidate(10920, frames, 1), candidate(10921, frames, 1, shift=None)])
+
+
+def test_the_pilot_stops_on_a_snapshot_without_cube_or_goal() -> None:
+    no_goal = FrameStats(red=CUBE.red, green_count=0, green_centroid=None)
+    with pytest.raises(PilotStopError) as stop:
+        pilot_tolerances(
+            [
+                candidate(10920, (CUBE,) * 3, 1, snapshot=GONE),
+                candidate(10921, (CUBE,) * 3, 1, snapshot=no_goal),
+            ]
+        )
+    reasons = stop.value.observed["stops"]
+    assert "(6) seed 10920: the snapshot render shows no cube" in reasons
+    assert "(6) seed 10921: the snapshot render shows no goal" in reasons
 
 
 def test_the_pilot_stops_when_the_cube_moves_in_a_checkable_frame() -> None:
@@ -238,11 +375,15 @@ def test_the_size_check_summary() -> None:
 def test_the_verdict_reports_how_often_the_size_check_ran() -> None:
     controls = [
         {
-            "seed": 10400 + n,
+            "seed": 10580 + n,
             "passed": True,
             "failed_checks": [],
             "size_checkable_frames": 20,
             "frames": 100,
+            "final_ratio": [1.0, 0.01, 0.0][n % 3],
+            "final_visibility": [SHOWS, UNCERTAIN, NO_CUBE][n % 3],
+            "longest_unseen_run": {"length": 0, "start": -1},
+            "final_cube": {"over_table": True},
         }
         for n in range(60)
     ]
@@ -250,7 +391,7 @@ def test_the_verdict_reports_how_often_the_size_check_ran() -> None:
         {
             "type": t,
             "name": f"t{t}",
-            "seed": 10200 + 10 * (t - 1) + i,
+            "seed": 10520 + 10 * (t - 1) + i,
             "source_passed": True,
             "injected_passed": False,
             "failed_checks": ["x"],
@@ -265,12 +406,33 @@ def test_the_verdict_reports_how_often_the_size_check_ran() -> None:
     assert result["size_check"]["controls"]["share_of_frames_checked"] == pytest.approx(0.2)
     assert len(result["size_check"]["cube_resized_steps"]) == 10
     assert result["size_check"]["cube_resized_steps"][0] == {
-        "seed": 10220,
-        "frozen_seed": 10220,
+        "seed": 10540,
+        "frozen_seed": 10540,
         "skipped_seeds": [],
         "step": 3,
         "T": 99,
     }
+    shown = result["visibility"]["controls"]
+    assert (shown["final_no_cube"], shown["final_uncertain"]) == (20, 20)
+    assert shown["per_candidate"][1]["seed"] == 10581
+    assert shown["per_candidate"][1]["final_cube"] == {"over_table": True}
+
+    sources = result["visibility"]["injection_sources"]
+    assert sources["final_not_measured"] == 60
+    assert sources["per_candidate"][0]["seed"] == 10520
+    assert "uncertain" in result["uncertain_visibility"]
+    assert "ET-M3-2 has to judge presence and size" in result["limits"]
+
+
+def test_table_placement_tells_held_from_resting() -> None:
+    resting = table_placement((0.0, 0.0, 0.0125), 0.0125)
+    assert resting["over_table"] and resting["resting_on_table"]
+    held = table_placement((0.0, 0.0, 0.25), 0.0125)
+    assert held["over_table"] and not held["resting_on_table"]
+    fallen = table_placement((0.0, 0.0, -0.9), 0.0125)
+    assert not fallen["over_table"] and not fallen["resting_on_table"]
+    beyond = table_placement((0.6, 0.0, 0.0125), 0.0125)
+    assert not beyond["over_table"]
 
 
 def test_every_pinned_file_has_its_pinned_sha256() -> None:
@@ -280,6 +442,7 @@ def test_every_pinned_file_has_its_pinned_sha256() -> None:
 
     for path, expected in FROZEN.items():
         assert hashlib.sha256((ROOT / path).read_bytes()).hexdigest() == expected, path
-    frozen = json.loads((ROOT / "evals/M3-protocol-2.json").read_text(encoding="utf-8"))
+    frozen = json.loads((ROOT / "evals/M3-protocol-3.json").read_text(encoding="utf-8"))
     for path, expected in frozen["builds_on"].items():
         assert FROZEN[Path(path)] == expected, path
+    assert Path("evals/M3-protocol-3.json") in FROZEN

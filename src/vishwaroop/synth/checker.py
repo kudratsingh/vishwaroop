@@ -1,25 +1,30 @@
 """ET-M3-1's deterministic scene-consistency checker, its tolerance pilot and its threshold.
 
-Frozen in ``evals/M3-protocol-2.json`` (``m3-protocol-2``), which replaces the ET-M3-1 of
+Frozen in ``evals/M3-protocol-3.json`` (``m3-protocol-3``), which replaces the ET-M3-1 of
 ``evals/M3-exit-tests.json``. A candidate is a candidate manifest, frames 0 to T, and, for frame
-eligibility only, its scene's initial joint and cube positions and its actions. It passes when
-every check holds:
+eligibility only, its scene's initial joint and cube positions and its actions. For a frame, r is
+its merged red area (the red components whose centroids lie within the merge radius of the largest
+one's centroid) over the snapshot render's merged cube area, compared unrounded; the frame shows the
+cube when r >= 0.02, shows no cube when r = 0, and its visibility is uncertain otherwise
+(``visibility``). A candidate passes when every check holds:
 
 - ``manifest``: the candidate manifest's fields equal the snapshot's;
+- ``frame_shape``: every frame has the render's shape;
 - ``first_frame``: frame 0's mean absolute difference from the snapshot's saved render, over every
   pixel and channel in uint8 units, is at most the first-frame tolerance;
-- ``cube_area``: in every frame, the red components whose centroids lie within the merge radius
-  of the largest one's centroid have a total area within the presence band [p_lo, p_hi] x the
-  snapshot render's cube area (protocol-1's band, kept for every frame);
-- ``cube_size``: in every size-checkable frame (``size_checkable_frames``), that area is within the
-  size band [a_lo, a_hi]; a candidate with no size-checkable frame gets no ``cube_size`` check;
+- ``cube_size``: in every size-checkable frame (``size_checkable_frames``), r is within the size
+  band [a_lo, a_hi]; a candidate with no size-checkable frame gets no ``cube_size`` check;
+- ``cube_presence``: the final frame T shows the cube (r >= 0.02); a final frame that shows no cube
+  or whose visibility is uncertain fails. No other frame has a presence requirement, and no frame
+  outside the size-checkable ones has an upper area bound;
 - ``extra_red``: in no frame does another red component of at least 0.25 x that area exist;
 - ``goal_centroid``: in every frame with at least the pilot's minimum count of green pixels (and at
   least one), the green pixels' centroid is within the goal-centroid distance of the snapshot's.
 
-The tolerances come from ``evals/M3-checker-tolerances.json``, pinned by the sha256 the caller
-passes. The rules here are standard library only; ``measure`` and ``first_frame_difference`` need
-numpy and scipy and import them when called. Distances are in pixels, areas in pixel counts.
+A snapshot render with no cube fails ``cube_size`` and ``cube_presence``. The tolerances come from
+``evals/M3-checker-tolerances-p3.json``, pinned by the sha256 the caller passes. The rules here
+are standard library only; ``measure`` and ``first_frame_difference`` need numpy and scipy and
+import them when called. Distances are in pixels, areas in pixel counts.
 """
 
 from __future__ import annotations
@@ -36,7 +41,7 @@ from typing import Any
 from ..sim.so100_kinematics import arm_segments, segment_distance
 from .protocol import PROTOCOL_VERSION
 
-TOLERANCES_PATH = Path("evals/M3-checker-tolerances.json")
+TOLERANCES_PATH = Path("evals/M3-checker-tolerances-p3.json")
 WIDENING = 0.10
 BAND_LIMITS = (0.36, 2.56)
 OTHER_COMPONENT_FRACTION = 0.25
@@ -59,13 +64,23 @@ CHECKS = (
     "manifest",
     "frame_shape",
     "first_frame",
-    "cube_area",
     "cube_size",
+    "cube_presence",
     "extra_red",
     "goal_centroid",
 )
-PILOT_SEEDS = tuple(range(10300, 10320))
-CONTROL_SEEDS = tuple(range(10400, 10460))
+PILOT_SEEDS = tuple(range(10920, 10940))
+CONTROL_SEEDS = tuple(range(10580, 10640))
+PRESENCE_FLOOR = 0.02
+SHOWS, NO_CUBE, UNCERTAIN = "shows the cube", "no cube", "uncertain"
+SMALLEST_DUPLICATE_OFFSET_PX = 60.0  # min(hypot(*offset)) over inject.DUPLICATE_OFFSETS
+GOAL_MOVE_MIN_M = 0.03  # inject.GOAL_MOVE_M[0]
+GOAL_SHIFT_DIRECTIONS_DEG = tuple(range(360))
+# The PickCube table's collision box (mani_skill 3.0.1 TableSceneBuilder): its top at z = 0 over
+# x in [-0.7245, 0.4845] and y in [-1.209, 1.209]. For reporting only.
+TABLE_TOP_X_M = (-0.12 - 1.209 / 2, -0.12 + 1.209 / 2)
+TABLE_TOP_Y_M = (-2.418 / 2, 2.418 / 2)
+RESTING_TOLERANCE_M = 0.005  # reporting only: a resting cube's centre is its half size above z = 0
 SIGHTLINE_CLEARANCE_M = 0.035
 MAX_PILOT_CUBE_DISPLACEMENT_M = 0.005
 PILOT_SIZE_PREMISE_BAND = (0.95, 1.05)
@@ -80,17 +95,26 @@ PHYSICS_STATEMENT = (
 
 
 ZERO_SIZE_CHECKABLE_STATEMENT = (
-    "A candidate with no size-checkable frame gets no cube_size check; every other check, the "
-    "cube_area presence band in every frame included, still applies, and the candidate is "
-    "reported as size not checked. A cube-resize source with no size-checkable frame 1 to T - 1 "
-    "is replaced by the next seed from 10800 up that has one."
+    "A candidate with no size-checkable frame (n = 0) gets no cube_size check and still gets "
+    "cube_presence and every other check; it is reported as size not checked. A cube-resize "
+    "source with no size-checkable frame 1 to T - 1 is replaced by the next seed from 10660 up "
+    "(to 10749) that has one."
+)
+UNCERTAIN_STATEMENT = (
+    "A frame shows the cube when r >= 0.02, shows no cube when r = 0, and its visibility is "
+    "uncertain when 0 < r < 0.02. Before the arm is first commanded near the camera-to-cube "
+    "sightline, cube_size needs the whole cube at its size, so a missing or uncertain cube fails "
+    "there. After that, a frame that shows no cube or is uncertain is accepted without deciding "
+    "whether the cube is hidden or missing. At the final frame the cube must be seen: uncertain "
+    "visibility counts as not seen and fails. A cube legitimately hidden at the final frame, or "
+    "knocked off the table or out of view, is rejected, which the checker cannot tell from removal."
 )
 LIMITS_STATEMENT = (
-    "The cube_size band runs only in the frames before the arm first nears the sightline, so a "
-    "size error that starts later is caught only if it leaves the every-frame cube_area band. "
-    "Passing ET-M3-1 does not show that the checker judges cube size while the cube is grasped, "
-    "carried or placed; ET-M3-2's audit has to judge cube size in frames that were not "
-    "size-checked."
+    "A cube that disappears after the size-checkable frames and reappears before the end is not "
+    "caught by cube_presence, and a size error after those frames is not caught by cube_size; an "
+    "enlarged cube is caught only in size-checkable frames. ET-M3-1 shows that the checker catches "
+    "a removal that persists to the end, a duplicate, and a resize that starts before the arm "
+    "approaches. ET-M3-2 has to judge presence and size in the frames between."
 )
 
 
@@ -152,6 +176,31 @@ def camera_position(snapshot_manifest: dict[str, Any]) -> tuple[float, float, fl
         raise ValueError("the snapshot records no render camera, so no frame is size-checkable")
     pose = camera["cam2world_gl"]
     return _point([pose[0][3], pose[1][3], pose[2][3]], "camera position")
+
+
+def visibility(ratio: float) -> str:
+    """Whether a frame with merged-area ratio ``ratio`` (unrounded) shows the cube (r >= 0.02),
+    shows no cube (r = 0), or has uncertain visibility (0 < r < 0.02)."""
+    if ratio >= PRESENCE_FLOOR:
+        return SHOWS
+    if ratio == 0:
+        return NO_CUBE
+    return UNCERTAIN
+
+
+def table_placement(position: Sequence[float], half_size_m: float) -> dict[str, Any]:
+    """For reporting only: whether the cube centre is over the table top (within its xy footprint,
+    z > 0, held or resting), whether it rests on it (also z within 0.005 m of the half size), and
+    its height above the table top."""
+    x, y, z = _point(position, "cube position")
+    over = (
+        TABLE_TOP_X_M[0] <= x <= TABLE_TOP_X_M[1] and TABLE_TOP_Y_M[0] <= y <= TABLE_TOP_Y_M[1]
+    ) and z > 0
+    return {
+        "over_table": over,
+        "resting_on_table": over and abs(z - half_size_m) <= RESTING_TOLERANCE_M,
+        "height_above_table_top_m": z,
+    }
 
 
 def candidate_manifest(snapshot_manifest: dict[str, Any]) -> dict[str, Any]:
@@ -232,12 +281,10 @@ def cube_area(stats: FrameStats, merge_radius: float) -> tuple[int, int]:
 @dataclass(frozen=True)
 class Tolerances:
     """The checker's pilot-set tolerances: the size band [a_lo, a_hi] for size-checkable frames,
-    the presence band [p_lo, p_hi] for every frame, and the rest."""
+    and the rest. There is no presence band; the presence floor 0.02 is frozen, not pilot-set."""
 
     a_lo: float
     a_hi: float
-    p_lo: float
-    p_hi: float
     merge_radius_px: float
     first_frame_tolerance: float
     goal_centroid_px: float
@@ -255,20 +302,18 @@ class Tolerances:
             raise ValueError("the tolerances file's other-component fraction is not 0.25")
         if data.get("sightline_clearance_m") != SIGHTLINE_CLEARANCE_M:
             raise ValueError("the tolerances file's sightline clearance is not 0.035 m")
-        for name in ("size_band", "presence_band"):
-            if not isinstance(data.get(name), list) or len(data[name]) != 2:
-                raise ValueError(f"the tolerances file has no two-value {name}")
+        if data.get("presence_floor") != PRESENCE_FLOOR:
+            raise ValueError("the tolerances file's presence floor is not 0.02")
+        if "presence_band" in data:
+            raise ValueError("m3-protocol-3 sets no presence band, and the tolerances file has one")
+        if not isinstance(data.get("size_band"), list) or len(data["size_band"]) != 2:
+            raise ValueError("the tolerances file has no two-value size_band")
         a_lo, a_hi = (float(value) for value in data["size_band"])
         if not (BAND_LIMITS[0] < a_lo <= a_hi < BAND_LIMITS[1]):
             raise ValueError(f"band [{a_lo}, {a_hi}] is outside the frozen limits {BAND_LIMITS}")
-        p_lo, p_hi = (float(value) for value in data["presence_band"])
-        if not 0 < p_lo <= p_hi:
-            raise ValueError(f"presence band [{p_lo}, {p_hi}] does not exclude a missing cube")
         return cls(
             a_lo=a_lo,
             a_hi=a_hi,
-            p_lo=p_lo,
-            p_hi=p_hi,
             merge_radius_px=float(data["merge_radius_px"]),
             first_frame_tolerance=float(data["first_frame_tolerance"]),
             goal_centroid_px=float(data["goal_centroid_px"]),
@@ -320,6 +365,8 @@ class CheckResult:
     failed: dict[str, dict[str, Any]] = field(default_factory=dict)
     size_checkable_frames: int = 0
     frames: int = 0
+    final_ratio: float | None = None
+    longest_unseen_run: dict[str, int] | None = None
 
     @property
     def passed(self) -> bool:
@@ -335,6 +382,9 @@ class CheckResult:
             "passed": self.passed,
             "size_checkable_frames": self.size_checkable_frames,
             "frames": self.frames,
+            "final_ratio": self.final_ratio,
+            "final_visibility": None if self.final_ratio is None else visibility(self.final_ratio),
+            "longest_unseen_run": self.longest_unseen_run,
             "failed_checks": [name for name in CHECKS if name in self.failed],
             "failures": {name: self.failed[name] for name in CHECKS if name in self.failed},
         }
@@ -351,8 +401,12 @@ def evaluate(
 ) -> CheckResult:
     """Apply every check to measured frames. ``first_difference`` is ``None`` when frame 0's shape
     differs from the render's, which fails ``frame_shape``. ``size_frames`` is
-    ``size_checkable_frames`` for the candidate: the presence band applies in every frame, and the
-    size band in frames 0 to ``size_frames - 1`` only (in none when it is 0)."""
+    ``size_checkable_frames`` for the candidate: the size band applies in frames 0 to
+    ``size_frames - 1`` only (in none when it is 0). ``cube_presence`` reads the final frame T only,
+    which is ``stats[-1]`` when frame T has the render's shape (``check_candidate`` measures only
+    such frames); otherwise frame T is not measured and ``cube_presence`` fails with
+    ``frame_shape``. The final frame's r and the longest run of frames with r < 0.02 are recorded
+    when every frame was measured."""
     if isinstance(size_frames, bool) or not isinstance(size_frames, int) or size_frames < 0:
         raise ValueError(f"size_frames is a non-negative integer, not {size_frames!r}")
     result = CheckResult(size_checkable_frames=min(size_frames, len(stats)), frames=len(stats))
@@ -375,20 +429,17 @@ def evaluate(
             f"mean absolute difference {first_difference:.6g} > {tolerances.first_frame_tolerance}",
         )
     if ref.cube_area <= 0:
-        result.fail("cube_area", None, "the snapshot render shows no cube")
+        result.fail("cube_size", None, "the snapshot render shows no cube")
+        result.fail("cube_presence", None, "the snapshot render shows no cube")
     if ref.goal_centroid is None:
         result.fail("goal_centroid", None, "the snapshot render shows no goal")
     least_green = max(tolerances.min_green_pixels, 1)
+    ratios: list[float] = []
     for index, frame in enumerate(stats):
         if ref.cube_area > 0:
             merged, outside = cube_area(frame, tolerances.merge_radius_px)
             ratio = merged / ref.cube_area
-            if not tolerances.p_lo <= ratio <= tolerances.p_hi:
-                result.fail(
-                    "cube_area",
-                    index,
-                    f"area ratio {ratio:.4g} outside [{tolerances.p_lo}, {tolerances.p_hi}]",
-                )
+            ratios.append(ratio)
             if index < size_frames and not tolerances.a_lo <= ratio <= tolerances.a_hi:
                 result.fail(
                     "cube_size",
@@ -411,7 +462,39 @@ def evaluate(
                     f"goal centroid {gap:.4g} px from the snapshot's, "
                     f"> {tolerances.goal_centroid_px}",
                 )
+    final_measured = (
+        bool(stats) and bool(frame_shapes) and tuple(frame_shapes[-1]) == ref.render_shape
+    )
+    if ref.cube_area > 0:
+        if not final_measured:
+            result.fail("cube_presence", None, "the final frame was not measured")
+        elif visibility(ratios[-1]) != SHOWS:
+            result.fail(
+                "cube_presence",
+                len(frame_shapes) - 1,
+                f"the final frame's area ratio {ratios[-1]:.4g} is below {PRESENCE_FLOOR} "
+                f"({visibility(ratios[-1])})",
+            )
+    if ratios and len(stats) == len(frame_shapes) and final_measured:
+        result.final_ratio = ratios[-1]
+        result.longest_unseen_run = longest_unseen_run(ratios)
     return result
+
+
+def longest_unseen_run(ratios: Sequence[float]) -> dict[str, int]:
+    """The longest run of consecutive frames with r < 0.02 (no cube or uncertain), as its length
+    and first frame; length 0 and start -1 when every frame shows the cube."""
+    best = (0, -1)
+    start = -1
+    for index, ratio in enumerate(ratios):
+        if ratio < PRESENCE_FLOOR:
+            if start < 0:
+                start = index
+            if index - start + 1 > best[0]:
+                best = (index - start + 1, start)
+        else:
+            start = -1
+    return {"length": best[0], "start": best[1]}
 
 
 def check_candidate(
@@ -439,8 +522,11 @@ def check_candidate(
 class PilotCandidate:
     """One pilot candidate's measurements: its snapshot render's, every frame's, frame 0's
     difference from the snapshot render, its ``size_checkable_frames``, the simulator's cube
-    displacement from its initial position at every frame (frame 0's is 0), and the sightline
-    clearance of the simulator's actual joint positions at every frame (for the record)."""
+    displacement from its initial position at every frame (frame 0's is 0), the sightline
+    clearance of the simulator's actual joint positions at every frame (for the record), and the
+    smallest image displacement, in pixels and unrounded, of the scene's goal moved 0.03 m in xy
+    over directions every 1 degree, from the render camera's projection (``None`` if not
+    measured, which stops the pilot)."""
 
     seed: int
     snapshot: FrameStats
@@ -449,6 +535,7 @@ class PilotCandidate:
     size_frames: int
     cube_displacement_m: tuple[float, ...]
     actual_clearance_m: tuple[float, ...] = ()
+    goal_shift_min_px: float | None = None
 
 
 def _widen_up(value: float) -> float:
@@ -469,17 +556,21 @@ def _extreme(values: Sequence[tuple[float, int, int]], pick: Any) -> dict[str, A
 def pilot_tolerances(candidates: Sequence[PilotCandidate]) -> dict[str, Any]:
     """The tolerances by the frozen rule: each the pilot's observed extreme widened by 10%.
 
-    Upper extremes (the area ratios' maxima, the merge distance, the first-frame difference, the
-    goal-centroid distance) are multiplied by 1.1 and the area ratios' minima by 0.9. The size
-    band's extremes are over size-checkable frames only, the presence band's and the others' over
-    every frame. The minimum green count is the pilot's observed minimum.
+    Upper extremes (the size-checkable area ratios' maximum, the merge distance, the first-frame
+    difference, the goal-centroid distance) are multiplied by 1.1 and the size-checkable area
+    ratios' minimum by 0.9. The size band's extremes are over size-checkable frames only; the
+    merge radius, first-frame tolerance, goal-centroid distance and minimum green count are taken
+    over every frame. The minimum green count is the pilot's observed minimum. No presence band is
+    set.
 
-    Every stop condition is evaluated, and ``PilotStopError`` lists all that hold, so that the
-    owner is told: more than 2 candidates without a size-checkable frame 1 to T - 1; the
-    simulator's cube more than 0.005 m from its start in a size-checkable frame; a size-checkable
-    frame's area ratio outside [0.95, 1.05]; the size band not inside 0.36 < a_lo and
-    a_hi < 2.56; a pilot frame showing no cube, so the presence band cannot exclude a missing one;
-    no size-checkable frame at all; a snapshot render showing no cube or no goal.
+    Every stop condition of ``evals/M3-protocol-3.json`` is evaluated, and ``PilotStopError``
+    lists all that hold, so that the owner is told: (1) more than 2 of the candidates without a
+    size-checkable frame 1 to T - 1; (2) the simulator's cube more than 0.005 m from its start in a
+    size-checkable frame; (3) a size-checkable frame's area ratio outside [0.95, 1.05]; (4) the
+    widened size band not inside 0.36 < a_lo and a_hi < 2.56; (5) no size-checkable frame at all;
+    (6) a snapshot render showing no cube or no goal; (7) a candidate's final frame not showing the
+    cube (r < 0.02); (8) the merge radius 60 px or more; (9) the goal-centroid distance at least
+    the smallest ``goal_shift_min_px`` of any candidate (or one not measured).
     """
     if not candidates:
         raise ValueError("the pilot has no candidates")
@@ -499,7 +590,7 @@ def pilot_tolerances(candidates: Sequence[PilotCandidate]) -> dict[str, Any]:
     observed["without_size_checkable_frame_1_to_T_minus_1"] = short
     if len(short) > MAX_PILOT_SHORT_CANDIDATES:
         stops.append(
-            f"{len(short)} candidates (seeds {short}) have no size-checkable frame 1 to T - 1, "
+            f"(1) {len(short)} candidates (seeds {short}) have no size-checkable frame 1 to T - 1, "
             f"more than {MAX_PILOT_SHORT_CANDIDATES}"
         )
     moved = max(
@@ -512,7 +603,7 @@ def pilot_tolerances(candidates: Sequence[PilotCandidate]) -> dict[str, Any]:
     }
     if moved[0] > MAX_PILOT_CUBE_DISPLACEMENT_M:
         stops.append(
-            f"seed {moved[1]}: the cube moved {moved[0]:.4g} m in a size-checkable frame, "
+            f"(2) seed {moved[1]}: the cube moved {moved[0]:.4g} m in a size-checkable frame, "
             f"more than {MAX_PILOT_CUBE_DISPLACEMENT_M} m"
         )
     actual = [
@@ -528,36 +619,47 @@ def pilot_tolerances(candidates: Sequence[PilotCandidate]) -> dict[str, Any]:
     )
     radius = _widen_up(merge[0])
     observed["merge_distance_px"] = {"value": merge[0], "seed": merge[1], "frame": merge[2]}
+    observed["merge_radius_px"] = radius
+    if radius >= SMALLEST_DUPLICATE_OFFSET_PX:
+        stops.append(
+            f"(8) the merge radius {radius:.4g} px is {SMALLEST_DUPLICATE_OFFSET_PX:g} px or more, "
+            "the smallest duplicate offset, so a duplicate could merge with the cube"
+        )
     every: list[tuple[float, int, int]] = []
     checkable: list[tuple[float, int, int]] = []
+    finals: dict[str, dict[str, Any]] = {}
     for item in candidates:
         ref_area, _ = cube_area(item.snapshot, radius)
         if ref_area == 0:
-            stops.append(f"seed {item.seed}: the snapshot render shows no cube")
+            stops.append(f"(6) seed {item.seed}: the snapshot render shows no cube")
             continue
-        for index, stats in enumerate(item.frames):
-            ratio = (cube_area(stats, radius)[0] / ref_area, item.seed, index)
-            every.append(ratio)
+        ratios = [cube_area(stats, radius)[0] / ref_area for stats in item.frames]
+        for index, value in enumerate(ratios):
+            every.append((value, item.seed, index))
             if index < item.size_frames:
-                checkable.append(ratio)
+                checkable.append((value, item.seed, index))
+        if ratios:
+            finals[str(item.seed)] = {
+                "final_ratio": ratios[-1],
+                "final_visibility": visibility(ratios[-1]),
+                "longest_unseen_run": longest_unseen_run(ratios),
+            }
+            if visibility(ratios[-1]) != SHOWS:
+                stops.append(
+                    f"(7) seed {item.seed}: the final frame {len(ratios) - 1} does not show the "
+                    f"cube (area ratio {ratios[-1]:.4g} < {PRESENCE_FLOOR})"
+                )
+    observed["final_frames"] = finals
     observed["area_ratio_min"] = _extreme(every, min)
     observed["area_ratio_max"] = _extreme(every, max)
     observed["size_checkable_area_ratio_min"] = _extreme(checkable, min)
     observed["size_checkable_area_ratio_max"] = _extreme(checkable, max)
-    presence = (_widen_down(min(every)[0]), _widen_up(max(every)[0])) if every else (0.0, 0.0)
     size = (
         (_widen_down(min(checkable)[0]), _widen_up(max(checkable)[0])) if checkable else (0.0, 0.0)
     )
-    observed["presence_band"] = list(presence)
     observed["size_band"] = list(size)
-    if every and presence[0] <= 0:
-        low = min(every)
-        stops.append(
-            f"seed {low[1]} frame {low[2]} shows no cube, so the presence band cannot exclude a "
-            "missing cube"
-        )
     if not checkable:
-        stops.append("no pilot frame is size-checkable")
+        stops.append("(5) no pilot frame is size-checkable")
     else:
         outside = [
             r
@@ -568,14 +670,14 @@ def pilot_tolerances(candidates: Sequence[PilotCandidate]) -> dict[str, Any]:
         if outside:
             worst = max(outside, key=lambda r: abs(r[0] - 1))
             stops.append(
-                f"{len(outside)} size-checkable pilot frames have an area ratio outside "
+                f"(3) {len(outside)} size-checkable pilot frames have an area ratio outside "
                 f"{list(PILOT_SIZE_PREMISE_BAND)} (worst {worst[0]:.4g}, seed {worst[1]} frame "
                 f"{worst[2]}), so the cube's size is not knowable there"
             )
         if not (BAND_LIMITS[0] < size[0] and size[1] < BAND_LIMITS[1]):
             stops.append(
-                f"the widened size band [{size[0]:.4g}, {size[1]:.4g}] is not inside 0.36 < a_lo "
-                "and a_hi < 2.56"
+                f"(4) the widened size band [{size[0]:.4g}, {size[1]:.4g}] is not inside "
+                "0.36 < a_lo and a_hi < 2.56"
             )
     green = min(
         (stats.green_count, item.seed, index)
@@ -588,13 +690,36 @@ def pilot_tolerances(candidates: Sequence[PilotCandidate]) -> dict[str, Any]:
     for item in candidates:
         centre = item.snapshot.green_centroid
         if centre is None:
-            stops.append(f"seed {item.seed}: the snapshot render shows no goal")
+            stops.append(f"(6) seed {item.seed}: the snapshot render shows no goal")
             continue
         for index, stats in enumerate(item.frames):
             if stats.green_count >= least_green and stats.green_centroid is not None:
                 gaps.append((_distance(stats.green_centroid, centre), item.seed, index))
     gap = max(gaps)
     observed["goal_centroid_px"] = {"value": gap[0], "seed": gap[1], "frame": gap[2]}
+    goal_tolerance = _widen_up(gap[0])
+    unmeasured = [item.seed for item in candidates if item.goal_shift_min_px is None]
+    shifts = [
+        (float(item.goal_shift_min_px), item.seed)
+        for item in candidates
+        if item.goal_shift_min_px is not None
+    ]
+    smallest_shift = min(shifts) if shifts else None
+    observed["goal_shift_min_px"] = (
+        None if smallest_shift is None else {"value": smallest_shift[0], "seed": smallest_shift[1]}
+    )
+    observed["goal_centroid_tolerance_px"] = goal_tolerance
+    if unmeasured:
+        stops.append(
+            f"(9) seeds {unmeasured} have no measured goal-move shift, so stop (9) cannot be "
+            "evaluated"
+        )
+    if smallest_shift is not None and goal_tolerance >= smallest_shift[0]:
+        stops.append(
+            f"(9) the goal-centroid distance {goal_tolerance:.4g} px is at least the smallest "
+            f"image displacement of a {GOAL_MOVE_MIN_M} m goal move, {smallest_shift[0]:.4g} px "
+            f"(seed {smallest_shift[1]}), so a type-4 pixel shift could pass"
+        )
     first = max((item.first_difference, item.seed) for item in candidates)
     observed["first_frame_difference"] = {"value": first[0], "seed": first[1]}
     if stops:
@@ -602,21 +727,23 @@ def pilot_tolerances(candidates: Sequence[PilotCandidate]) -> dict[str, Any]:
     return {
         "protocol_version": PROTOCOL_VERSION,
         "rule": (
-            "ET-M3-1 tolerance pilot (m3-protocol-2): each tolerance is the pilot's observed "
+            "ET-M3-1 tolerance pilot (m3-protocol-3): each tolerance is the pilot's observed "
             "extreme widened by 10%; the size band over size-checkable frames, subject to "
-            "0.36 < a_lo and a_hi < 2.56; the presence band over every frame"
+            "0.36 < a_lo and a_hi < 2.56; the merge radius, first-frame tolerance, goal-centroid "
+            "distance and minimum green count over every frame; no presence band (the presence "
+            "floor 0.02 is frozen)"
         ),
         "pilot_seeds": [item.seed for item in candidates],
         "widening": WIDENING,
         "sightline_clearance_m": SIGHTLINE_CLEARANCE_M,
         "masks": MASK_RULES,
         "size_band": list(size),
-        "presence_band": list(presence),
+        "presence_floor": PRESENCE_FLOOR,
         "band_limits": list(BAND_LIMITS),
         "merge_radius_px": radius,
         "first_frame_metric": FIRST_FRAME_METRIC,
         "first_frame_tolerance": _widen_up(first[0]),
-        "goal_centroid_px": _widen_up(gap[0]),
+        "goal_centroid_px": goal_tolerance,
         "min_green_pixels": green[0],
         "other_component_fraction": OTHER_COMPONENT_FRACTION,
         "observed": observed,
@@ -641,6 +768,23 @@ def size_checkable_summary(counts: Sequence[tuple[int, int]]) -> dict[str, Any]:
         "median": statistics.median(checked),
         "max": checked[-1],
         "share_of_frames_checked": sum(checked) / total if total else 0.0,
+    }
+
+
+def visibility_summary(candidates: Sequence[dict[str, Any]]) -> dict[str, Any]:
+    """For reporting: how many candidates' final frames show no cube or are uncertain, and each
+    candidate's final r, final visibility, longest run of frames with r < 0.02 and where it starts,
+    and, where recorded, the simulator's final cube position (``final_cube``)."""
+    keys = ("final_ratio", "final_visibility", "longest_unseen_run", "final_cube")
+    rows = [
+        {"seed": item.get("seed"), **{key: item.get(key) for key in keys}} for item in candidates
+    ]
+    return {
+        "candidates": len(rows),
+        "final_no_cube": sum(1 for row in rows if row["final_visibility"] == NO_CUBE),
+        "final_uncertain": sum(1 for row in rows if row["final_visibility"] == UNCERTAIN),
+        "final_not_measured": sum(1 for row in rows if row["final_visibility"] is None),
+        "per_candidate": rows,
     }
 
 
@@ -669,7 +813,8 @@ def verdict(
 
     ``controls`` items carry ``seed``, ``passed`` and ``failed_checks``. ``injections`` items carry
     ``type``, ``name``, ``seed``, ``source_passed``, ``injected_passed`` (``None`` if not built) and
-    ``failed_checks``.
+    ``failed_checks``. Controls and sources may also carry the ``CheckResult.to_json`` and
+    ``final_cube`` fields that ``visibility_summary`` reports.
     """
     rejected = [
         item for item in injections if credited(item["source_passed"], item["injected_passed"])
@@ -685,7 +830,7 @@ def verdict(
             for check in item["failed_checks"]:
                 by_check[check] = by_check.get(check, 0) + 1
     interval = list(wilson(len(false), len(controls))) if controls else None
-    sources = [item["source"] for item in injections if "source" in item]
+    sources = [{**item["source"], "seed": item["seed"]} for item in injections if "source" in item]
     size_check = {
         "controls": size_checkable_summary(
             [
@@ -737,7 +882,12 @@ def verdict(
             {"seed": item["seed"], "failed_checks": item["failed_checks"]} for item in false
         ],
         "size_check": size_check,
+        "visibility": {
+            "controls": visibility_summary(controls),
+            "injection_sources": visibility_summary(sources),
+        },
         "zero_size_checkable": ZERO_SIZE_CHECKABLE_STATEMENT,
+        "uncertain_visibility": UNCERTAIN_STATEMENT,
         "limits": LIMITS_STATEMENT,
         "statement": PHYSICS_STATEMENT,
     }

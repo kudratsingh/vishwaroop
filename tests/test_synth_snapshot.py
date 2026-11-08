@@ -138,14 +138,16 @@ def test_the_pilot_and_scoring_flow_end_to_end(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A shortened ET-M3-1 on fabricated scenes: 4 pilot seeds, 4 controls, 8 injections."""
-    monkeypatch.setattr(et_m3_1, "PILOT_SEEDS", (10900, 10901, 10902, 10903))
-    monkeypatch.setattr(et_m3_1, "CONTROL_SEEDS", (10000, 10001, 10002, 10003))
+    monkeypatch.setattr(et_m3_1, "PILOT_SEEDS", (10920, 10921, 10922, 10923))
+    monkeypatch.setattr(et_m3_1, "CONTROL_SEEDS", (10580, 10581, 10582, 10583))
     plan = [(t, 0, inject.injection_seed(t, 0)) for t in range(1, 7)]
     plan += [(4, 1, inject.injection_seed(4, 1)), (4, 2, inject.injection_seed(4, 2))]
     monkeypatch.setattr(inject, "injection_plan", lambda: sorted(plan, key=lambda x: x[2]))
     env: Any = FakeSceneEnv()
     measured = et_m3_1.run_pilot(env, TASK, tmp_path / "pilot")
-    assert [e["seed"] for e in measured["episodes"]] == [10900, 10901, 10902, 10903]
+    assert [e["seed"] for e in measured["episodes"]] == [10920, 10921, 10922, 10923]
+    assert all(e["goal_shift_min_px"]["value"] > 0 for e in measured["episodes"])
+    assert all(e["final_cube"]["projects_inside_image"] for e in measured["episodes"])
     written = pilot_tolerances(measured["candidates"])
     tolerances = Tolerances.from_json(json.loads(json.dumps(written)))
     assert (tolerances.a_lo, tolerances.a_hi) == pytest.approx((0.9, 1.1))
@@ -158,7 +160,12 @@ def test_the_pilot_and_scoring_flow_end_to_end(
     assert result["injections_rejected"] == 8 and result["false_rejections"] == 0
     assert not result["passed"]  # 8 of the frozen 60: the shortened run cannot pass
     assert result["rejections_by_type"]["goal_or_task_changed"] == {"injected": 3, "rejected": 3}
-    assert (tmp_path / "score" / "snapshots" / "seed-010750" / "snapshot.json").exists()
+    assert (tmp_path / "score" / "snapshots" / "seed-010770" / "snapshot.json").exists()
+    shown = result["visibility"]["controls"]
+    assert shown["candidates"] == 4 and shown["final_no_cube"] == shown["final_uncertain"] == 0
+    assert all(row["final_cube"]["over_table"] for row in shown["per_candidate"])
+    assert all("error" not in row["final_cube"] for row in shown["per_candidate"])
+    assert result["visibility"]["injection_sources"]["candidates"] == 8
     json.dumps(report, allow_nan=False)
     with pytest.raises(SnapshotError, match="written once"):
         et_m3_1.run_score(env, TASK, tmp_path / "score", tolerances)
@@ -206,11 +213,11 @@ def test_frame_t_is_rendered_after_exactly_t_steps_with_the_seed_as_noise_seed(
     assert seen == [10001]
 
 
-def test_a_short_resize_source_is_replaced_from_10800_up(
+def test_a_short_resize_source_is_replaced_from_10660_up(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """FABRICATED: the frozen type-3 source is made short; the scorer takes 10800 instead."""
-    monkeypatch.setattr(et_m3_1, "CONTROL_SEEDS", (10400,))
+    """FABRICATED: the frozen type-3 source is made short; the scorer takes 10660 instead."""
+    monkeypatch.setattr(et_m3_1, "CONTROL_SEEDS", (10580,))
     frozen = inject.injection_seed(3, 0)
     monkeypatch.setattr(inject, "injection_plan", lambda: [(3, 0, frozen)])
     real = et_m3_1._size_frames
@@ -226,6 +233,20 @@ def test_a_short_resize_source_is_replaced_from_10800_up(
     )
     report = et_m3_1.run_score(env, TASK, tmp_path / "score", tolerances)
     item = report["injections"][0]
-    assert item["frozen_seed"] == frozen and item["seed"] == 10800
+    assert item["frozen_seed"] == frozen and item["seed"] == 10660
     assert item["skipped_seeds"] == [{"seed": frozen, "size_checkable_frames": 1, "T": 15}]
     assert item["detail"]["step"] >= 1 and item["injected_passed"] is False
+
+
+def test_a_final_cube_report_error_is_recorded_not_raised() -> None:
+    """FABRICATED: reporting-only final_cube must never abort a one-shot run."""
+    env: Any = FakeSceneEnv()
+    snap = take_snapshot(env, 10580, *TASK[:2])
+    rendered = render_episode(env, snap, et_m3_1_episodes([10580])[0], TASK[2])
+    good = et_m3_1.final_cube(snap, rendered)
+    assert "error" not in good and good["projects_inside_image"]
+    rendered.cube_positions[-1] = [float("nan"), 0.0, 0.0]
+    assert "finite" in et_m3_1.final_cube(snap, rendered)["error"]
+    del snap.manifest["cube_half_size_m"]
+    rendered.cube_positions[-1] = [0.0, 0.0, 0.0125]
+    assert "cube_half_size_m" in et_m3_1.final_cube(snap, rendered)["error"]
