@@ -87,3 +87,12 @@ The frozen text leaves these open. The owner may veto the agent-set ET-M3-6 deta
   - **Details 2 and 3 approved.** F1s also reports its scene overlap with F2 and its window count separately.
   - **Checkpoints:** saved and sha256-hashed.
   - **Not scored:** block 16 and the no-harm set stay unscored until F3's protocol is frozen.
+- **2026-11-08, code reviewed and rechecked (`AGENTS.md` §13.8), then recorded and trained; nothing scored.** The report is `reports/WO-022-m3-et-m3-6-physics-arms.md`.
+  - **Review and recheck.** The review raised 17 findings, 4 of them blockers, all fixed in `2d56c8d`. The recheck found no blockers. Its nits were fixed before recording (PR #49) and before training (PR #51).
+  - **Recordings** (**measured**, simulation):
+    - evaluation family: 60 kept, 0 skipped, seeds 16000–16059 (`20261108T085827Z_7c4da015`);
+    - F2: 29 kept, 0 skipped, 4,161 windows used (`20261108T090103Z_293f1e74`);
+    - F1s: 27 kept, 0 skipped, 4,161 windows, 27 of F2's 29 scenes (`20261108T090335Z_9c50a729`).
+  - **Split audit:** it passed on 436 episodes.
+  - **Training** (**measured**, Mac MPS): F0, F_star, F1, F1s and F2, each on seeds 0, 1 and 2, 30 epochs, 15 runs. Every checkpoint is sha256-hashed and re-verifies. Every seed of an arm has the same data and normalization digests.
+  - **Not done:** no arm has been scored on block 16 or the no-harm set, and none will be until F3's protocol is frozen. ET-M3-6 stays open, waiting on F3.
