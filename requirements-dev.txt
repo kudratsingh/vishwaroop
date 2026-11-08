@@ -6,3 +6,4 @@ pytest==9.1.1
 ruff==0.16.9
 mypy==2.3.1
 ironclad-kit @ git+https://github.com/kudratsingh/ironclad@v1.2.0
+pyarrow==26.0.0  # WO-023: LeRobot v3.0 Parquet tables (Apache-2.0)
