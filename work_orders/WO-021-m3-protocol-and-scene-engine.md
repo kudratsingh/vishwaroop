@@ -120,3 +120,8 @@ A pilot that cannot fit a band inside the frozen limits (the owner is told); any
     - the size band is [0.9, 1.1];
     - every final frame shows the cube (smallest r 0.275).
   - Nothing was written to `evals/`, and no control or injection was generated. Seeds 10320–10379, 10460–10519, 10260–10299 and 10780–10789 remain unsimulated. Seeds 10940–10959 are spent.
+- **2026-11-07, ET-M3-1 recorded as failed under `m3-protocol-4` (pilot stop 9); the owner put ET-M3-1 on hold.**
+  - The report is `reports/WO-021-et-m3-1-protocol-4.md`. The owner's hold is `approvals-20261108T074331649665Z-d15195a4`: "Hold ET-M3-1. Preserve the protocol-4 stop record and the unused seeds. If we reopen it, bring a design that gives the checker a reliable view of the goal and defines how to handle scenes where visibility is insufficient. For now, prioritize SO-101 work that can proceed independently of this test."
+  - **Seeds.** 10940 to 10959 are spent. Protocol 4's never-simulated seeds stay unused and are held for ET-M3-1: 10260–10299, 10320–10379, 10460–10519 and 10780–10789. They are listed as `ET_M3_1_HELD_SEEDS` in `src/vishwaroop/synth/protocol.py`, and `check_not_held` refuses them to other work.
+  - **WO-021 is `blocked`.** A reopening needs a new protocol, sent to the owner before freezing, with a fresh pilot on seeds that no earlier protocol named. That protocol must give the checker a reliable view of the goal and define how scenes with insufficient visibility are handled. The acceptance thresholds and the four failure records are unchanged.
+  - The ET-M3-2 audits above stay owed.

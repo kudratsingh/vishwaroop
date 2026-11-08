@@ -23,6 +23,15 @@ M0_TRAIN_BLOCKS = range(8)
 M0_DEV_BLOCKS = (8, 9)
 TRAINING_REFUSED_BLOCKS = (*M0_DEV_BLOCKS, *DEV_BLOCKS)
 KINDS = ("synth", "eval")
+# ET-M3-1 is on hold (owner, 2026-11-07, after m3-protocol-4's pilot stop). The seeds that
+# m3-protocol-4 named for its controls, injections, type-3 replacements and type-6 renders were
+# never simulated; they stay unused, kept for ET-M3-1, and no other work may take them.
+ET_M3_1_HELD_SEEDS = (
+    range(10260, 10300),  # type-3 replacements
+    range(10320, 10380),  # controls
+    range(10460, 10520),  # injections
+    range(10780, 10790),  # type-6 renders
+)
 _NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 
 
@@ -83,6 +92,23 @@ def check_training_seeds(seeds: Iterable[int]) -> list[int]:
         if block not in TRAIN_BLOCKS and block not in M0_TRAIN_BLOCKS:
             raise ProtocolRefusalError(
                 f"seed {seed} is in block {block}, outside the frozen blocks"
+            )
+        checked.append(seed)
+    return checked
+
+
+def check_not_held(seeds: Iterable[int]) -> list[int]:
+    """Refuse any seed held for ET-M3-1 (``ET_M3_1_HELD_SEEDS``). Returns the seeds, unchanged.
+
+    Work other than ET-M3-1 calls this before simulating, so the held seeds stay unused.
+    """
+    checked = []
+    for seed in seeds:
+        block_of(seed)
+        if any(seed in held for held in ET_M3_1_HELD_SEEDS):
+            raise ProtocolRefusalError(
+                f"seed {seed} is held for ET-M3-1 (m3-protocol-4's unused seeds; owner hold "
+                "2026-11-07)"
             )
         checked.append(seed)
     return checked
