@@ -110,7 +110,7 @@ A separate document, written only after §3.4 passes, sent to the owner, frozen 
 
 | # | Work order (proposed) | Size | Depends on | Runs on fixtures now? |
 |---|---|---|---|---|
-| WO-A | **Real-episode importer** (already approved and being built): LeRobot dataset → contract v1 with joints, images, object pose `reference_only`, `embodiment_id: so101_real` | in progress | — | yes, on fabricated datasets |
+| WO-A | **Real-episode importer**, WO-023 (built on fixtures 2026-11-08, PR #59; real data not run): LeRobot dataset → contract v1 with joints, images, object pose `reference_only`, `embodiment_id: so101_real` | done on fixtures | — | yes, on fabricated datasets |
 | WO-B | **Candidate generator library:** perturbation menu (time shift, EE offsets via SO-101 FK/IK, gripper timing), joint-limit clipping, nesting and seeding, distinctness metric; an abstract hook for latent or noise-seed sampling | S | SO-101 kinematics from the official URDF (licence checked) | yes: fabricated chunks; mocked/fixture |
 | WO-C | **ACT export loader and latent-diversity measurement:** load an immutable, hash-verified ACT export through public `lerobot`, replay logged observations (no arm), generate z ~ N(0, τ²I) candidates, report distinctness against the gate in §2 | M | WO-006 import of an arm-project ACT export; real episodes from WO-A | loader on a randomly initialised ACT (fixture); the measurement waits for the export |
 | WO-D | **Real-state scorer port:** SO-101 state layout without grasp flag, inferred held state, knock-gate fix, real violation definitions, nominal from measured servo lag, training and conformal calibration scripts | M | WO-A; bench prerequisites (top camera, tags, servo-lag measurement) | yes: fabricated episodes |

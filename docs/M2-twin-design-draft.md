@@ -136,7 +136,7 @@ A split declaration (proposed file `evals/M2a-data-split.json`) is frozen and it
 ### 6.1 Prerequisites
 | Dependency | State today | Needed for |
 |---|---|---|
-| Real-episode importer (owner item 4, $0; LeRobot dataset → contract v1 with image streams and `reference_only` object pose) | being built on fixtures; no number assigned in this checkout | every real recording |
+| Real-episode importer (owner item 4, $0; LeRobot dataset → contract v1 with image streams and `reference_only` object pose) | WO-023, built on fixtures 2026-11-08 (`docs/SO101_EXPORT.md`); real data not run | every real recording |
 | Arm-project exports (checkpoints with config, preprocessor, normalisation stats, weights in `safetensors`, eval results, `COMPLETE`) | none exist | ET-M2a-1, -3, -4 |
 | WO-006 policy registry with `holdout` per run | created, not started | D/H split |
 | Bench prerequisites: fixed cameras with locked exposure and white balance, fixed lighting, printed template with board, servo gains settled (P gain decided once, then a calibration id), session-start drift check, AprilTag or colour object pose from a top camera as `reference_only` | kit arrived 2026-11-08; not set up | every recording |
@@ -150,7 +150,7 @@ Twin rollouts for ET-M2a-3: 10 policies × 18 placements × 5 repeats ≈ 900 ep
 | # | Work order | Size | Needs |
 |---|---|---|---|
 | 1 | ADR recording the M2a redesign; `docs/PHASES.md` and `config/phases.json` deliverable text updated, ET texts marked "proposed, not frozen" | S | owner approval of this draft |
-| 2 | Real-episode importer (already approved, in progress) | M | none further |
+| 2 | Real-episode importer, WO-023 (built on fixtures) | M | none further |
 | 3 | SO-101 twin scene: pinned asset, environment id, template scene, image streams on the `SimEnv` protocol, CPU-tier tests with a fake | M | 1 |
 | 4 | Input-spec manifest and compatibility checker (spec comparison, loopback, execution config), tested on fabricated policy configs | S | 3; real exports for the loopback test |
 | 5 | Bench calibration protocol, excitation target files, collection manifests and the split declaration (frozen before any recording) | S | 1; owner bench setup |
