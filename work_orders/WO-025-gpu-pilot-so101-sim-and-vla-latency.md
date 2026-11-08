@@ -12,7 +12,7 @@ Answer two questions with measurements, on one rented card and on the Mac:
 1. **Simulator throughput.** How fast does ManiSkill3 step and render an SO-arm scene on a GPU, compared with the Mac? This sizes the M2 twin's rollouts.
 2. **VLA inference latency.** How long do ACT, SmolVLA and π0.5 take per decision, including batches of N candidates? Is that within the control budget, and what card class does that imply? This feeds M5-early's latency question and the workstation decision (owner item 6).
 
-## The exact workload
+## Scope: the exact workload
 **Software:** Python 3.12; `mani-skill==3.0.1` and `sapien==3.0.3` (this repository's resolved lock); `lerobot==0.6.1` (2026-08-03; 0.7.0 of 2026-11-05 is too new to pin); torch from a Linux CUDA lock resolved in this work order before the rental. Exact pins are recorded in `config/`.
 
 **A. Simulator throughput.**
