@@ -277,6 +277,17 @@ def goal_envelope_px(visible: float, radius_px: float) -> float:
     return segment_rho(min(visible, 1.0)) * radius_px + GOAL_MARGIN_PX
 
 
+def goal_frame(
+    stats: FrameStats, centre: tuple[float, float], radius_px: float
+) -> list[float | None]:
+    """A frame's goal record, [v_g, the green centroid's distance from p, E], with the distance
+    and E ``None`` when the frame has no green pixel (the record is written without NaN)."""
+    seen = goal_visibility(stats.green_count, radius_px)
+    if stats.green_count < 1 or stats.green_centroid is None:
+        return [seen, None, None]
+    return [seen, _distance(stats.green_centroid, centre), goal_envelope_px(seen, radius_px)]
+
+
 def guarantee_level(radius_px: float, smallest_shift_px: float) -> float | None:
     """For reporting only: the smallest v with 2 (rho(v) r_g + 1.5) < s_min, s_min the scene's
     smallest whole-pixel 0.03 m goal shift; a final frame at or above it certainly catches a
@@ -472,6 +483,7 @@ class CheckResult:
     longest_unseen_run: dict[str, int] | None = None
     final_goal_visibility: float | None = None
     max_goal_excess: dict[str, Any] | None = None
+    goal_frames: list[list[float | None]] = field(default_factory=list)
 
     @property
     def passed(self) -> bool:
@@ -492,6 +504,7 @@ class CheckResult:
             "longest_unseen_run": self.longest_unseen_run,
             "final_goal_visibility": self.final_goal_visibility,
             "max_goal_excess": self.max_goal_excess,
+            "goal_frames": self.goal_frames,
             "failed_checks": [name for name in CHECKS if name in self.failed],
             "failures": {name: self.failed[name] for name in CHECKS if name in self.failed},
         }
@@ -558,6 +571,8 @@ def evaluate(
                 )
             if outside >= OTHER_COMPONENT_FRACTION * ref.cube_area:
                 result.fail("extra_red", index, f"another red component of {outside} px")
+        row = goal_frame(frame, ref.goal_centre, ref.goal_radius_px)
+        result.goal_frames.append(row)
         if frame.green_count >= 1 and frame.green_centroid is not None:
             seen = goal_visibility(frame.green_count, ref.goal_radius_px)
             envelope = goal_envelope_px(seen, ref.goal_radius_px)
@@ -811,7 +826,6 @@ def pilot_tolerances(candidates: Sequence[PilotCandidate]) -> dict[str, Any]:
     for item in candidates:
         if item.snapshot.green_count <= 0 or item.snapshot.green_centroid is None:
             stops.append(f"(6) seed {item.seed}: the snapshot render shows no goal")
-            continue
         if item.goal is None:
             stops.append(f"(9) seed {item.seed}: its goal geometry was not measured")
             continue
@@ -966,13 +980,17 @@ def visibility_summary(candidates: Sequence[dict[str, Any]]) -> dict[str, Any]:
             if row["final_goal_visibility"] is not None
             and row["final_goal_visibility"] < GOAL_FINAL_FLOOR
         ),
-        "final_goal_below_guarantee_level": sum(
-            1
+        "final_goal_below_guarantee_level": [
+            {
+                "seed": row["seed"],
+                "final_goal_visibility": row["final_goal_visibility"],
+                "goal_guarantee_level": row["goal_guarantee_level"],
+            }
             for row in rows
             if row["final_goal_visibility"] is not None
             and row["goal_guarantee_level"] is not None
             and GOAL_FINAL_FLOOR <= row["final_goal_visibility"] < row["goal_guarantee_level"]
-        ),
+        ],
         "per_candidate": rows,
     }
 

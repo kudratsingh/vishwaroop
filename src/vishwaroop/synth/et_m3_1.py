@@ -58,6 +58,7 @@ from .checker import (
     camera_position,
     check_candidate,
     first_frame_difference,
+    goal_frame,
     goal_geometry,
     guarantee_level,
     load_tolerances,
@@ -258,11 +259,12 @@ def run_pilot(env: RenderingEnv, task: tuple[str, str, int], run_dir: Path) -> d
         shift = goal_shifts(snapshot.manifest)
         rendered = render_episode(env, snapshot, episode, task[2])
         start = rendered.initial_cube
+        measured_frames = tuple(measure(frame) for frame in rendered.frames)
         candidates.append(
             PilotCandidate(
                 seed=episode.seed,
                 snapshot=measure(snapshot.render),
-                frames=tuple(measure(frame) for frame in rendered.frames),
+                frames=measured_frames,
                 first_difference=first_frame_difference(rendered.frames[0], snapshot.render),
                 size_frames=_size_frames(snapshot, rendered),
                 cube_displacement_m=tuple(
@@ -282,6 +284,7 @@ def run_pilot(env: RenderingEnv, task: tuple[str, str, int], run_dir: Path) -> d
                 "size_checkable_frames": candidates[-1].size_frames,
                 "cube_positions": rendered.cube_positions,
                 "actual_clearance_m": list(candidates[-1].actual_clearance_m),
+                "goal_frames": [goal_frame(stats, goal[0], goal[1]) for stats in measured_frames],
                 "goal": {
                     "projected_centre": list(goal[0]),
                     "projected_radius_px": goal[1],

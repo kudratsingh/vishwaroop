@@ -379,6 +379,11 @@ def test_the_pilot_stops_on_a_snapshot_without_cube_or_goal() -> None:
     reasons = stop.value.observed["stops"]
     assert "(6) seed 10920: the snapshot render shows no cube" in reasons
     assert "(6) seed 10921: the snapshot render shows no goal" in reasons
+    low = FrameStats(red=CUBE.red, green_count=100, green_centroid=(150.0, 350.0))
+    with pytest.raises(PilotStopError) as both:
+        pilot_tolerances([candidate(10940, (CUBE, CUBE, low), 1, snapshot=no_goal)])
+    listed = " ".join(both.value.observed["stops"])
+    assert "(6) seed 10940" in listed and "(9) seed 10940: the final frame" in listed
 
 
 def test_the_pilot_stops_when_the_cube_moves_in_a_checkable_frame() -> None:
@@ -517,6 +522,9 @@ def test_goal_envelope_follows_visibility() -> None:
     assert run([CUBE, CUBE], 1).to_json()["max_goal_excess"]["value"] == pytest.approx(
         -1.5, abs=1e-3
     )
+    record = run([CUBE, far, FrameStats(CUBE.red, 0, None)], 1).to_json()["goal_frames"]
+    assert record[1][1] == pytest.approx(7.0) and record[1][2] == pytest.approx(6.29, abs=0.01)
+    assert record[2] == [0.0, None, None]
 
 
 def test_the_final_frame_must_show_enough_of_the_goal() -> None:

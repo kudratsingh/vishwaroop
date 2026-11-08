@@ -148,6 +148,9 @@ def test_the_pilot_and_scoring_flow_end_to_end(
     assert [e["seed"] for e in measured["episodes"]] == [10940, 10941, 10942, 10943]
     assert all(e["goal"]["smallest_whole_pixel_shift_px"] > 0 for e in measured["episodes"])
     assert all(e["goal"]["projected_radius_px"] > 0 for e in measured["episodes"])
+    first = measured["episodes"][0]
+    assert len(first["goal_frames"]) == first["T"] + 1
+    assert all(row[1] is not None and row[1] <= row[2] for row in first["goal_frames"])
     assert all(e["final_cube"]["projects_inside_image"] for e in measured["episodes"])
     written = pilot_tolerances(measured["candidates"])
     tolerances = Tolerances.from_json(json.loads(json.dumps(written)))
@@ -168,6 +171,10 @@ def test_the_pilot_and_scoring_flow_end_to_end(
     assert all(row["final_goal_visibility"] >= 0.4 for row in shown["per_candidate"])
     assert all(row["goal_guarantee_level"] is not None for row in shown["per_candidate"])
     assert shown["final_goal_below_floor"] == 0
+    assert shown["final_goal_below_guarantee_level"] == []
+    control = report["controls"][0]
+    assert len(control["goal_frames"]) == control["frames"]
+    assert all(len(row) == 3 for row in control["goal_frames"])
     assert all("error" not in row["final_cube"] for row in shown["per_candidate"])
     assert result["visibility"]["injection_sources"]["candidates"] == 8
     json.dumps(report, allow_nan=False)
