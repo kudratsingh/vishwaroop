@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-08 05:31 UTC · ledger records: 146
+Generated: 2026-11-08 07:43 UTC · ledger records: 148
 
 ## Phases
 
@@ -43,7 +43,7 @@ Generated: 2026-11-08 05:31 UTC · ledger records: 146
 | ET-M2b-2 | M2b | Ranking on held-out real checkpoint pairs using matched placements with randomized within-pair order and paired analysis. | proposed default: selection regret <= 5 points; false optimism <= 10%; sample size frozen from a precision plan | not_run | — |
 | ET-M2b-3 | M2b | Physical episodes saved at the validated selection error and cost per evaluated checkpoint are reported. | reported with denominators; no threshold on the value itself | not_run | — |
 | ET-M2b-4 | M2b | One sealed confirmation suite is opened once under logged owner authorization and the result is reported regardless of outcome. | exactly one opening; frozen candidate hashes recorded before access | not_run | — |
-| ET-M3-1 | M3 | Generation starts from initial frames rendered from known simulator scenes whose initial state and asset hashes were saved first; scene-consistency checks reject injected mismatches. | frozen: 100% of 60 injected mismatches rejected, at most 3 of 60 controls falsely rejected (evals/M3-exit-tests.json) | frozen | — |
+| ET-M3-1 | M3 | Generation starts from initial frames rendered from known simulator scenes whose initial state and asset hashes were saved first; scene-consistency checks reject injected mismatches. | frozen: 100% of 60 injected mismatches rejected, at most 3 of 60 controls falsely rejected (evals/M3-exit-tests.json) | failed | reports/WO-021-et-m3-1-protocol-4.md |
 | ET-M3-2 | M3 | Inverse-dynamics actions are replayed from the initial state only and judged on task predicates; executability and false accept/reject rates are measured on an audited sample. | proposed default: false acceptance <= 10% on >= 100 audited trajectories | not_run | — |
 | ET-M3-3 | M3 | Matched-budget downstream ablation on the SFT route: real-only, real plus ordinary augmentation, real plus generated, with multiple seeds and held-out success with intervals. | proposed default: >= 3 seeds per arm; a benefit is claimed only if real+generated beats real+augmentation by a frozen margin; a negative result is a valid delivery | not_run | — |
 | ET-M3-4 | M3 | Total generation, filtering and training cost per accepted trajectory is reported including rejected generations. | reported; no threshold on the value | not_run | — |
@@ -84,5 +84,5 @@ Generated: 2026-11-08 05:31 UTC · ledger records: 146
 | WO-018 | M2a: a GPU pilot to measure the speedup over the Mac, then one full run if it fits | M2a | **in_progress** | 2026-11-07T07:23:55.659967Z | — |
 | WO-019 | M4: import banshee's D1 simulation episodes, read-only, and validate them | M4 | **accepted** | 2026-11-07T12:27:12.479099Z | reports/WO-019-m4-import-banshee-d1.md |
 | WO-020 | M3: re-measure the family-holdout gaps under plain A, and pick M3's target family | M3 | **accepted** | 2026-11-07T07:13:29.084289Z | reports/WO-020-m3-remeasure-family-gaps.md |
-| WO-021 | M3: protocol, scene engine and the scene-consistency check (ET-M3-1) | M3 | **in_progress** | 2026-11-07T08:27:59.661473Z | — |
+| WO-021 | M3: protocol, scene engine and the scene-consistency check (ET-M3-1) | M3 | **blocked** | 2026-11-08T07:43:37.149747Z | — |
 

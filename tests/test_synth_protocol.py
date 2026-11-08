@@ -5,9 +5,11 @@ from __future__ import annotations
 import pytest
 
 from vishwaroop.synth.protocol import (
+    ET_M3_1_HELD_SEEDS,
     ProtocolRefusalError,
     block_of,
     check_family_seed,
+    check_not_held,
     check_training_seeds,
     family_id,
     family_partition,
@@ -86,3 +88,25 @@ def test_a_family_lies_wholly_in_one_partition() -> None:
         check_family_seed("m3-synth-lateral-miss", 16000)
     with pytest.raises(ProtocolRefusalError, match="wholly"):
         check_family_seed("m3-eval-missed-grasp", 11000)
+
+
+@pytest.mark.parametrize("seed", [10260, 10299, 10320, 10379, 10460, 10519, 10780, 10789])
+def test_seeds_held_for_et_m3_1_are_refused(seed: int) -> None:
+    with pytest.raises(ProtocolRefusalError, match="held for ET-M3-1"):
+        check_not_held([11000, seed])
+
+
+def test_seeds_next_to_the_held_ranges_pass() -> None:
+    seeds = [10259, 10300, 10319, 10380, 10459, 10520, 10779, 10790, 11000, 16000]
+    assert check_not_held(seeds) == seeds
+
+
+def test_the_held_seeds_are_protocol_4s_unused_seeds() -> None:
+    held = sorted(seed for block in ET_M3_1_HELD_SEEDS for seed in block)
+    assert len(held) == 40 + 60 + 60 + 10
+    assert all(partition_for_seed(seed) == "train" for seed in held)
+
+
+def test_check_not_held_refuses_a_bad_seed() -> None:
+    with pytest.raises(ProtocolRefusalError):
+        check_not_held([-1])
