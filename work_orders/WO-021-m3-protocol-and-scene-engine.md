@@ -106,3 +106,17 @@ A pilot that cannot fit a band inside the frozen limits (the owner is told); any
   - **Nits fixed:** the guarantee-band candidates are now listed, not counted; stops (9) and (10) are now evaluated for a snapshot without green.
   - **Recheck:** passed. Its nits are fixed in `126d28d`.
   - No protocol-4 seed had been simulated by then.
+- **2026-11-07, the `m3-protocol-4` tolerance pilot stopped by its frozen stop (9); paused for the owner.** Run `20261108T055657Z_063008b3`, at clean `1b55ac7`, seeds 10940 to 10959, exit 4 (**measured**, simulation).
+  - **Stop (9), the only stop that held.** Seed 10954's final frame shows v_g 0.325 of the goal, below the 0.4 floor (`goal_final`).
+  - **Goal-check measurements:**
+    - every normal frame is inside its goal envelope (largest distance minus E −0.67 px, seed 10956);
+    - stop (10) held for no seed: at every final frame a 0.03 m shift lands outside the envelope, with the smallest margin 1.16 px at 10954 itself;
+    - the other 19 final frames have v_g from 0.545 to 1.024.
+  - **Cube rules:**
+    - size-checkable frames are 17.7% of frames, at least 16 per candidate;
+    - size-checkable r is 1.000;
+    - the cube moves at most 1.7e-6 m in those frames;
+    - the merge radius is 27.3 px;
+    - the size band is [0.9, 1.1];
+    - every final frame shows the cube (smallest r 0.275).
+  - Nothing was written to `evals/`, and no control or injection was generated. Seeds 10320–10379, 10460–10519, 10260–10299 and 10780–10789 remain unsimulated. Seeds 10940–10959 are spent.
