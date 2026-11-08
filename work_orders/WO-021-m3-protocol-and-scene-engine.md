@@ -100,3 +100,9 @@ A pilot that cannot fit a band inside the frozen limits (the owner is told); any
     - lasting goal shifts with the goal partly occluded in the final frame. This is the known blind spot. Between v_g 0.4 and the scene's guarantee level, a lasting 0.03 m to 0.04 m move whose moved-toward side is hidden at T can pass `goal_envelope`.
 
     The frozen ET-M3-2 text in `evals/M3-exit-tests.json` is not edited. The audit is added by an amendment frozen before any ET-M3-2 data.
+- **2026-11-07, `m3-protocol-4`'s implementation reviewed and rechecked before its pilot (`AGENTS.md §13.8`).**
+  - **Review:** three lenses plus an adversarial verifier. The reviewers replayed the new goal check on the recorded spent-seed data, with no simulation, and every frozen in-sample number matched.
+  - **Blocker found and fixed:** the frozen per-frame goal record (v_g, the centroid's distance from p, and E) was computed but not written, in both the pilot and the score. Fixed in `9f9da4b`.
+  - **Nits fixed:** the guarantee-band candidates are now listed, not counted; stops (9) and (10) are now evaluated for a snapshot without green.
+  - **Recheck:** passed. Its nits are fixed in `126d28d`.
+  - No protocol-4 seed had been simulated by then.
