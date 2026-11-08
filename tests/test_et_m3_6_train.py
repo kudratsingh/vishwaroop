@@ -3,6 +3,8 @@ Nothing is trained here; no simulator ran."""
 
 from __future__ import annotations
 
+import hashlib
+import json
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -103,3 +105,77 @@ def test_the_hyperparameters_are_wo_004s() -> None:
     assert train.TRAINED_VARIANT == "carry-contact-beta-fall" and train.TRAINED_VARIANT in VARIANTS
     assert train.EPOCHS == 30 and train.SEEDS == (0, 1, 2)
     assert (MEMBERS, HIDDEN, BATCH, WINDOW) == (3, 256, 256, 14)
+
+
+def test_the_result_records_the_checkpoint_and_scoring_refuses_a_changed_one(
+    tmp_path: Path,
+) -> None:
+    from vishwaroop.models.et_m3_6_score import check_checkpoint
+    from vishwaroop.synth.et_m3_6_guard import GuardRefusalError
+
+    checkpoint = tmp_path / "checkpoint.pt"
+    checkpoint.write_bytes(b"weights")
+    record = train.checkpoint_record(checkpoint)
+    assert record["checkpoint_sha256"] == hashlib.sha256(b"weights").hexdigest()
+    assert check_checkpoint(record) == checkpoint
+    checkpoint.write_bytes(b"weights changed")
+    with pytest.raises(GuardRefusalError, match="not the trained"):
+        check_checkpoint(record)
+
+
+def _seed_result(runs: Path, arm: str, seed: int, data: dict[str, Any], stats: str) -> None:
+    run = runs / f"run-{arm}-{seed}"
+    run.mkdir(parents=True)
+    (run / train.result_name(arm, seed)).write_text(
+        json.dumps({"data": data, "stats_sha256": stats})
+    )
+
+
+def test_every_seed_of_an_arm_trains_on_the_same_windows(tmp_path: Path) -> None:
+    info = {"windows_sha256": "a", "episodes": [], "total_windows": 35192}
+    train.check_same_data("F1", 0, info, "s", tmp_path)  # the first seed has nothing to match
+    _seed_result(tmp_path, "F1", 0, info, "s")
+    train.check_same_data("F1", 1, info, "s", tmp_path)
+    from vishwaroop.synth.et_m3_6_guard import GuardRefusalError
+
+    with pytest.raises(GuardRefusalError, match="windows_sha256 differs"):
+        train.check_same_data("F1", 1, {**info, "windows_sha256": "b"}, "s", tmp_path)
+    with pytest.raises(GuardRefusalError, match="normalization differs"):
+        train.check_same_data("F1", 2, info, "t", tmp_path)
+    train.check_same_data("F2", 1, {**info, "windows_sha256": "b"}, "s", tmp_path)  # other arm
+
+
+def test_training_refuses_an_unaudited_or_leaky_set(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from ironclad.contracts.v1 import audit_splits
+    from ironclad.contracts.v1.validate import ContractError
+
+    from vishwaroop.models import et_m3_6_data as data_module
+
+    manifest = tmp_path / "m0.json"
+    manifest.write_text(json.dumps({"episodes": [{"path": "m0-ep"}]}))
+    with pytest.raises(DataRefusalError, match="not the frozen M0 manifest"):
+        data_module.audit_recordings({}, manifest, tmp_path)
+    monkeypatch.setattr(
+        data_module, "M0_MANIFEST_SHA256", hashlib.sha256(manifest.read_bytes()).hexdigest()
+    )
+    seen: dict[str, Any] = {}
+
+    def fake_audit(paths: list[Path], groups: tuple[str, ...]) -> dict[str, Any]:
+        seen.update(paths=paths, groups=groups)
+        return {"status": "declared_group_and_lineage_checks_passed"}
+
+    monkeypatch.setattr(audit_splits, "audit", fake_audit)
+    recordings = {"eval": {"kept": [{"path": "e1"}]}, "f2": {"kept": [{"path": "f1"}]}}
+    out = data_module.audit_recordings(recordings, manifest, tmp_path)
+    assert out["episodes_by_source"] == {"m0": 1, "eval": 1, "f2": 1}
+    assert [path.parent.name for path in seen["paths"]] == ["m0-ep", "e1", "f1"]
+    assert "scene_group_id" in seen["groups"]
+
+    def leaky(paths: list[Path], groups: tuple[str, ...]) -> dict[str, Any]:
+        raise ContractError("group leakage")
+
+    monkeypatch.setattr(audit_splits, "audit", leaky)
+    with pytest.raises(DataRefusalError, match="split audit failed"):
+        data_module.audit_recordings(recordings, manifest, tmp_path)
