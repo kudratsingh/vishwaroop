@@ -155,3 +155,5 @@
 {"note":"f2: 29 kept, 0 skipped","record_id":"runs-20261108T090126432598Z-daff8ff2","run_dir":"runs/20261108T090103Z_293f1e74","run_id":"20261108T090103Z_293f1e74","status":"completed","ts":"2026-11-08T09:01:26.432621Z"}
 {"purpose":"WO-022: ET-M3-6 f1s recording, gated (protocol section 4)","record_id":"runs-20261108T090335996657Z-c43715f3","run_dir":"runs/20261108T090335Z_9c50a729","run_id":"20261108T090335Z_9c50a729","status":"started","ts":"2026-11-08T09:03:35.996717Z"}
 {"note":"f1s: 27 kept, 0 skipped","record_id":"runs-20261108T090359347249Z-39add46e","run_dir":"runs/20261108T090335Z_9c50a729","run_id":"20261108T090335Z_9c50a729","status":"completed","ts":"2026-11-08T09:03:59.347269Z"}
+{"purpose":"WO-022: ET-M3-6 arm F0, seed 0","record_id":"runs-20261108T090800922046Z-8e1aab5e","run_dir":"runs/20261108T090800Z_53749cae","run_id":"20261108T090800Z_53749cae","status":"started","ts":"2026-11-08T09:08:00.922104Z"}
+{"note":"arm F0 seed 0: 31031 windows, 30 epochs","record_id":"runs-20261108T091051627062Z-8d2320cd","run_dir":"runs/20261108T090800Z_53749cae","run_id":"20261108T090800Z_53749cae","status":"completed","ts":"2026-11-08T09:10:51.627088Z"}
