@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-08 13:59 UTC · ledger records: 160
+Generated: 2026-11-08 14:11 UTC · ledger records: 161
 
 ## Phases
 
@@ -88,5 +88,5 @@ Generated: 2026-11-08 13:59 UTC · ledger records: 160
 | WO-022 | M3: ET-M3-6's physics side on the Mac — reproducibility gate, evaluation family, arms F0, F_star, F1, F1s and F2 | M3 | **accepted** | 2026-11-08T10:16:18.551340Z | reports/WO-022-m3-et-m3-6-physics-arms.md |
 | WO-023 | Real SO-101 episodes: LeRobot v3.0 export → contract v1, on fixtures first | M2b | **accepted** | 2026-11-08T13:42:56.879468Z | reports/WO-023-so101-real-episode-importer.md |
 | WO-024 | CUDA-portable trainers, with the Mac path unchanged | M2a | **accepted** | 2026-11-08T13:59:27.164036Z | reports/WO-024-cuda-portable-trainers.md |
-| WO-025 | GPU pilot: SO-101 simulator throughput and VLA inference latency (proposal, awaiting approval) | M2a | **created** | — | — |
+| WO-025 | GPU pilot: SO-101 simulator throughput and VLA inference latency (proposal, awaiting approval) | M2a | **created** | 2026-11-08T13:59:32.054265Z | — |
 
