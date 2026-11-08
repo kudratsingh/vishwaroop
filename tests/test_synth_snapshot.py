@@ -236,3 +236,17 @@ def test_a_short_resize_source_is_replaced_from_10660_up(
     assert item["frozen_seed"] == frozen and item["seed"] == 10660
     assert item["skipped_seeds"] == [{"seed": frozen, "size_checkable_frames": 1, "T": 15}]
     assert item["detail"]["step"] >= 1 and item["injected_passed"] is False
+
+
+def test_a_final_cube_report_error_is_recorded_not_raised() -> None:
+    """FABRICATED: reporting-only final_cube must never abort a one-shot run."""
+    env: Any = FakeSceneEnv()
+    snap = take_snapshot(env, 10580, *TASK[:2])
+    rendered = render_episode(env, snap, et_m3_1_episodes([10580])[0], TASK[2])
+    good = et_m3_1.final_cube(snap, rendered)
+    assert "error" not in good and good["projects_inside_image"]
+    rendered.cube_positions[-1] = [float("nan"), 0.0, 0.0]
+    assert "finite" in et_m3_1.final_cube(snap, rendered)["error"]
+    del snap.manifest["cube_half_size_m"]
+    rendered.cube_positions[-1] = [0.0, 0.0, 0.0125]
+    assert "cube_half_size_m" in et_m3_1.final_cube(snap, rendered)["error"]

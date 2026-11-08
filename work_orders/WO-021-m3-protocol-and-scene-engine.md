@@ -59,3 +59,9 @@ A pilot that cannot fit a band inside the frozen limits (the owner is told); any
 
     It does not show presence or size judged in the frames between.
   - **For ET-M3-2 (owner's instruction, not yet acted on):** ET-M3-2's work order must explicitly audit temporary disappearances and late resizes in generated trajectories. A temporary disappearance is a cube that vanishes after the size-checkable frames and reappears before the end. A late resize starts after those frames. ET-M3-1's checker does not catch either. The frozen ET-M3-2 text in `evals/M3-exit-tests.json` is not edited. The audit is added by an amendment frozen before any ET-M3-2 data.
+- **2026-11-07, `m3-protocol-3`'s implementation reviewed and rechecked before its pilot (`AGENTS.md §13.8`).** Three reviewers checked fidelity to the frozen text, correctness and one-shot safety, and an adversarial verifier checked their findings. There were no blockers. Three nits are fixed in `cb5cd3b`, all reporting or robustness only:
+  - `table_placement` separates a cube over the table from one resting on it;
+  - a reporting-only `final_cube` error is recorded instead of aborting a run;
+  - the pilot refuses an unexposed camera before simulating.
+
+  Two things were deliberately not changed. Stop (9) uses the unrounded projected shift, as frozen. A type-6 snapshot error refuses the run. The recheck passed (191 synth tests, `make check`). No protocol-3 seed had been simulated by then.
