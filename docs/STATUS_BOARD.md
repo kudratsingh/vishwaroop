@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-08 13:39 UTC · ledger records: 155
+Generated: 2026-11-08 13:42 UTC · ledger records: 156
 
 ## Phases
 
@@ -86,5 +86,5 @@ Generated: 2026-11-08 13:39 UTC · ledger records: 155
 | WO-020 | M3: re-measure the family-holdout gaps under plain A, and pick M3's target family | M3 | **accepted** | 2026-11-07T07:13:29.084289Z | reports/WO-020-m3-remeasure-family-gaps.md |
 | WO-021 | M3: protocol, scene engine and the scene-consistency check (ET-M3-1) | M3 | **blocked** | 2026-11-08T07:43:37.149747Z | — |
 | WO-022 | M3: ET-M3-6's physics side on the Mac — reproducibility gate, evaluation family, arms F0, F_star, F1, F1s and F2 | M3 | **accepted** | 2026-11-08T10:16:18.551340Z | reports/WO-022-m3-et-m3-6-physics-arms.md |
-| WO-023 | Real SO-101 episodes: LeRobot v3.0 export → contract v1, on fixtures first | M2b | **in_progress** | 2026-11-08T13:38:49.747326Z | — |
+| WO-023 | Real SO-101 episodes: LeRobot v3.0 export → contract v1, on fixtures first | M2b | **accepted** | 2026-11-08T13:42:56.879468Z | reports/WO-023-so101-real-episode-importer.md |
 
