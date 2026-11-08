@@ -408,7 +408,7 @@ def test_the_gate_tolerance_is_m0s_with_the_m3_protocol(tmp_path: Path) -> None:
 
 
 class _Fakes:
-    """A recorder that writes nothing and a gate that fails the listed seeds."""
+    """A recorder writing only a stand-in episode.json; a gate failing the listed seeds."""
 
     def __init__(
         self,
@@ -426,6 +426,8 @@ class _Fakes:
     def recorder(self, _env: Any, family: str, seed: int, settings: PlanSettings, *_: Any) -> Any:
         self.recorded.append((family, seed, settings))
         path = self.tmp_path / f"{family}-seed-{seed:06d}"
+        path.mkdir(parents=True, exist_ok=True)
+        (path / "episode.json").write_text(json.dumps({"seed": seed}))
         return Recorded(path, path.name, seed, family, self.steps, "never_lifted", None, "x", True)
 
     def gate(self, path: Path, *_: Any) -> GateResult:
@@ -608,7 +610,7 @@ def test_a_stopped_sequence_resumes_without_repeating_a_seed(tmp_path: Path) -> 
     second = _Fakes(tmp_path, failing={11001}, steps=1012)
     outcome = _run(sequence, second, progress)
     assert [seed for _, seed, _ in second.recorded] == [11003, 11004, 11005]
-    uninterrupted = _run(sequence, _Fakes(tmp_path, {11001}, 1012), tmp_path / "q.jsonl")
+    uninterrupted = _run(sequence, _Fakes(tmp_path / "u", {11001}, 1012), tmp_path / "q.jsonl")
     assert [line["settings"] for line in outcome["kept"]] == [
         line["settings"] for line in uninterrupted["kept"]
     ]
@@ -780,3 +782,11 @@ def test_scoring_refuses_arms_trained_on_another_device(tmp_path: Path) -> None:
     (run / train.result_name("F2", 1)).write_text(json.dumps({"device": "cpu"}))
     with pytest.raises(GuardRefusalError, match="trained on 'cpu', not mps"):
         scoring.trained(tmp_path)
+
+
+def test_f1s_must_write_where_f2_wrote(tmp_path: Path) -> None:
+    out = tmp_path / "m3"
+    f2 = {"kept": [{"path": str(out / "m3-synth-lateral-miss-seed-011000")}]}
+    rec.check_f1s_out(f2, out)
+    with pytest.raises(GuardRefusalError, match="not F2's"):
+        rec.check_f1s_out(f2, tmp_path / "elsewhere")

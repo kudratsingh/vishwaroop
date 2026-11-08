@@ -188,7 +188,9 @@ def _m3_episode(
 ) -> EpisodeArrays:
     """One recorded M3 episode, checked against its recording's listing and its own manifest."""
     path = Path(root) / item["path"]
-    manifest = read_manifest(path)
+    if "episode_json_sha256" not in item:
+        raise DataRefusalError(f"{path}: the recording did not pin its gated episode.json sha256")
+    manifest = read_manifest(path, item["episode_json_sha256"])
     family = manifest["policy"]["family_id"]
     seed = int(item["seed"])
     if family not in set(families) or family != item["family"]:

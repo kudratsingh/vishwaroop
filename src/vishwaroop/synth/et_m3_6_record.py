@@ -263,6 +263,10 @@ def run_sequence(
             "gate": result.to_json(),
             "kept": result.passed,
             "windows": windows_of(recorded.steps),
+            # The gated bytes: training refuses an episode.json that differs from these.
+            "episode_json_sha256": hashlib.sha256(
+                (recorded.path / "episode.json").read_bytes()
+            ).hexdigest(),
         }
         append_line(progress, line)
         (kept if result.passed else skipped).append(line)
@@ -337,6 +341,7 @@ def summary(kind: str, outcome: dict[str, Any], f2: dict[str, Any] | None = None
                 "family": item["family"],
                 "episode_id": item["recorded"]["episode_id"],
                 "path": item["recorded"]["path"],
+                "episode_json_sha256": item["episode_json_sha256"],
                 "settings": item["settings"],
             }
             for item in kept
@@ -395,6 +400,17 @@ def sequence_for(kind: str, runs_root: Path = RUNS) -> Recording:
     return f1s_sequence([item["seed"] for item in f2["kept"]])
 
 
+def check_f1s_out(f2: dict[str, Any], out: Path) -> None:
+    """F1s records on F2's scenes, so it writes where F2 wrote: refuse another ``--out``, whose
+    missing snapshots would be taken afresh instead of checked against F2's."""
+    for item in f2["kept"]:
+        if Path(item["path"]).parent.resolve() != out.resolve():
+            raise GuardRefusalError(
+                f"F1s --out {out} is not F2's ({Path(item['path']).parent}); F1s must check "
+                "F2's scene snapshots"
+            )
+
+
 def _run(args: argparse.Namespace) -> int:
     from ..sim.env import ManiSkillPickCube
 
@@ -404,6 +420,8 @@ def _run(args: argparse.Namespace) -> int:
     check_not_started(RUNS, plan_name(args.kind), args.resume_from)
     sequence = sequence_for(args.kind, RUNS)
     f2 = find_result("f2", RUNS) if args.kind == "f1s" else None
+    if f2 is not None:
+        check_f1s_out(f2, Path(args.out))
     task = Task.from_frozen(json.loads(M0_EXIT_TESTS.read_text(encoding="utf-8")))
     tolerance, rubric = gate_tolerance(M0_EXIT_TESTS)
     config = {"kind": args.kind, "out": str(args.out), "frozen": frozen}

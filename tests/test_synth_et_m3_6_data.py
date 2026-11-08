@@ -181,7 +181,13 @@ def _write_episode(
     )
     manifest.update(manifest_changes)
     (path / "episode.json").write_text(json.dumps(manifest))
-    return {"seed": seed, "family": family, "path": episode_id, "episode_id": episode_id}
+    return {
+        "seed": seed,
+        "family": family,
+        "path": episode_id,
+        "episode_id": episode_id,
+        "episode_json_sha256": _sha((path / "episode.json").read_bytes()),
+    }
 
 
 def _sha(raw: bytes) -> str:
@@ -344,3 +350,18 @@ def test_f1_refuses_a_base_of_another_size() -> None:
     np = pytest.importorskip("numpy")
     with pytest.raises(DataRefusalError, match="31031"):
         data.f1_augment(np.zeros((10, 14, 13)), np.zeros((10, 13, 6)), np.ones(13), np.ones(6))
+
+
+def test_the_m3_loader_refuses_an_episode_changed_after_gating(tmp_path: Path) -> None:
+    item = _write_episode(tmp_path, LATERAL_FAMILY, 11000, 20)
+    path = tmp_path / item["path"] / "episode.json"
+    path.write_text(path.read_text() + " ")
+    with pytest.raises(DataRefusalError, match="sha256"):
+        load_m3_train([item], (LATERAL_FAMILY,), tmp_path)
+
+
+def test_the_m3_loader_refuses_a_listing_without_the_gated_hash(tmp_path: Path) -> None:
+    item = _write_episode(tmp_path, LATERAL_FAMILY, 11000, 20)
+    del item["episode_json_sha256"]
+    with pytest.raises(DataRefusalError, match="did not pin"):
+        load_m3_train([item], (LATERAL_FAMILY,), tmp_path)
