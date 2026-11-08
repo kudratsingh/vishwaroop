@@ -65,3 +65,15 @@ A pilot that cannot fit a band inside the frozen limits (the owner is told); any
   - the pilot refuses an unexposed camera before simulating.
 
   Two things were deliberately not changed. Stop (9) uses the unrounded projected shift, as frozen. A type-6 snapshot error refuses the run. The recheck passed (191 synth tests, `make check`). No protocol-3 seed had been simulated by then.
+- **2026-11-07, the `m3-protocol-3` tolerance pilot stopped by its frozen stop (9); paused for the owner.** Run `20261108T040245Z_f9f36234`, at clean `5cd71e1`, seeds 10920 to 10939, exit 4 (**measured**, simulation).
+  - **Stop (9).** The widened goal-centroid distance, 16.44 px, is at least the smallest image displacement of a 0.03 m goal move, 11.35 px (seed 10936). The widened value comes from an observed 14.95 px (seed 10936, frame 114). So a type-4 goal-pixel shift could pass. No other stop held.
+  - **Other measurements:**
+    - size-checkable frames: 19.1% of frames, at least 16 per candidate;
+    - size-checkable r: 1.000 to 1.002;
+    - cube displacement in size-checkable frames: at most 1.6e-6 m;
+    - actual-joint clearance: at least 0.0358 m;
+    - merge radius: 27.1 px (stop 8 limit 60 px);
+    - widened size band: [0.9, 1.102];
+    - minimum green count: 0.
+  - **Final frames.** Every candidate's final frame shows the cube, with final r from 0.607 to 1.206. No candidate has a run of frames with r < 0.02. Every final cube rests on the table, inside the image.
+  - Nothing was written to `evals/`. No control or injection was generated: seeds 10520 to 10579, 10580 to 10639, 10660 to 10749 and 10770 to 10779 remain unsimulated. Seeds 10920 to 10939 are spent.
