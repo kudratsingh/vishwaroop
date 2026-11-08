@@ -4,8 +4,10 @@ checked to change what it should, and to be rejected by the checker while its so
 from __future__ import annotations
 
 import hashlib
+import json
 import math
 import random
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -23,6 +25,8 @@ from fake_scene import (  # noqa: E402
     manifest,
 )
 from vishwaroop.synth.checker import (  # noqa: E402
+    GOAL_MOVE_MIN_M,
+    SMALLEST_DUPLICATE_OFFSET_PX,
     Tolerances,
     check_candidate,
     credited,
@@ -32,7 +36,11 @@ from vishwaroop.synth.checker import (  # noqa: E402
 )
 from vishwaroop.synth.inject import (  # noqa: E402
     DUPLICATE_OFFSETS,
+    FIRST_SEED,
+    GOAL_MOVE_M,
     PER_TYPE,
+    RENDER_SEED_OFFSET,
+    RESIZE_REPLACEMENT_SEEDS,
     InjectionError,
     break_hash,
     choose_offset,
@@ -49,8 +57,6 @@ from vishwaroop.synth.masks import green_mask, red_mask  # noqa: E402
 TOL = Tolerances(
     a_lo=0.8,
     a_hi=1.25,
-    p_lo=0.8,
-    p_hi=1.25,
     merge_radius_px=20.0,
     first_frame_tolerance=0.0,
     goal_centroid_px=3.0,
@@ -83,11 +89,26 @@ def digest(frames: list[Any]) -> str:
 
 
 def test_the_injection_seeds_are_the_frozen_ones() -> None:
-    assert injection_seed(1, 0) == 10200
-    assert injection_seed(3, 4) == 10224
-    assert injection_seed(6, 9) == 10259
+    assert FIRST_SEED == 10520
+    assert injection_seed(1, 0) == 10520
+    assert injection_seed(3, 4) == 10544
+    assert injection_seed(6, 9) == 10579
     plan = injection_plan()
-    assert [seed for _, _, seed in plan] == list(range(10200, 10260))
+    assert [seed for _, _, seed in plan] == list(range(10520, 10580))
+    assert RENDER_SEED_OFFSET == 200
+    assert [injection_seed(6, i) + RENDER_SEED_OFFSET for i in (0, 9)] == [10770, 10779]
+    assert tuple(range(10660, 10750)) == RESIZE_REPLACEMENT_SEEDS
+    rule = json.loads(
+        (Path(__file__).resolve().parents[1] / "evals/M3-protocol-3.json").read_text("utf-8")
+    )["ET-M3-1"]["injections"]
+    assert "seed = 10520 + 10 x (t - 1) + i" in rule
+    assert "seed + 200 (10770 to 10779)" in rule
+    assert "10660 upward (to 10749)" in rule
+
+
+def test_the_pilot_stop_constants_match_the_injections() -> None:
+    assert min(math.hypot(*offset) for offset in DUPLICATE_OFFSETS) == SMALLEST_DUPLICATE_OFFSET_PX
+    assert GOAL_MOVE_M[0] == GOAL_MOVE_MIN_M
     with pytest.raises(ValueError):
         injection_seed(7, 0)
     with pytest.raises(ValueError):
@@ -150,8 +171,22 @@ def test_object_removed_fills_the_cube_with_the_ring_median() -> None:
         rows, cols = np.nonzero(red_mask(frames[k]))
         assert (injection.frames[k][rows, cols] == BACKGROUND).all()
     result = checked(injection.frames, injection.manifest, injection.seed)
-    assert result.to_json()["failed_checks"] == ["cube_area", "cube_size"]
-    assert result.failed["cube_area"]["frame"] == step
+    assert result.to_json()["failed_checks"] == ["cube_size", "cube_presence"]
+    assert result.failed["cube_size"]["frame"] == step
+    assert result.failed["cube_presence"]["frame"] == len(frames) - 1
+
+
+def test_a_removal_after_the_size_checkable_frames_is_caught_at_the_final_frame() -> None:
+    injection, frames = build(1, 3)
+    snapshot_render = episode_frames()[0]
+    ref = reference(manifest(injection.seed), measure(snapshot_render), snapshot_render.shape, TOL)
+    result = check_candidate(injection.manifest, injection.frames, ref, snapshot_render, TOL, 1)
+    assert result.to_json()["failed_checks"] == ["cube_presence"]
+    assert result.to_json()["final_visibility"] == "no cube"
+    assert result.to_json()["longest_unseen_run"] == {
+        "length": len(frames) - injection.detail["step"],
+        "start": injection.detail["step"],
+    }
 
 
 def test_the_ring_falls_back_to_6_to_12_px_when_the_near_ring_is_too_small() -> None:
@@ -205,7 +240,7 @@ def test_cube_resized_scales_the_area_about_the_centroid(i: int) -> None:
     assert after[1] == pytest.approx(before[1], abs=1.0)
     assert after[2] == pytest.approx(before[2], abs=1.0)
     result = checked(injection.frames, injection.manifest, injection.seed)
-    assert "cube_area" in result.to_json()["failed_checks"]
+    assert "cube_size" in result.to_json()["failed_checks"]
 
 
 def test_resizing_only_pastes_the_resized_mask() -> None:
@@ -305,12 +340,12 @@ def test_asset_hash_broken_changes_one_first_hex_digit(i: int) -> None:
 
 def test_initial_render_mismatch_replaces_frame_0_only() -> None:
     injection, frames = build(6, 0)
-    assert injection.detail["render_seed"] == injection.seed + 500
+    assert injection.detail["render_seed"] == injection.seed + 200
     assert (injection.frames[0] == OTHER).all()
     assert all(injection.frames[k] is frames[k] for k in range(1, len(frames)))
     result = checked(injection.frames, injection.manifest, injection.seed)
     assert "first_frame" in result.to_json()["failed_checks"]
-    with pytest.raises(InjectionError, match="seed \\+ 500"):
+    with pytest.raises(InjectionError, match="seed \\+ 200"):
         inject(6, 0, *source(injection_seed(6, 0)))
 
 
@@ -347,7 +382,8 @@ def test_a_cube_resize_is_placed_in_a_size_checkable_frame(size_frames: int) -> 
         result = check_candidate(
             injection.manifest, injection.frames, *reference_and_render(seed), size_frames
         )
-        assert "cube_area" in result.to_json()["failed_checks"]
+        assert result.to_json()["failed_checks"] == ["cube_size"]
+        assert result.failed["cube_size"]["frame"] == injection.detail["step"]
 
 
 @pytest.mark.parametrize("size_frames", [0, 1])

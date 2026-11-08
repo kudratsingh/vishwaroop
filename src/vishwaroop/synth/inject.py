@@ -1,18 +1,19 @@
-"""ET-M3-1's six mismatch injections, as ``evals/M3-protocol-2.json`` freezes them.
+"""ET-M3-1's six mismatch injections, as ``evals/M3-protocol-3.json`` freezes them.
 
 Pure functions on frames (H x W x 3 uint8 arrays, row 0 at the top, offsets as (row, column) in
 pixels) and candidate manifests (``checker.candidate_manifest``). Nothing here touches the
-simulator: the camera projection for a goal-pixel shift and the seed + 500 render for an initial
+simulator: the camera projection for a goal-pixel shift and the seed + 200 render for an initial
 render mismatch are passed in. Frames before the injection step are passed through unchanged (the
 same array objects); every altered frame is a new array, so a source candidate is never modified.
 
-Injection ``i`` of type ``t`` (1 to 6, ``i`` 0 to 9) is on seed ``10200 + 10 (t - 1) + i``. Its
+Injection ``i`` of type ``t`` (1 to 6, ``i`` 0 to 9) is on seed ``10520 + 10 (t - 1) + i``. Its
 ``rng = random.Random(seed)`` first draws the injection step: ``rng.randrange(1, T)`` for every
 type but 3, and for type 3 ``rng.choice`` of the size-checkable frames 1 to T - 1 in ascending
 order; then the type's own draws in the frozen order. A type-3 source with no such frame is
-replaced by the next seed from 10800 up (``RESIZE_REPLACEMENT_SEEDS``) whose source has one; the
-scorer finds it, lists every seed it skips, and passes it here as ``seed``. ``InjectionError``
-means an injection could not be built as frozen; the scorer counts it as not rejected.
+replaced by the next seed from 10660 up to 10749 (``RESIZE_REPLACEMENT_SEEDS``) whose source has
+one; the scorer finds it, lists every seed it skips, and passes it here as ``seed``.
+``InjectionError`` means an injection could not be built as frozen; the scorer counts it as not
+rejected.
 """
 
 from __future__ import annotations
@@ -27,7 +28,7 @@ import numpy as np
 
 from .masks import Array, bounding_box, centroid, green_mask, red_mask
 
-FIRST_SEED = 10200
+FIRST_SEED = 10520
 TYPES = {
     1: "object_removed",
     2: "object_duplicated",
@@ -48,8 +49,8 @@ TASK_I = (1, 4, 7)
 GOAL_PIXELS_I = (2, 5, 8)
 TASK_ID_I = (1, 7)  # i = 4 changes the version instead (see task_change)
 WRONG_TASK_ID = "PickCube-v1"
-RENDER_SEED_OFFSET = 500
-RESIZE_REPLACEMENT_SEEDS = tuple(range(10800, 10900))
+RENDER_SEED_OFFSET = 200
+RESIZE_REPLACEMENT_SEEDS = tuple(range(10660, 10750))
 
 
 class InjectionError(ValueError):
@@ -57,7 +58,7 @@ class InjectionError(ValueError):
 
 
 def injection_seed(t: int, i: int) -> int:
-    """``10200 + 10 (t - 1) + i`` for type ``t`` in 1 to 6 and ``i`` in 0 to 9."""
+    """``10520 + 10 (t - 1) + i`` for type ``t`` in 1 to 6 and ``i`` in 0 to 9."""
     if t not in TYPES or not 0 <= i < PER_TYPE:
         raise ValueError(f"no injection of type {t}, index {i}")
     return FIRST_SEED + PER_TYPE * (t - 1) + i
@@ -260,7 +261,7 @@ def inject(
 
     ``frames`` are frames 0 to T and ``manifest`` the candidate manifest, on the injection's seed.
     Type 4 with i in 2, 5, 8 needs the human render camera's 3 x 4 ``projection``; type 6 needs
-    ``other_render``, the snapshot render of seed + 500. Type 3 needs ``size_frames``, the source
+    ``other_render``, the snapshot render of seed + 200. Type 3 needs ``size_frames``, the source
     candidate's ``checker.size_checkable_frames``, and is not built when no frame 1 to T - 1 is
     size-checkable. ``seed`` is the injection's seed, by default ``injection_seed(t, i)``; a
     cube-resize injection may instead take a replacement seed from ``RESIZE_REPLACEMENT_SEEDS``.
@@ -337,9 +338,9 @@ def inject(
         detail.update(asset_index=index, n_assets=len(hashes))
     else:
         if other_render is None:
-            raise InjectionError("an initial render mismatch needs the seed + 500 render")
+            raise InjectionError("an initial render mismatch needs the seed + 200 render")
         if other_render.shape != frames[0].shape or other_render.dtype != frames[0].dtype:
-            raise InjectionError("the seed + 500 render differs in shape or type from frame 0")
+            raise InjectionError("the seed + 200 render differs in shape or type from frame 0")
         out_frames[0] = other_render.copy()
         detail["render_seed"] = seed + RENDER_SEED_OFFSET
     return Injection(t, i, seed, out_frames, out_manifest, detail)
