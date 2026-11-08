@@ -46,3 +46,18 @@ def test_one_pass_over_fabricated_scenes(tmp_path: Path, monkeypatch: pytest.Mon
     assert cell["stop_9_would_hold"] is False
     assert cell["eligible_frames_a_shift_could_pass_computed"] == 0
     assert gd.focus(episodes)["visibility"] == pytest.approx(1.0)
+
+
+def test_the_rule_diagnostic_on_fabricated_scenes(monkeypatch: pytest.MonkeyPatch) -> None:
+    from vishwaroop.synth import goal_rule_diagnostic as grd
+
+    monkeypatch.setattr(grd, "SEQUENCES", {"fake": (10936, 10937)})
+    env: Any = FakeSceneEnv()
+    episodes = grd.run_episodes(env, TASK)
+    summary = grd.summarize(episodes)
+    rules = {(r["rule"], r["value"]): r for r in summary["rules"]}
+    assert set(rules) >= {("snapshot_v", 0.9), ("projected_v", 0.9), ("geometric_c", 0.05)}
+    for rule in rules.values():
+        assert 0.0 <= rule["eligible_share"] <= 1.0
+    json_ready = __import__("json").dumps(summary, allow_nan=False)
+    assert "stop_9_margin_px" in json_ready
