@@ -219,3 +219,4 @@ Done when the report gives A and B on the Mac and on the rented card, and the re
 ## Progress (append-only)
 - 2026-11-09: Mac baseline measured (runs/20261109T011733Z_52957e3e, runs/20261109T012123Z_5266661e; reports/WO-025-gpu-pilot.md). GPU half not run: waits for the owner's approval of this text, the gate route (G2) and the $10 ceiling.
 - 2026-11-09: owner accepted the benchmark scope, kept $10 as the proposed ceiling and held the rental (approvals-20261109T022626042919Z-ee024835). S3 now checks the selected GPU's architecture (device.require refuses a build that cannot run the card's compute capability). Teardown proposal for ironclad: docs/program-drafts/ADR-NNNN-PROGRAM-verified-teardown-for-owner-operated-pods.md.
+- 2026-11-09: held until teardown is validated and released (owner, approvals-20261109T031542703689Z-c8b6c471). Design and simulation: WO-027.

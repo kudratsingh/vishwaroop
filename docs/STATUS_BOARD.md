@@ -2,7 +2,7 @@
 
 _Derived from `work_orders/STATUS.jsonl` and `config/phases.json` by `ironclad-status`. Do not edit by hand._
 
-Generated: 2026-11-09 01:23 UTC · ledger records: 164
+Generated: 2026-11-09 03:22 UTC · ledger records: 167
 
 ## Phases
 
@@ -10,7 +10,7 @@ Generated: 2026-11-09 01:23 UTC · ledger records: 164
 |---|---|---|---|---|---|
 | M0 | Grounded development environment | **passed** | 6 / 6 / 6 | — | WO-001, WO-002, WO-003, WO-007, WO-008, WO-009, WO-010, WO-011 |
 | M1 | Compact predictor, latent planner, action-chunk scorer | **passed** | 5 / 5 / 5 | M0 | WO-004, WO-005, WO-006, WO-012, WO-013, WO-014, WO-015, WO-016 |
-| M2a | Closed-loop policy evaluator (simulation) | **not_started** | 0 / 0 / 5 | M1 | WO-017, WO-018, WO-024, WO-025, WO-026 |
+| M2a | Closed-loop policy evaluator (simulation) | **not_started** | 0 / 0 / 5 | M1 | WO-017, WO-018, WO-024, WO-025, WO-026, WO-027 |
 | M2b | Real-arm evaluator validation | **not_started** | 0 / 0 / 4 | M2a | WO-023 |
 | M3 | Synthetic-data engine (SFT route) | **not_started** | 0 / 2 / 6 | M0 | WO-020, WO-021, WO-022 |
 | M4 | Drone dynamics adaptation (offline and shadow only) | **not_started** | 1 / 2 / 4 | M1 | WO-019 |
@@ -88,6 +88,7 @@ Generated: 2026-11-09 01:23 UTC · ledger records: 164
 | WO-022 | M3: ET-M3-6's physics side on the Mac — reproducibility gate, evaluation family, arms F0, F_star, F1, F1s and F2 | M3 | **accepted** | 2026-11-08T10:16:18.551340Z | reports/WO-022-m3-et-m3-6-physics-arms.md |
 | WO-023 | Real SO-101 episodes: LeRobot v3.0 export → contract v1, on fixtures first | M2b | **accepted** | 2026-11-08T13:42:56.879468Z | reports/WO-023-so101-real-episode-importer.md |
 | WO-024 | CUDA-portable trainers, with the Mac path unchanged | M2a | **accepted** | 2026-11-08T13:59:27.164036Z | reports/WO-024-cuda-portable-trainers.md |
-| WO-025 | GPU pilot: SO-101 simulator throughput and VLA inference latency (Mac baseline done; rental awaiting approval) | M2a | **in_progress** | 2026-11-09T01:17:24.762948Z | — |
+| WO-025 | GPU pilot: SO-101 simulator throughput and VLA inference latency (Mac baseline done; benchmark scope accepted; rental held) | M2a | **in_progress** | 2026-11-09T01:17:24.762948Z | — |
 | WO-026 | Storage: inventory the vishwaroop R2 backup and restore one known object to scratch | M2a | **created** | 2026-11-09T01:23:59.779849Z | — |
+| WO-027 | Verified teardown for owner-operated pods: design and simulation, before any paid test | M2a | **in_progress** | 2026-11-09T03:22:32.611409Z | — |
 
