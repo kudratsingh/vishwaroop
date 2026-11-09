@@ -47,6 +47,26 @@ def add_device_argument(parser: argparse.ArgumentParser, default: str) -> None:
     parser.add_argument("--device", choices=DEVICES, default=default)
 
 
+def arch_supported(capability: tuple[int, int], arch_list: list[str]) -> bool:
+    """Whether a torch build's architecture list can run on a GPU of this compute capability.
+
+    A binary (``sm_XY``) runs on the same major version at the same or a higher minor version, so
+    ``sm_86`` serves an 8.9 card such as the L40S. PTX (``compute_XY``) is compiled for any
+    capability at or above it. A 12.0 card (RTX 5090) needs ``sm_120`` or older-major PTX.
+    """
+    major, minor = capability
+    for arch in arch_list:
+        kind, _, digits = arch.partition("_")
+        if not digits.isdigit() or len(digits) < 2:
+            continue
+        arch_major, arch_minor = int(digits[:-1]), int(digits[-1])
+        if kind == "sm" and arch_major == major and arch_minor <= minor:
+            return True
+        if kind == "compute" and (arch_major, arch_minor) <= (major, minor):
+            return True
+    return False
+
+
 def require(device: str) -> str:
     """Refuse an unavailable device; on CUDA, make kernels deterministic. Returns ``device``."""
     if device not in DEVICES:
@@ -60,6 +80,14 @@ def require(device: str) -> str:
         return device
     if not torch.cuda.is_available():
         raise DeviceUnavailableError("--device cuda, but CUDA is not available here")
+    capability = tuple(torch.cuda.get_device_capability(0))
+    arch_list = list(torch.cuda.get_arch_list())
+    if not arch_supported(capability, arch_list):
+        name = torch.cuda.get_device_name(0)
+        raise DeviceUnavailableError(
+            f"{name} is compute capability {capability[0]}.{capability[1]}, which this torch build "
+            f"cannot run: it was built for {arch_list}"
+        )
     os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", CUBLAS_WORKSPACE)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
