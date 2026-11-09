@@ -74,7 +74,7 @@ Measured on 2026-11-08 and 2026-11-09 on the owner's M3 Pro (36 GB). The results
 ### Code and credentials
 - **Nothing private on the pod.** Code arrives as a `git bundle` of the exact commit, copied with `scp`.
 - **ironclad:** the pinned `ironclad-kit` v1.2.0 arrives as a wheel built on the Mac, with its sha256 recorded.
-  - `scripts/setup_gpu_host.sh` today installs ironclad from the private Git URL and checks read access to it. A small `--ironclad-wheel PATH --ironclad-wheel-sha256 HASH` option is added before rental (gate step G5, $0).
+  - `scripts/setup_gpu_host.sh --ironclad-wheel PATH --ironclad-wheel-sha256 HASH` installs it from that wheel and checks the name's version and the hash (added in this work order, gate step G5). A test build on 2026-11-09 gave `ironclad_kit-1.2.0-py3-none-any.whl`, sha256 `41a2fe13…b30cfc16`; the approval binds the hash of the build made for the rental.
 - **Checkpoints:** both are public at their pinned revisions and download without a token.
 
 ## Exact commands
@@ -83,7 +83,7 @@ Measured on 2026-11-08 and 2026-11-09 on the owner's M3 Pro (36 GB). The results
 **On the Mac, before rental ($0):**
 ```
 git bundle create ~/wo025-$C.bundle $C
-python3.12 -m pip wheel --no-deps "ironclad-kit @ git+https://github.com/kudratsingh/ironclad@v1.2.0" -w ~/wo025-wheels
+uv tool run --from pip --python 3.12 pip wheel --no-deps "ironclad-kit @ git+https://github.com/kudratsingh/ironclad@v1.2.0" -w ~/wo025-wheels
 shasum -a 256 ~/wo025-wheels/*.whl
 ```
 
@@ -177,7 +177,7 @@ These are what the repository's rules require before the first paid minute. None
    - the agent appends reserved, completed and reconciled lines to `ledgers/costs.jsonl`, with the billed amount;
    - process exit is not pod shutdown.
 5. **G5. Pre-rental preparation ($0, agent).**
-   - The `--ironclad-wheel` option in `setup_gpu_host.sh`, with a test.
+   - The `--ironclad-wheel` option in `setup_gpu_host.sh`, with tests: **done**.
    - The bundle and wheel built from the approved commit.
    - This work order, the code and both locks merged.
 
@@ -210,3 +210,4 @@ Done when the report gives A and B on the Mac and on the rented card, and the re
 `reports/WO-025-gpu-pilot.md`
 
 ## Progress (append-only)
+- 2026-11-09: Mac baseline measured (runs/20261109T011733Z_52957e3e, runs/20261109T012123Z_5266661e; reports/WO-025-gpu-pilot.md). GPU half not run: waits for the owner's approval of this text, the gate route (G2) and the $10 ceiling.
