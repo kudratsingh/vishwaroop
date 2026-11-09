@@ -36,6 +36,8 @@ class FakeCuda:
         self.available = available
         self.calls: list[str] = []
         self.rng = "cuda-state"
+        self.capability = (8, 9)
+        self.arch_list = ["sm_75", "sm_80", "sm_86", "sm_90", "sm_100", "sm_120", "compute_120"]
 
     def is_available(self) -> bool:
         return self.available
@@ -51,6 +53,15 @@ class FakeCuda:
 
     def set_rng_state(self, state: Any) -> None:
         self.calls.append(f"set_rng_state:{state}")
+
+    def get_device_capability(self, index: int) -> tuple[int, int]:
+        return self.capability
+
+    def get_arch_list(self) -> list[str]:
+        return self.arch_list
+
+    def get_device_name(self, index: int) -> str:
+        return "FAKE GPU"
 
     def get_device_properties(self, index: int) -> Any:
         return SimpleNamespace(name="FAKE GPU", major=8, minor=9, total_memory=24 * 2**30)
@@ -133,6 +144,32 @@ def test_cuda_turns_on_deterministic_kernels(cuda_torch: Any) -> None:
     assert cuda_torch.backends.cudnn.benchmark is False
     assert cuda_torch.deterministic_calls == [(True, True)]
     assert os.environ["CUBLAS_WORKSPACE_CONFIG"] == device.CUBLAS_WORKSPACE
+
+
+@pytest.mark.parametrize(
+    ("capability", "arch_list", "supported"),
+    [
+        ((12, 0), ["sm_80", "sm_86", "sm_90", "sm_100", "sm_120"], True),  # RTX 5090
+        ((12, 0), ["sm_80", "sm_86", "sm_90"], False),  # a pre-Blackwell build
+        ((8, 9), ["sm_80", "sm_86", "sm_90", "sm_120"], True),  # L40S, RTX 6000 Ada via sm_86
+        ((8, 9), ["sm_89"], True),
+        ((8, 9), ["sm_90", "sm_100", "sm_120"], False),  # no 8.x binary, no low PTX
+        ((8, 9), ["sm_90", "compute_80"], True),  # PTX at or below 8.9
+        ((12, 0), ["compute_90"], True),
+        ((8, 6), ["sm_89"], False),  # a newer minor does not run on an older card
+    ],
+)
+def test_arch_supported_follows_cuda_binary_compatibility(
+    capability: tuple[int, int], arch_list: list[str], supported: bool
+) -> None:
+    assert device.arch_supported(capability, arch_list) is supported
+
+
+def test_cuda_is_refused_on_an_architecture_the_build_cannot_run(cuda_torch: Any) -> None:
+    cuda_torch.cuda.capability = (12, 0)
+    cuda_torch.cuda.arch_list = ["sm_80", "sm_86", "sm_90"]
+    with pytest.raises(device.DeviceUnavailableError, match=r"compute capability 12\.0"):
+        device.require("cuda")
 
 
 def test_mps_leaves_the_cuda_settings_alone(monkeypatch: pytest.MonkeyPatch) -> None:

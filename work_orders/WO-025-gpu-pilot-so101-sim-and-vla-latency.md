@@ -1,4 +1,4 @@
-# WO-025 | GPU pilot: SO-101 simulator throughput and VLA inference latency (Mac baseline done; rental awaiting approval)
+# WO-025 | GPU pilot: SO-101 simulator throughput and VLA inference latency (Mac baseline done; benchmark scope accepted; rental held)
 **Phase:** M2a
 **Exit tests advanced:** none. It measures the workloads the M2 twin, M5-early and the deferred workstation decision depend on.
 **Size:** S
@@ -6,6 +6,7 @@
 **Authorization:**
 - **First decision (owner, 2026-11-08, `approvals-20261108T132556755986Z-2add2fa0`, item 2):** "Revise the pilot plan first. I'm open to using the $50 ceiling for SO-101 simulator throughput and VLA inference latency. Send the exact workload, checkpoint, VM quote, and stop conditions for a fresh approval before I rent it."
 - **Second decision (owner, 2026-11-08, `approvals-20261109T010005936999Z-5e60e401`):** "WO-025 — Run the $0 Mac baseline. Keep $10 as the proposed ceiling. Before I rent, make rendered SO-101 throughput a required workload and label any SO-100 timing as a reference. Bring back the pinned image, exact commands, CUDA and Vulkan smoke-test plan, and the steps needed to clear the paid-execution gate."
+- **Third decision (owner, 2026-11-09, `approvals-20261109T022626042919Z-ee024835`):** "WO-025. Accept the benchmark scope and keep $10 as the proposed ceiling. Hold the rental. Bring the teardown question to ironclad and propose a verified shutdown mechanism compatible with me operating the pod. Also fix S3 to check the selected GPU's architecture. The RTX 5090 is compute capability 12.0, and both named fallbacks are 8.9."
 - **Who runs the machine:** the owner rents, starts and stops it. The agent only connects over SSH.
 
 **Files:**
@@ -68,7 +69,7 @@ Measured on 2026-11-08 and 2026-11-09 on the owner's M3 Pro (36 GB). The results
 | Image | `runpod/base:2.0.0-cuda1300-ubuntu2404@sha256:d06fb6b07bcf13cac6eab0218824129358101ef7d36abf98afbecacb4338c8b2` (Docker Hub, tag dated 2026-11-05; digest read 2026-11-08). Ubuntu 24.04 with Python 3.12, uv 0.13.4, git and openssh-server. It has no Vulkan loader. |
 | CUDA floor | `minCudaVersion` 13.0 when the pod is created. Hosts with stock report CUDA 13.2 (read 2026-11-09). |
 | Pod environment | `NVIDIA_DRIVER_CAPABILITIES=all`, so that the container runtime mounts NVIDIA's graphics libraries (`libGLX_nvidia.so.0`), which SAPIEN's Vulkan rendering needs. Whether Runpod honours it is the first smoke test. |
-| Disk | 100 GB container disk; no network volume. Needs, estimated: π0.5 14.5 GB, SmolVLA 1 GB, two environments about 15 GB, runs under 1 GB. |
+| Disk | 100 GB container disk; **no volume disk** and no network volume, so a stopped pod keeps no data (container-only, the teardown proposal's `disk_policy`). Needs, estimated: π0.5 14.5 GB, SmolVLA 1 GB, two environments about 15 GB, runs under 1 GB. |
 | Access | TCP 22 exposed. The owner's SSH public key goes in the pod's `PUBLIC_KEY`. No GitHub token and no Hugging Face token on the pod (see "Code and credentials"). |
 
 ### Code and credentials
@@ -114,7 +115,7 @@ uv venv --python 3.12 /workspace/venv-lerobot
 uv pip install --python /workspace/venv-lerobot/bin/python --require-hashes --no-deps -r config/lerobot-requirements.linux.txt
 uv pip install --python /workspace/venv-lerobot/bin/python --no-deps /workspace/<wheel>
 
-# 8. Workload B (S3 again in this environment, then the timing).
+# 8. Workload B. S3 again in this environment: device.require("cuda") checks the card's capability against this build.
 /workspace/venv-lerobot/bin/python -m vishwaroop.models.wo025_vla_latency --device cuda
 
 # 9. Copy back (run on the Mac), then tell the owner the machine can be stopped.
@@ -129,7 +130,7 @@ These run first. The time box is 30 minutes (about $0.60 at $1.19/h), and every 
 |---|---|---|---|
 | S1 | `nvidia-smi`: card, driver and memory in use | RTX 5090 (or the named fallback); driver ≥ 580; under 500 MiB used | Stop condition 2. Tell the owner, who may replace the machine. |
 | S2 | Vulkan: `vulkaninfo --summary`, and the setup check's ICD test (`nvidia_icd.json`, or `libGLX_nvidia.so.0` present) | An NVIDIA device listed, not `llvmpipe` | Stop condition 2. A runs only at `obs_mode=state`, and only if the owner agrees. B continues, since it needs no rendering. |
-| S3 | torch CUDA in each environment: `torch.cuda.is_available()`, compute capability 12.0 in `torch.cuda.get_arch_list()`, and a 4096 × 4096 bf16 matmul | All true, with the matmul finite | Stop condition 2 for that environment. |
+| S3 | torch CUDA in each environment, for the **card actually selected**. It checks `torch.cuda.is_available()`, reads `torch.cuda.get_device_capability(0)`, and checks the result against the expected value for the named card: 12.0 for the RTX 5090; 8.9 for the L40S and the RTX 6000 Ada (NVIDIA's compute-capability table). `device.require("cuda")` then refuses unless `torch.cuda.get_arch_list()` can run that capability: an `sm_XY` binary of the same major and an equal or lower minor (`sm_86` serves 8.9), or `compute_XY` PTX at or below it. A 12.0 card needs `sm_120` or PTX. The check finishes with a 4096 × 4096 bf16 matmul | The capability matches the named card, the build can run it, and the matmul is finite | Stop condition 2 for that environment. A card other than the one named is also a stop: the owner decides. |
 | S4 | SAPIEN on the GPU: the command 5 smoke on SO-101, `physx_cuda`, 128 × 128 and 480 × 640 frames | Every SO-101 configuration measured, and the saved frame shapes match | GPU rendering failure: stop condition 2. One configuration out of memory: recorded, not a stop. |
 | S5 | The M0 smoke episode on CPU physics (in `setup_gpu_host.sh`) | Recorded, validated and replayed | Recorded; it does not block A or B, which do not depend on M0 replay. |
 
@@ -144,7 +145,9 @@ From Runpod's `get-gpu-type` read on 2026-11-09 at 01:18 UTC: on-demand Pod, `mi
 
 - **Known risk:** Runpod Pods are containers, not VMs. The graphics mount (S2) is unverified until S2 runs.
 - **Not quoted:** other providers.
-- **Blackwell compatibility:** RTX 5090 (sm_120) with SAPIEN 3.0.3 is untested. S4 tests it. If S4 fails on the 5090, the fallback is an L40S on a new pod, which needs the owner's action (stop condition 5).
+- **Architecture differs by card.** The RTX 5090 is Blackwell (compute capability 12.0); both fallbacks are Ada (8.9).
+  - torch's arch list is checked against the selected card (S3).
+  - SAPIEN 3.0.3 on 12.0 is untested; S4 tests it. If S4 fails on the 5090, the fallback is an L40S on a new pod, which needs the owner's action (stop condition 5).
 
 ## Cost (estimated from the quote)
 | Step | Hours |
@@ -166,11 +169,15 @@ These are what the repository's rules require before the first paid minute. None
    - the card and its fallbacks, and one resource;
    - the $10 ceiling and the 4-hour wall stop;
    - an expiry.
-2. **G2. The owner chooses a route through the enforcing-launcher rule.** `AGENTS.md §9.2` says paid execution stays blocked until the enforcing launcher's provider-teardown tests pass. In the pinned `ironclad` 1.2.0:
-   - `REAL_PROVIDER_LIFECYCLE_VERIFIED = False`, and `ironclad-launch` and `ironclad-budget-preflight` refuse every paid plan.
-   - Clearing that inside ironclad needs a Runpod provider adapter, a real-provider lifecycle test with a $1-class pilot, and a release. That route has the launcher create and terminate the pod itself, which conflicts with "I run the machine; you never start or stop it".
-   - **Route A, owner-operated (proposed; WO-018's precedent).** The owner creates, stops and terminates the pod. The agent runs only the commands above over SSH. The owner records that this paid run is approved outside the enforcing launcher, for WO-025 only. `config/budget.json` stays at $0 (`paid_execution_enabled: false`), since no launcher reads it on this route. This is a written exception to `§9.2`, which only the owner can make.
-   - **Route B, launcher (not proposed now).** An ironclad work order to build and test the Runpod provider. It means the owner lets the launcher start and stop machines. It costs more time than the pilot itself.
+2. **G2. Verified teardown with the owner operating the pod.**
+   - **The owner's decision, 2026-11-09** (`approvals-20261109T022626042919Z-ee024835`): "Hold the rental. Bring the teardown question to ironclad and propose a verified shutdown mechanism compatible with me operating the pod."
+   - **Why the rule blocks today.** `AGENTS.md §9.2` keeps paid execution blocked until the launcher's provider-teardown tests pass. ironclad 1.2.0 refuses every paid launch (`REAL_PROVIDER_LIFECYCLE_VERIFIED = False`).
+   - **The proposal for ironclad:** `docs/program-drafts/ADR-NNNN-PROGRAM-verified-teardown-for-owner-operated-pods.md`.
+     - The launcher attaches to the owner's pod and never creates or stops it.
+     - The owner's own stop timer, set at creation, is the hard bound.
+     - A Read Only Runpod key verifies `TERMINATED` (or a container-only `EXITED`), a bill that has stopped rising, and the reconciliation.
+     - Fake-provider tests come first, then a real $1-class pilot with the owner operating.
+   - **This step is met when** ironclad releases that mode with its pilot passed and this repository moves its pin, or when the owner decides otherwise in writing.
 3. **G3. A fresh quote at creation.** The owner creates the pod only if the card's secure price is at most $1.19/h; for a fallback, at most $1.09 (L40S) or $0.99 (RTX 6000 Ada). The read time goes in the report.
 4. **G4. Teardown verified and reconciled** (`AGENTS.md §9.3`). After the owner stops and terminates the pod:
    - the agent reads the pod's state with Runpod's read-only `get-pod` and `list-pod-billing`, and confirms that the pod is gone and nothing bills;
@@ -211,3 +218,4 @@ Done when the report gives A and B on the Mac and on the rented card, and the re
 
 ## Progress (append-only)
 - 2026-11-09: Mac baseline measured (runs/20261109T011733Z_52957e3e, runs/20261109T012123Z_5266661e; reports/WO-025-gpu-pilot.md). GPU half not run: waits for the owner's approval of this text, the gate route (G2) and the $10 ceiling.
+- 2026-11-09: owner accepted the benchmark scope, kept $10 as the proposed ceiling and held the rental (approvals-20261109T022626042919Z-ee024835). S3 now checks the selected GPU's architecture (device.require refuses a build that cannot run the card's compute capability). Teardown proposal for ironclad: docs/program-drafts/ADR-NNNN-PROGRAM-verified-teardown-for-owner-operated-pods.md.
