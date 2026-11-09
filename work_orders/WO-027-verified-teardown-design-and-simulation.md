@@ -60,3 +60,4 @@ Done when the owner has the revised design and the simulated results. The paid t
 `reports/WO-027-teardown-design-and-simulation.md`
 
 ## Progress (append-only)
+- 2026-11-09: design revised (revision 2) and simulated: runs/20261109T032235Z_0abd0b0c; reports/WO-027-teardown-design-and-simulation.md. The paid teardown test is proposed in the report and not requested.
