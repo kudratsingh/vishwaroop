@@ -3,6 +3,8 @@
 #
 #   scripts/setup_gpu_host.sh --check-only     # read-only: what this machine has and lacks
 #   scripts/setup_gpu_host.sh                  # checks, pinned install, GPU check, smoke episode
+#   ... --ironclad-wheel W --ironclad-wheel-sha256 H   # install ironclad from a hash-checked wheel,
+#                                                      # so the machine needs no access to its repository
 #
 # It creates a new venv (default venv/, which git ignores) and new run directories under runs/, and
 # appends to ledgers/runs.jsonl. uv may also download Python 3.12 and cache packages under $HOME.
@@ -31,8 +33,16 @@ VENV="$REPO/venv"
 RUN_ROOT="$REPO/runs"
 RUN_ID="gpu-smoke-$(date -u +%Y%m%dT%H%M%SZ)"
 CHECK_ONLY=0
+# A wheel of the pinned ironclad, built elsewhere and checked by hash, so the machine needs no
+# read access to the private repository (WO-025).
+IRONCLAD_WHEEL=""
+IRONCLAD_WHEEL_SHA256=""
 
 usage_error() { echo "$1" >&2; exit 2; }
+file_sha256() {
+  if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d' ' -f1
+  else shasum -a 256 "$1" | cut -d' ' -f1; fi
+}
 absolute() {
   case "/$1/" in */../*|*/./*) usage_error "use a plain path, without . or .. segments: $1" ;; esac
   case "$1" in /*) echo "$1" ;; *) echo "$PWD/$1" ;; esac
@@ -51,6 +61,20 @@ while [ "$#" -gt 0 ]; do
       shift
       RUN_ROOT="$(absolute "$1")" || exit 2
       ;;
+    --ironclad-wheel)
+      [ "$#" -ge 2 ] || usage_error "--ironclad-wheel needs a path"
+      shift
+      IRONCLAD_WHEEL="$(absolute "$1")" || exit 2
+      ;;
+    --ironclad-wheel-sha256)
+      [ "$#" -ge 2 ] || usage_error "--ironclad-wheel-sha256 needs a hash"
+      shift
+      IRONCLAD_WHEEL_SHA256="$1"
+      case "$IRONCLAD_WHEEL_SHA256" in
+        *[!0-9a-f]*) usage_error "--ironclad-wheel-sha256 must be 64 lowercase hex digits" ;;
+      esac
+      [ "${#IRONCLAD_WHEEL_SHA256}" -eq 64 ] || usage_error "--ironclad-wheel-sha256 must be 64 lowercase hex digits"
+      ;;
     --run-id)
       [ "$#" -ge 2 ] || usage_error "--run-id needs a name"
       shift
@@ -63,6 +87,12 @@ while [ "$#" -gt 0 ]; do
   esac
   shift
 done
+if [ -n "$IRONCLAD_WHEEL" ] && [ -z "$IRONCLAD_WHEEL_SHA256" ]; then
+  usage_error "--ironclad-wheel needs --ironclad-wheel-sha256"
+fi
+if [ -z "$IRONCLAD_WHEEL" ] && [ -n "$IRONCLAD_WHEEL_SHA256" ]; then
+  usage_error "--ironclad-wheel-sha256 needs --ironclad-wheel"
+fi
 
 case "$VENV/" in
   "$REPO"/data/*|"$REPO"/runs/*|"$REPO"/ledgers/*|"$REPO"/reports/*|"$REPO"/artifacts/*)
@@ -176,8 +206,21 @@ fi
 
 IRONCLAD_PIN="$(grep -E '^ironclad-kit @ ' "$REPO/requirements-dev.txt" || true)"
 IRONCLAD_TAG="${IRONCLAD_PIN##*@}"
+IRONCLAD_SOURCE="$IRONCLAD_PIN"
 if [ -z "$IRONCLAD_PIN" ]; then
   lacks "ironclad pin: none in requirements-dev.txt"
+elif [ -n "$IRONCLAD_WHEEL" ]; then
+  WHEEL_NAME="$(basename "$IRONCLAD_WHEEL")"
+  if [ ! -f "$IRONCLAD_WHEEL" ]; then
+    lacks "ironclad wheel: $IRONCLAD_WHEEL does not exist"
+  elif [[ "$WHEEL_NAME" != ironclad_kit-"${IRONCLAD_TAG#v}"-*.whl ]]; then
+    lacks "ironclad wheel: $WHEEL_NAME is not version ${IRONCLAD_TAG#v}, the pin in requirements-dev.txt"
+  elif [ "$(file_sha256 "$IRONCLAD_WHEEL")" != "$IRONCLAD_WHEEL_SHA256" ]; then
+    lacks "ironclad wheel: $WHEEL_NAME does not match the sha256 given"
+  else
+    ok "ironclad wheel: $WHEEL_NAME, sha256 checked"
+    IRONCLAD_SOURCE="$IRONCLAD_WHEEL"
+  fi
 elif GIT_TERMINAL_PROMPT=0 git ls-remote --exit-code https://github.com/kudratsingh/ironclad \
     "refs/tags/$IRONCLAD_TAG" >/dev/null 2>&1; then
   ok "read access to ironclad: $IRONCLAD_TAG"
@@ -221,7 +264,7 @@ if [ -n "$UV" ]; then
   if ! { uv venv --python 3.12 "$VENV" \
       && timeout "$INSTALL_LIMIT_S" uv pip install --python "$VENV/bin/python" --require-hashes \
         --no-deps -r "$LOCK" \
-      && timeout "$INSTALL_LIMIT_S" uv pip install --python "$VENV/bin/python" --no-deps "$IRONCLAD_PIN" \
+      && timeout "$INSTALL_LIMIT_S" uv pip install --python "$VENV/bin/python" --no-deps "$IRONCLAD_SOURCE" \
       && uv pip freeze --python "$VENV/bin/python" > "$RUN_DIR/freeze.txt"; } 2>&1 \
       | tee "$RUN_DIR/install.log"; then
     echo "install failed; see $RUN_DIR/install.log" >&2
@@ -231,7 +274,7 @@ else
   if ! { python3.12 -m venv "$VENV" \
       && timeout "$INSTALL_LIMIT_S" "$VENV/bin/python" -m pip install --require-hashes --no-deps \
         -r "$LOCK" \
-      && timeout "$INSTALL_LIMIT_S" "$VENV/bin/python" -m pip install --no-deps "$IRONCLAD_PIN" \
+      && timeout "$INSTALL_LIMIT_S" "$VENV/bin/python" -m pip install --no-deps "$IRONCLAD_SOURCE" \
       && "$VENV/bin/python" -m pip freeze > "$RUN_DIR/freeze.txt"; } 2>&1 \
       | tee "$RUN_DIR/install.log"; then
     echo "install failed; see $RUN_DIR/install.log" >&2

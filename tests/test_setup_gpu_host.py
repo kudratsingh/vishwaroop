@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 import re
 import shutil
@@ -82,6 +83,7 @@ case "$1 $2" in
     [ "$FAIL" = install ] && { echo "hash mismatch"; exit 1; }
     case "$*" in
       *ironclad-kit*) [ "$FAIL" = ironclad ] && { echo "no access"; exit 1; }; echo installed ;;
+      *ironclad_kit-*.whl*) echo installed ;;
       *--require-hashes*--no-deps*) echo installed ;;
       *) exit 9 ;;
     esac
@@ -412,6 +414,52 @@ def test_ironclad_is_installed_from_the_repository_pin(tmp_path: Path) -> None:
     log = (tmp_path / "args.log").read_text(encoding="utf-8")
     assert IRONCLAD_PIN in log
     assert "venv --python 3.12" in log
+
+
+def _wheel(tmp_path: Path, version: str | None = None) -> tuple[Path, str]:
+    tag = IRONCLAD_PIN.rpartition("@")[2].removeprefix("v")
+    wheel = tmp_path / f"ironclad_kit-{version or tag}-py3-none-any.whl"
+    wheel.write_bytes(b"a wheel")
+    return wheel, hashlib.sha256(b"a wheel").hexdigest()
+
+
+def test_ironclad_can_come_from_a_hash_checked_wheel_without_repository_access(
+    tmp_path: Path,
+) -> None:
+    host = Host(tmp_path)
+    wheel, digest = _wheel(tmp_path)
+    flags = ("--ironclad-wheel", str(wheel), "--ironclad-wheel-sha256", digest)
+    check = host.run("--check-only", *flags, fail="ironclad")
+    assert check.returncode == 0, check.stdout + check.stderr
+    assert "sha256 checked" in check.stdout
+    assert host.run("--run-id", "t", *flags).returncode == 0
+    log = (tmp_path / "args.log").read_text(encoding="utf-8")
+    assert str(wheel) in log
+    assert IRONCLAD_PIN not in log
+
+
+def test_a_wheel_with_the_wrong_hash_or_version_is_refused(tmp_path: Path) -> None:
+    host = Host(tmp_path)
+    wheel, _ = _wheel(tmp_path)
+    wrong = host.run(
+        "--check-only", "--ironclad-wheel", str(wheel), "--ironclad-wheel-sha256", "0" * 64
+    )
+    assert wrong.returncode == 2
+    assert "does not match the sha256" in wrong.stdout
+    other, digest = _wheel(tmp_path, version="0.0.1")
+    old = host.run(
+        "--check-only", "--ironclad-wheel", str(other), "--ironclad-wheel-sha256", digest
+    )
+    assert old.returncode == 2
+    assert "is not version" in old.stdout
+
+
+def test_a_wheel_needs_its_hash_and_a_hash_needs_its_wheel(tmp_path: Path) -> None:
+    host = Host(tmp_path)
+    wheel, digest = _wheel(tmp_path)
+    assert host.run("--check-only", "--ironclad-wheel", str(wheel)).returncode == 2
+    assert host.run("--check-only", "--ironclad-wheel-sha256", digest).returncode == 2
+    assert host.run("--check-only", "--ironclad-wheel-sha256", "XYZ").returncode == 2
 
 
 def test_an_invalid_replay_shows_its_reason(tmp_path: Path) -> None:
